@@ -13,6 +13,7 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
     "@react-navigation/native": "^7.0.3",
+    "@rnmapbox/maps": "^10.1.39",
     "expo": "^53.0.11",
     "expo-constants": "~17.1.4",
     "expo-linking": "~7.1.4",
