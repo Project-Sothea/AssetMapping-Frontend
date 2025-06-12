@@ -13,7 +13,7 @@
       "expo-router",
       [
         "@rnmapbox/maps",
-        { 
+        {
           "RNMapBoxMapsDownloadToken": "pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw",
           "RNMapBoxMapsVersion": "11.*"
         }
@@ -35,7 +35,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.AssetMapApp"
     },
     "android": {
       "adaptiveIcon": {
