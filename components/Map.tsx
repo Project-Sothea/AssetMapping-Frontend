@@ -1,9 +1,6 @@
 import Mapbox, { Camera, LocationPuck, MapView } from '@rnmapbox/maps';
-import { isEnabled } from 'react-native/Libraries/Performance/Systrace';
 
-const accessToken =
-  'pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw';
-Mapbox.setAccessToken(accessToken);
+Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY || '');
 export default function Map() {
   return (
     <MapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/satellite-streets-v12">
