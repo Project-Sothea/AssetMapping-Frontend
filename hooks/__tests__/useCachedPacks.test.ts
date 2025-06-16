@@ -1,7 +1,7 @@
 import MapboxGL, { OfflineCreatePackOptions, offlineManager } from '@rnmapbox/maps';
 import { OfflineCreatePackOptionsArgs } from '@rnmapbox/maps/lib/typescript/src/modules/offline/OfflineCreatePackOptions';
 import { act, render, renderHook, waitFor } from '@testing-library/react-native';
-import { useCachedPacks } from '../useCachedPacks';
+import { useCachedPacks } from '../useFetchPacks';
 
 jest.mock('@rnmapbox/maps', () => ({
   offlineManager: {

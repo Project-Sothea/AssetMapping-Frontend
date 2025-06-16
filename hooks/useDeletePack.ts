@@ -1,30 +1,12 @@
-import { useState, useCallback } from 'react';
-import MapboxGL from '@rnmapbox/maps';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteOfflinePack } from '~/apis/deleteOfflinePack';
 
-export const useDeleteOfflineMapPack = () => {
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+//to retrieve offline tile pack stored in the db
 
-  const deletePack = useCallback(async (packName: string) => {
-    setDeleting(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      await MapboxGL.offlineManager.deletePack(packName);
-      setSuccess(true);
-    } catch (e: any) {
-      setError(e.message || 'Unknown error');
-    } finally {
-      setDeleting(false);
-    }
-  }, []);
-
-  return {
-    deletePack,
-    deleting,
-    error,
-    success,
-  };
+export const useFetchPacks = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteOfflinePack,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['offlinePacks'] }),
+  });
 };

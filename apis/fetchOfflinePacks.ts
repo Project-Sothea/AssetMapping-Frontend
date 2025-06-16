@@ -1,6 +1,6 @@
 import { offlineManager } from '@rnmapbox/maps';
 
-export const getOfflinePacks = async () => {
+export const fetchOfflinePacks = async () => {
   try {
     return await offlineManager.getPacks();
   } catch (err) {
