@@ -16,7 +16,6 @@ expo-env.d.ts
 
 ios
 android
-android/local.properties
 
 # macOS
 .DS_Store
