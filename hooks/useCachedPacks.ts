@@ -9,7 +9,7 @@ import OfflinePack from '@rnmapbox/maps/lib/typescript/src/modules/offline/Offli
 export const useCachedPacks = () => {
   //states
   const [data, setData] = useState<any[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   //Callback
@@ -21,7 +21,7 @@ export const useCachedPacks = () => {
       setData(res);
       setError(null);
     } catch (err) {
-      setError((err as Error).message);
+      setError(err as Error);
       setData(null);
     } finally {
       setLoading(false);
