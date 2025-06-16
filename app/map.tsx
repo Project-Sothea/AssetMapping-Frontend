@@ -7,7 +7,8 @@ import { ScreenWrapper } from '~/components/ui/ScreenWrapper';
 export default function Home() {
   return (
     <ScreenWrapper>
-      <Stack.Screen options={{ title: 'Home' }} />
+      <Stack.Screen options={{ title: 'Map' }} />
+      <Map />
     </ScreenWrapper>
   );
 }
