@@ -27,18 +27,7 @@ export default function Map() {
       onDidFinishLoadingMap={() => setMapLoaded(true)}>
       {mapLoaded && (
         <>
-          <Camera
-            followUserLocation
-            followZoomLevel={16}
-            // bounds={{
-            //   ne: [12.830381, 103.3883592],
-            //   sw: [12.8282439, 103.388317],
-            //   paddingLeft: 20,
-            //   paddingRight: 20,
-            //   paddingTop: 20,
-            //   paddingBottom: 20,
-            // }}
-          />
+          <Camera followUserLocation followZoomLevel={16} />
           <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
           <ShapeSource id="OfflineRegion" shape={poly}>
             <MapboxGL.FillLayer id="offlineFill" style={{ fillColor: 'rgba(0, 150, 255, 0.2)' }} />

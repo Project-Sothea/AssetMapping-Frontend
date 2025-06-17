@@ -19,7 +19,7 @@ const Item = ({ title }: ItemProps) => (
   </View>
 );
 
-export default function Home() {
+export default function Download() {
   const { mutateAsync: createPackMutation } = useCreatePack();
   const { mutateAsync: deletePackMutation } = useDeletePack();
   const { data: packs, isPending } = useFetchPacks();

@@ -10,13 +10,17 @@ export const coordsSreO = {
   minLng: 103.389,
 };
 
+export const exactCoordsSreO = [103.39, 12.8285];
+
+export const boundsSreO: any = [
+  [coordsSreO.maxLng, coordsSreO.maxLat],
+  [coordsSreO.minLng, coordsSreO.minLat],
+];
+
 export const packSreO: UseCreatePackProps = {
   name: 'Sre O Primary School',
   styleURL: MapboxGL.StyleURL.SatelliteStreet,
-  bounds: [
-    [coordsSreO.maxLng, coordsSreO.maxLat],
-    [coordsSreO.minLng, coordsSreO.minLat],
-  ],
+  bounds: boundsSreO,
   minZoom: 16,
   maxZoom: 22,
 };
