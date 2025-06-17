@@ -3,7 +3,7 @@ import { deleteOfflinePack } from '~/apis/deleteOfflinePack';
 
 //to retrieve offline tile pack stored in the db
 
-export const useFetchPacks = () => {
+export const useDeletePack = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteOfflinePack,

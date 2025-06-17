@@ -4,8 +4,8 @@ import { useState } from 'react';
 
 type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
 
-export default function useCreatePack(options: UseCreatePackProps) {
-  const [progress, setProgress] = useState<number | null>(null);
+export default function useCreatePack() {
+  const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<Error | null>(null);
 
   //to update UI
@@ -30,3 +30,8 @@ export default function useCreatePack(options: UseCreatePackProps) {
 
   return { createPackMutation, progress, error };
 }
+
+/*
+Errors:
+1.  ERROR  [Error: Offline pack with name Sre O Primary School already exists.]
+*/
