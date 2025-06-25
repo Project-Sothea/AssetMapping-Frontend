@@ -1,23 +1,25 @@
 import { offlineManager } from '@rnmapbox/maps';
 import { Button } from '~/components/Button';
-import { FlatList, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text, View, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
 import useCreatePack from '~/hooks/useCreatePack';
 import { useDeletePack } from '~/hooks/useDeletePack';
 import { useFetchPacks } from '~/hooks/useFetchPacks';
-import MapboxGL from '~/services/mapbox';
 import Spacer from '~/components/customUI/Spacer';
-import { coordsSreO, packSreO } from '~/data/testingData';
+import { packSreO } from '~/data/testingData';
 
 type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
-
-type ItemProps = { title: string };
-
-const Item = ({ title }: ItemProps) => (
-  <View style={styles.item}>
-    <Text style={styles.title}>{title}</Text>
-  </View>
-);
+// Example:
+// {
+//   name: 'Sre O Primary School',
+//   styleURL: MapboxGL.StyleURL.SatelliteStreet,
+//   bounds: [
+//     [coordsSreO.maxLng, coordsSreO.maxLat],
+//     [coordsSreO.minLng, coordsSreO.minLat],
+//   ],
+//   minZoom: 16,
+//   maxZoom: 22,
+// }
 
 export default function Home() {
   const { mutateAsync: createPackMutation } = useCreatePack();
@@ -26,13 +28,6 @@ export default function Home() {
 
   return (
     <ScreenWrapper>
-      {/* <PackProgressIndicator packName={pack1.name} /> */}
-      {/* <Button
-        title="Fetch Pack"
-        onPress={async () => {
-          await fetchOfflinePacks();
-        }}
-      /> */}
       <Spacer />
 
       <Button
@@ -57,6 +52,21 @@ export default function Home() {
           }
         }}
       />
+
+      <Text>Downloaded Packs:</Text>
+      {isPending ? (
+        <ActivityIndicator />
+      ) : (
+        <FlatList
+          data={packs}
+          keyExtractor={(item) => item.name}
+          renderItem={({ item }) => (
+            <View style={styles.item}>
+              <Text style={styles.title}>📦 {item.name}</Text>
+            </View>
+          )}
+        />
+      )}
     </ScreenWrapper>
   );
 }

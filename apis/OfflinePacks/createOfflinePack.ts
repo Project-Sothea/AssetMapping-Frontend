@@ -1,6 +1,5 @@
 import { offlineManager } from '@rnmapbox/maps';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { Alert } from 'react-native';
 
 type CreateOfflinePackProps = Parameters<typeof offlineManager.createPack>[0];
 
@@ -12,6 +11,7 @@ export const CreateOfflinePack = async (options: CreateOfflinePackProps) => {
     });
   } catch (err) {
     console.error('Offline pack error:', err);
+    Alert.alert('CreatePack Error', 'Pack already Created');
   }
 };
 
