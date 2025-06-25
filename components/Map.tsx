@@ -9,6 +9,10 @@ import Mapbox, {
 import { featureCollection, point } from '@turf/helpers';
 import pin from '../assets/pin.png';
 import homes from '~/data/homes.json';
+import MapboxGL from '~/services/mapbox';
+//mapbox://styles/mapbox/satellite-streets-v12
+//16-18 zoom level
+const mapStyleURL = MapboxGL.StyleURL.Satellite;
 
 Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY || '');
 
@@ -17,8 +21,8 @@ export default function Map() {
   const homesFeatures = featureCollection(points);
 
   return (
-    <MapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/satellite-streets-v12">
-      <Camera followUserLocation followZoomLevel={16}></Camera>
+    <MapView style={{ flex: 1 }} styleURL={mapStyleURL}>
+      <Camera followUserLocation followZoomLevel={19}></Camera>
       <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 
       <ShapeSource id="houses" shape={homesFeatures}>
