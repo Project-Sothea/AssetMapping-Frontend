@@ -1,7 +1,7 @@
 import MapboxGL, { OfflineCreatePackOptions, offlineManager } from '@rnmapbox/maps';
 import { OfflineCreatePackOptionsArgs } from '@rnmapbox/maps/lib/typescript/src/modules/offline/OfflineCreatePackOptions';
 import { act, render, renderHook, waitFor } from '@testing-library/react-native';
-import { useCachedPacks } from '../useCachedPacks';
+import { useCachedPacks } from '../useFetchPacks';
 
 jest.mock('@rnmapbox/maps', () => ({
   offlineManager: {
@@ -53,11 +53,15 @@ const mockPack2 = {
 };
 
 describe('useCachedPacks', () => {
+  const mockGetPacks = offlineManager.getPacks as jest.Mock;
+  beforeAll(() => {
+    jest.clearAllMocks();
+  });
+
   describe('given cached packs exist', () => {
     test('when hook is mounted', async () => {
       const mockPacks = [mockPack1, mockPack2];
-
-      (offlineManager.getPacks as jest.Mock).mockResolvedValue(mockPacks);
+      mockGetPacks.mockResolvedValue(mockPacks);
 
       const { result } = renderHook(() => useCachedPacks());
 
@@ -72,20 +76,14 @@ describe('useCachedPacks', () => {
     test('when refetch func is called', async () => {
       const mockRes1 = [mockPack1];
       const mockRes2 = [mockPack1, mockPack2];
-
-      (offlineManager.getPacks as jest.Mock)
+      mockGetPacks
         .mockResolvedValueOnce(mockRes1) //initial call
         .mockResolvedValueOnce(mockRes2); //refetch
 
       const { result } = renderHook(() => useCachedPacks());
-
       await waitFor(() => {
-        const dataState = result.current.dataState;
-        expect(dataState.data).toEqual(mockRes1);
-        expect(dataState.loading).toBe(false);
-        expect(dataState.error).toBeNull();
+        expect(result.current.dataState.loading).toEqual(false);
       });
-
       await act(async () => {
         await result.current.refetch();
       });
@@ -98,21 +96,102 @@ describe('useCachedPacks', () => {
       });
     });
   });
-  //   describe('given no cached packs exist', () => {
-  //     test('when hook is mounted', () => {
-  //       expect(cache).toEqual(packs);
-  //     });
-  //     test('when refetch func is called', () => {
-  //       expect(error).toBe(errorMsg);
-  //     });
-  //   });
 
-  //   describe('given offlineManager throws', () => {
-  //     test('when hook is mounted', () => {
-  //       expect(cache).toEqual(packs);
-  //     });
-  //     test('when refetch func is called', () => {
-  //       expect(error).toBe(errorMsg);
-  //     });
-  //   });
+  describe('given no cached packs exist', () => {
+    test('when hook is mounted', async () => {
+      //arrange
+      mockGetPacks.mockResolvedValue([]);
+
+      //act
+      const { result } = renderHook(() => useCachedPacks());
+
+      //assert
+      await waitFor(() => {
+        const dataState = result.current.dataState;
+        expect(dataState.data).toEqual([]);
+        expect(dataState.error).toEqual(null);
+        expect(dataState.loading).toEqual(false);
+      });
+    });
+    test('when refetch func is called', async () => {
+      //arrange
+      const mockPacks = [mockPack1];
+      mockGetPacks.mockResolvedValueOnce(mockPacks).mockResolvedValueOnce([]);
+
+      //act
+      const { result } = renderHook(() => useCachedPacks());
+      await waitFor(() => {
+        expect(result.current.dataState.loading).toEqual(false);
+      });
+      await act(async () => {
+        await result.current.refetch();
+      });
+
+      //assert
+      await waitFor(() => {
+        const dataState = result.current.dataState;
+        expect(dataState.data).toEqual([]);
+        expect(dataState.loading).toBe(false);
+        expect(dataState.error).toBeNull();
+      });
+    });
+  });
+
+  describe('given offlineManager throws', () => {
+    const errMsg = 'fetch failed, clear cache';
+    const FetchError = new Error(errMsg);
+
+    test('when hook is mounted', async () => {
+      mockGetPacks.mockRejectedValue(FetchError);
+
+      const { result } = renderHook(() => useCachedPacks());
+
+      await waitFor(() => {
+        const dataState = result.current.dataState;
+        expect(dataState.data).toEqual(null);
+        expect(dataState.loading).toBe(false);
+        expect(dataState.error).toBe(FetchError);
+      });
+    });
+
+    test('when refetch func is called', async () => {
+      const mockPacks = [mockPack1];
+      mockGetPacks.mockResolvedValueOnce(mockPacks).mockRejectedValueOnce(FetchError);
+
+      //act
+      const { result } = renderHook(() => useCachedPacks());
+      await waitFor(() => {
+        expect(result.current.dataState.loading).toEqual(false);
+      });
+      await act(async () => {
+        await result.current.refetch();
+      });
+
+      await waitFor(() => {
+        const dataState = result.current.dataState;
+        expect(dataState.data).toEqual(null);
+        expect(dataState.loading).toBe(false);
+        expect(dataState.error).toBe(FetchError);
+      });
+    });
+  });
+
+  describe('given consecutive requests', () => {
+    test('when repeated refetch', async () => {
+      mockGetPacks.mockResolvedValue([mockPack1, mockPack2]);
+
+      const { result } = renderHook(() => useCachedPacks());
+
+      await act(async () => {
+        await Promise.all([
+          result.current.refetch(),
+          result.current.refetch(),
+          result.current.refetch(),
+        ]);
+      });
+
+      expect(mockGetPacks).toHaveBeenCalledTimes(1);
+      expect(result.current.dataState.loading).toBe(false);
+    });
+  });
 });
