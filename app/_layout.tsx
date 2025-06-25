@@ -12,8 +12,8 @@ function TabBarIcon(props: {
 
 export default function Layout() {
   return (
-    <SafeAreaProvider>
-      <QueryProvider>
+    <QueryProvider>
+      <SafeAreaProvider>
         <Tabs>
           <Tabs.Screen
             name="index"
@@ -37,7 +37,7 @@ export default function Layout() {
             }}
           />
         </Tabs>
-      </QueryProvider>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </QueryProvider>
   );
 }
