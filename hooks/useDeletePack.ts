@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteOfflinePack } from '~/apis/deleteOfflinePack';
+import { deleteOfflinePack } from '~/apis/OfflinePacks/deleteOfflinePack';
 
 //to retrieve offline tile pack stored in the db
 

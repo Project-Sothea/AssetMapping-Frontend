@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreateOfflinePack } from '~/apis/createOfflinePack';
+import { CreateOfflinePack } from '~/apis/OfflinePacks/createOfflinePack';
 
 export default function useCreatePack() {
   const queryClient = useQueryClient();

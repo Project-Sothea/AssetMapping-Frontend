@@ -1,7 +1,7 @@
 import MapboxGL, { OfflineCreatePackOptions, offlineManager } from '@rnmapbox/maps';
 import { OfflineCreatePackOptionsArgs } from '@rnmapbox/maps/lib/typescript/src/modules/offline/OfflineCreatePackOptions';
 import { act, render, renderHook, waitFor } from '@testing-library/react-native';
-import { useCachedPacks } from '../useFetchPacks';
+import { useFetchPacks } from '../useFetchPacks';
 
 jest.mock('@rnmapbox/maps', () => ({
   offlineManager: {
@@ -63,7 +63,7 @@ describe('useCachedPacks', () => {
       const mockPacks = [mockPack1, mockPack2];
       mockGetPacks.mockResolvedValue(mockPacks);
 
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
 
       await waitFor(() => {
         const dataState = result.current.dataState;
@@ -80,7 +80,7 @@ describe('useCachedPacks', () => {
         .mockResolvedValueOnce(mockRes1) //initial call
         .mockResolvedValueOnce(mockRes2); //refetch
 
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
       await waitFor(() => {
         expect(result.current.dataState.loading).toEqual(false);
       });
@@ -103,7 +103,7 @@ describe('useCachedPacks', () => {
       mockGetPacks.mockResolvedValue([]);
 
       //act
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
 
       //assert
       await waitFor(() => {
@@ -119,7 +119,7 @@ describe('useCachedPacks', () => {
       mockGetPacks.mockResolvedValueOnce(mockPacks).mockResolvedValueOnce([]);
 
       //act
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
       await waitFor(() => {
         expect(result.current.dataState.loading).toEqual(false);
       });
@@ -144,7 +144,7 @@ describe('useCachedPacks', () => {
     test('when hook is mounted', async () => {
       mockGetPacks.mockRejectedValue(FetchError);
 
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
 
       await waitFor(() => {
         const dataState = result.current.dataState;
@@ -159,7 +159,7 @@ describe('useCachedPacks', () => {
       mockGetPacks.mockResolvedValueOnce(mockPacks).mockRejectedValueOnce(FetchError);
 
       //act
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
       await waitFor(() => {
         expect(result.current.dataState.loading).toEqual(false);
       });
@@ -180,7 +180,7 @@ describe('useCachedPacks', () => {
     test('when repeated refetch', async () => {
       mockGetPacks.mockResolvedValue([mockPack1, mockPack2]);
 
-      const { result } = renderHook(() => useCachedPacks());
+      const { result } = renderHook(() => useFetchPacks());
 
       await act(async () => {
         await Promise.all([
