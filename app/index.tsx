@@ -1,9 +1,17 @@
+import React from 'react';
 import { Stack } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { Button } from '~/components/Button';
-import Map from '~/components/Map';
-import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
+import { Container } from '~/components/Container';
+//import { ScreenContent } from '~/components/ScreenContent';
+import Map from '~/components/Map'
 
 export default function Home() {
-  return <ScreenWrapper></ScreenWrapper>;
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Home' }} />
+        <Text>lucius was here lol</Text>
+        <Map />
+    </>
+  );
 }

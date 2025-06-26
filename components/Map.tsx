@@ -10,6 +10,9 @@ import { featureCollection, point } from '@turf/helpers';
 import pin from '../assets/pin.png';
 import homes from '~/data/homes.json';
 import MapboxGL from '~/services/mapbox';
+import Form from './Form';
+import { View } from 'react-native';
+import React, { useState } from 'react';
 
 const mapStyleURL = MapboxGL.StyleURL.Outdoors;
 
@@ -19,21 +22,47 @@ export default function Map() {
   const points = homes.map((home) => point([home.long, home.lat]));
   const homesFeatures = featureCollection(points);
 
-  return (
-    <MapView style={{ flex: 1 }} styleURL={mapStyleURL}>
-      <Camera followUserLocation followZoomLevel={16}></Camera>
-      <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
+  const [droppedPins, setDroppedPins] = useState<any[]>([]);
+  const [selectedPin, setSelectedPin] = useState<any | null>(null);
 
-      <ShapeSource id="houses" shape={homesFeatures}>
-        <SymbolLayer
-          id="homes-icons"
-          style={{
-            iconImage: 'pin',
-            iconSize: 0.1,
-          }}
-        />
-        <Images images={{ pin }} />
-      </ShapeSource>
-    </MapView>
+  return (
+    <View style={{ flex: 1 }}>
+      <MapView
+        style={{ flex: 1 }}
+        styleURL={mapStyleURL}
+        onLongPress={(e) => {
+          const coords = (e.geometry as GeoJSON.Point).coordinates;
+          const newPin = point(coords);
+          setDroppedPins((prev) => [...prev, newPin]);
+          setSelectedPin(newPin);
+        }}
+      >
+        <Camera followUserLocation followZoomLevel={16} />
+        <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
+
+        <ShapeSource id="houses" shape={homesFeatures}>
+          <SymbolLayer
+            id="homes-icons"
+            style={{
+              iconImage: 'pin',
+              iconSize: 0.1,
+            }}
+          />
+          <Images images={{ pin }} />
+        </ShapeSource>
+
+        <ShapeSource id="user-pins" shape={featureCollection(droppedPins)}>
+          <SymbolLayer
+            id="user-pins-layer"
+            style={{
+              iconImage: 'pin',
+              iconSize: 0.1,
+            }}
+          />
+        </ShapeSource>
+      </MapView>
+
+      {selectedPin && <Form onClose={() => setSelectedPin(null)} />}
+    </View>
   );
 }
