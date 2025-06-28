@@ -2,9 +2,9 @@ import { offlineManager } from '@rnmapbox/maps';
 import { Button } from '~/components/Button';
 import { Text, View, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
 import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
-import useCreatePack from '~/hooks/useCreatePack';
-import { useDeletePack } from '~/hooks/useDeletePack';
-import { useFetchPacks } from '~/hooks/useFetchPacks';
+import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
+import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
+import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
 import Spacer from '~/components/customUI/Spacer';
 import { packSreO } from '~/data/testingData';
 

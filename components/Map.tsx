@@ -35,8 +35,7 @@ export default function Map() {
           const newPin = point(coords);
           setDroppedPins((prev) => [...prev, newPin]);
           setSelectedPin(newPin);
-        }}
-      >
+        }}>
         <Camera followUserLocation followZoomLevel={16} />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 

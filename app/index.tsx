@@ -1,17 +1,35 @@
-import React from 'react';
 import { Stack } from 'expo-router';
-import { Text } from 'react-native';
-import { Button } from '~/components/Button';
-import { Container } from '~/components/Container';
+import { ActivityIndicator, Text, View } from 'react-native';
 //import { ScreenContent } from '~/components/ScreenContent';
-import Map from '~/components/Map'
+import Form from '~/components/Form';
+import { useBulkFetchForms, useFetchForm } from '~/hooks/Forms/index';
 
 export default function Home() {
+  const { data: forms, isLoading: loadingForms } = useBulkFetchForms();
+  const { data: form, isLoading: loadingForm } = useFetchForm(
+    '804642f2-0035-4e11-a4fe-a7e61cdd8dab'
+  );
+
   return (
     <>
       <Stack.Screen options={{ title: 'Home' }} />
-        <Text>lucius was here lol</Text>
-        <Map />
+      {loadingForms ? (
+        <ActivityIndicator />
+      ) : (
+        <View>
+          <Text>All Forms: {forms?.length}</Text>
+        </View>
+      )}
+
+      {loadingForm ? (
+        <ActivityIndicator />
+      ) : (
+        <View>
+          <Text>All Forms: {form?.village}</Text>
+        </View>
+      )}
+
+      <Form onClose={() => {}}></Form>
     </>
   );
 }
