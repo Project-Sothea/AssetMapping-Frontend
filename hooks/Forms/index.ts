@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createForm, deleteForm, getForm, getForms, updateForm } from '~/apis/Forms';
+import { createForm, softDeleteForm, getForm, getForms, updateForm } from '~/apis/Forms';
 import { Form } from '~/utils/database.types';
 
 export const useBulkFetchForms = () => {
@@ -38,11 +38,11 @@ export const useUpdateForm = () => {
   });
 };
 
-export const useDeleteForm = () => {
+export const useSoftDeleteForm = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => deleteForm(id),
+    mutationFn: (id: string) => softDeleteForm(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
     },

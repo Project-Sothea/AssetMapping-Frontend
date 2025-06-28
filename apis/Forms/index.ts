@@ -3,7 +3,7 @@ import { supabase } from '~/utils/supabase';
 
 export const getForms = async () => {
   try {
-    const { data, error } = await supabase.from('forms').select('*');
+    const { data, error } = await supabase.from('forms').select('*').eq('is_active', true);
     if (error) {
       console.error('supabase error:', error.message);
       return [];
@@ -17,7 +17,13 @@ export const getForms = async () => {
 
 export const getForm = async (id: string) => {
   try {
-    const { data, error } = await supabase.from('forms').select('*').eq('id', id).limit(1).single();
+    const { data, error } = await supabase
+      .from('forms')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
     if (error) {
       console.error('supabase error:', error.message);
       return null;
@@ -51,10 +57,15 @@ export const updateForm = async (id: string, values: Partial<Form>) => {
   }
 };
 
-export const deleteForm = async (id: string) => {
+export const softDeleteForm = async (id: string) => {
   try {
-    const response = await supabase.from('forms').delete().eq('id', id);
-    return response;
+    const { error } = await supabase
+      .from('forms')
+      .update({ is_active: false, deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      console.error('supabase error:', error.message);
+    }
   } catch (err) {
     console.error('Non-Supabase Error:', err);
   }
