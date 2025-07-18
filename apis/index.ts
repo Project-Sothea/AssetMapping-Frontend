@@ -1,1 +1,1 @@
-export * as pin from './pin';
+export * as callPin from './pin';

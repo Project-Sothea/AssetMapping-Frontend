@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { pin } from '~/apis';
-import { CreatePin } from '~/utils/globalTypes';
+import { callPin } from '~/apis';
+import { CreatePin, Pin } from '~/utils/globalTypes';
 
 export const useCreatePin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (p: CreatePin) => pin.create(p),
+    mutationFn: (p: CreatePin) => callPin.create(p),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pins'] });
     },
@@ -14,8 +14,8 @@ export const useCreatePin = () => {
 };
 
 export const useFetchPins = () => {
-  return useQuery<CreatePin[] | null>({
+  return useQuery<Pin[]>({
     queryKey: ['pins'],
-    queryFn: () => pin.fetchAll(),
+    queryFn: () => callPin.fetchAll(),
   });
 };

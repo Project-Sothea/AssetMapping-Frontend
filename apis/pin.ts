@@ -14,7 +14,10 @@ export const create = async (pin: CreatePin) => {
 
 export const fetchAll = async () => {
   try {
-    const { data, error } = await supabase.from('forms').select('*').eq('deleted_at', null);
+    const { data, error } = await supabase
+      .from('pins')
+      .select('*')
+      .filter('deleted_at', 'is', null);
     if (error) {
       console.error('supabase error:', error.message);
       return [];
