@@ -8,5 +8,3 @@ export default function Home() {
     </ScreenWrapper>
   );
 }
-
-//ERROR:  Mapbox [error] MapLoad error Failed to load tile:

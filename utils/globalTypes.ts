@@ -6,4 +6,6 @@ type dbPin = Database['public']['Tables']['pins']['Row'];
 //promote single source of truth
 
 export type Form = dbForm;
-export type Pin = Omit<dbPin, 'created_at' | 'updated_at' | 'deleted_at'>;
+export type Pin = dbPin;
+
+export type InsertPin = Omit<dbPin, 'deleted_at' | 'created_at' | 'updated_at'>;

@@ -1,7 +1,7 @@
 import { supabase } from '~/services/supabase';
-import { Pin } from '~/utils/globalTypes';
+import { InsertPin } from '~/utils/globalTypes';
 
-export const create = async (pin: Pin) => {
+export const create = async (pin: InsertPin) => {
   try {
     const { error } = await supabase.from('pins').insert(pin);
     if (error) {

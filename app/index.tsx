@@ -9,8 +9,7 @@ export default function Home() {
   return (
     <>
       <Stack.Screen options={{ title: 'Home' }} />
-
-      <PinForm onSubmit={() => console.log()}></PinForm>
+      <Form onClose={() => console.log()}></Form>
     </>
   );
 }

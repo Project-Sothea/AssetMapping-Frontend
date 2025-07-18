@@ -25,7 +25,7 @@ export default function Layout() {
           <Tabs.Screen
             name="map"
             options={{
-              title: 'Map',
+              headerShown: false,
               tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="map" color={color} />,
             }}
           />
