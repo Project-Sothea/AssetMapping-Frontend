@@ -174,9 +174,9 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           id: string
+          images: string[] | null
           lat: number
           lng: number
-          metadata: Json | null
           name: string
           postal_code: string | null
           state_province: string | null
@@ -189,10 +189,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string | null
-          id: string
+          id?: string
+          images?: string[] | null
           lat: number
           lng: number
-          metadata?: Json | null
           name: string
           postal_code?: string | null
           state_province?: string | null
@@ -206,9 +206,9 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           id?: string
+          images?: string[] | null
           lat?: number
           lng?: number
-          metadata?: Json | null
           name?: string
           postal_code?: string | null
           state_province?: string | null

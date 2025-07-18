@@ -1,6 +1,5 @@
 import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
-import homes from '~/data/homes.json';
 import MapboxGL from '~/services/mapbox';
 import Form from './Form';
 import { Modal, TouchableOpacity, View, Text, StyleSheet, Alert } from 'react-native';
@@ -9,6 +8,7 @@ import type { Feature, FeatureCollection, Point } from 'geojson';
 import { PinForm, PinFormValues } from './PinForm';
 import { useCreatePin, useFetchPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
+import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -23,7 +23,7 @@ export default function Map() {
     point([pin.lng, pin.lat], { id: pin.id, name: pin.name })
   );
   const pointCollection: FeatureCollection<Point, PinProps> = featureCollection(points);
-  console.log('pointCollection', JSON.stringify(pointCollection, null, 2));
+
   const [selectedPin, setSelectedPin] = useState<PinFeature | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,30 +32,42 @@ export default function Map() {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
 
     if (lng && lat) {
-      console.log('dropped', lng, lat);
       setDroppedCoords([lng, lat]);
       setModalVisible(true);
     }
   };
 
-  const handleSubmit = (formData: PinFormValues) => {
-    if (droppedCoords == null) {
-      return;
+  const handlePinSubmit = async (formData: PinFormValues) => {
+    if (droppedCoords == null) return;
+
+    console.log('creating new pin in db...');
+    try {
+      const uploadedImageUrls = await Promise.all(
+        formData.images.map((image, idx) => {
+          const filename = `pins/${Date.now()}-${idx}.jpg`;
+          return uploadImageAsync(image.uri, filename);
+        })
+      );
+      const newPin = {
+        ...formData,
+        lng: droppedCoords[0],
+        lat: droppedCoords[1],
+        images: uploadedImageUrls,
+      };
+
+      createPin.mutate(newPin);
+      Alert.alert(`${newPin.name} Pin Created!`);
+      setModalVisible(false);
+      setDroppedCoords(null);
+    } catch (error) {
+      console.error('Error uploading images or creating pin:', error);
+      Alert.alert('Upload failed', 'Please try again.');
     }
-    console.log('creating new pin in db');
-
-    const newPin = { ...formData, lng: droppedCoords[0], lat: droppedCoords[1] };
-
-    createPin.mutate(newPin);
-    Alert.alert(`${newPin.name} Pin Created!`);
-    setModalVisible(false);
-    setDroppedCoords(null);
   };
 
   const handleOpenPin = async (e: any) => {
     const pressedPin = e.features?.[0];
     if (pressedPin) {
-      console.log('Pressed feature:', pressedPin);
       setSelectedPin(pressedPin);
     }
   };
@@ -96,7 +108,7 @@ export default function Map() {
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Create Pin</Text>
 
-            <PinForm onSubmit={handleSubmit} />
+            <PinForm onSubmit={handlePinSubmit} />
 
             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
               <Text style={{ color: 'white' }}>Cancel</Text>

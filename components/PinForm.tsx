@@ -1,6 +1,7 @@
 import { Formik } from 'formik';
+import * as ImagePicker from 'expo-image-picker';
 import * as Yup from 'yup';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, ScrollView, Image } from 'react-native';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -19,6 +20,7 @@ export type PinFormValues = {
   country: string | null;
   description: string | null;
   type: string;
+  images: { uri: string }[]; // array of images with uri
 };
 
 type PinFormProps = {
@@ -26,6 +28,32 @@ type PinFormProps = {
 };
 
 export const PinForm = ({ onSubmit }: PinFormProps) => {
+  const pickImage = async (setFieldValue: any, images: { uri: string }[]) => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      alert('Permission to access camera roll is required!');
+      return;
+    }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      base64: true,
+      quality: 0.7,
+    });
+
+    if (!pickerResult.canceled && pickerResult.assets.length > 0) {
+      const asset = pickerResult.assets[0];
+      const uri = asset.uri;
+
+      // Append new image object with uri and mimeType
+      const newImage = { uri };
+      setFieldValue('images', [...images, newImage]);
+    } else {
+      console.warn('No images selected or picker was canceled.');
+    }
+  };
+
   return (
     <Formik<PinFormValues>
       initialValues={{
@@ -36,10 +64,11 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
         country: '',
         description: '',
         type: 'normal',
+        images: [],
       }}
       validationSchema={PinFormSchema}
       onSubmit={onSubmit}>
-      {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+      {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
         <View style={styles.container}>
           {[
             { name: 'name', label: 'Name', required: true },
@@ -61,11 +90,37 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
                 value={(values as any)[name]}
                 placeholder={`Enter ${label.toLowerCase()}`}
               />
-              {touched[name as keyof PinFormValues] && errors[name as keyof PinFormValues] && (
-                <Text style={styles.error}>{errors[name as keyof PinFormValues]}</Text>
+              {touched.images && errors.images && Array.isArray(errors.images) && (
+                <Text style={styles.error}>
+                  {(errors.images[0] as any)?.uri ?? 'Invalid image'}
+                </Text>
               )}
             </View>
           ))}
+
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ marginBottom: 8 }}>Images</Text>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 8 }}>
+              {values.images.map((image, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri: image.uri }}
+                  style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
+                />
+              ))}
+            </ScrollView>
+
+            <Button title="Pick an image" onPress={() => pickImage(setFieldValue, values.images)} />
+
+            {/* Optionally display validation error */}
+            {touched.images && errors.images && (
+              <Text style={styles.error}>{errors.images as string}</Text>
+            )}
+          </View>
 
           <Button title="Create Pin" onPress={() => handleSubmit()} />
         </View>
