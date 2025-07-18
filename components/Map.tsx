@@ -12,6 +12,9 @@ import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { Pin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
+import { useFocusEffect } from 'expo-router';
+import React from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -24,6 +27,7 @@ export default function Map() {
 
   const pointCollection = convertPinsToPointCollection(pins);
   const insertPin = useInsertPin();
+  const screenIsFocused = useIsFocused();
 
   const handleDropPin = async (e: any) => {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
@@ -98,7 +102,7 @@ export default function Map() {
         )}
       </MapView>
 
-      {selectedPin && (
+      {selectedPin && screenIsFocused && (
         <PinDetailsModal
           visible={detailsVisible}
           pin={selectedPin}

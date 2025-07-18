@@ -10,7 +10,15 @@ export default function mapLayout() {
           title: 'Map',
         }}
       />
-      <Stack.Screen name="form" options={{ headerShown: false }}></Stack.Screen>
+      <Stack.Screen
+        name="form/[pinId]"
+        options={({ route }) => {
+          const { pinName } = route.params as { pinName?: string };
+          return {
+            title: `${pinName ? `New Form for pin ${pinName}` : 'New Form'}`,
+          };
+        }}
+      />
     </Stack>
   );
 }
