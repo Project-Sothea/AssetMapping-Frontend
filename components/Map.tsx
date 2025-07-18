@@ -1,26 +1,30 @@
-import { Camera, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
+import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
 import homes from '~/data/homes.json';
 import MapboxGL from '~/services/mapbox';
 import Form from './Form';
-import { Modal, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { Modal, TouchableOpacity, View, Text, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import { PinForm, PinFormValues } from './PinForm';
-import { pin } from '~/apis';
+import { useCreatePin, useFetchPins } from '~/hooks/Pins';
+import pin from '~/assets/pin.png';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 type PinProps = { id: string; name: string };
-type Pin = Feature<Point, PinProps>;
+type PinFeature = Feature<Point, PinProps>;
 
 export default function Map() {
-  const points: Pin[] = homes.map(
-    (pin) => point([pin.long, pin.lat], { id: pin.id, name: pin.name }) as Pin
-  );
-  const homesFeatures: FeatureCollection<Point, PinProps> = featureCollection(points);
+  const { data: pins = [], isLoading } = useFetchPins();
+  const createPin = useCreatePin();
 
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const points: PinFeature[] = pins.map((pin) =>
+    point([pin.lng, pin.lat], { id: pin.id, name: pin.name })
+  );
+  const pointCollection: FeatureCollection<Point, PinProps> = featureCollection(points);
+  console.log('pointCollection', JSON.stringify(pointCollection, null, 2));
+  const [selectedPin, setSelectedPin] = useState<PinFeature | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -41,7 +45,9 @@ export default function Map() {
     console.log('creating new pin in db');
 
     const newPin = { ...formData, lng: droppedCoords[0], lat: droppedCoords[1] };
-    pin.create(newPin);
+
+    createPin.mutate(newPin);
+    Alert.alert(`${newPin.name} Pin Created!`);
     setModalVisible(false);
     setDroppedCoords(null);
   };
@@ -65,15 +71,18 @@ export default function Map() {
         <Camera followUserLocation followZoomLevel={16} />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 
-        <ShapeSource id="houses" shape={homesFeatures} onPress={handleOpenPin}>
-          <SymbolLayer
-            id="homes-icons"
-            style={{
-              iconImage: 'pin',
-              iconSize: 0.05,
-            }}
-          />
-        </ShapeSource>
+        {!isLoading && (
+          <ShapeSource id="houses" shape={pointCollection} onPress={handleOpenPin}>
+            <SymbolLayer
+              id="homes-icons"
+              style={{
+                iconImage: 'pin',
+                iconSize: 0.05,
+              }}
+            />
+            <Images images={{ pin }} />
+          </ShapeSource>
+        )}
       </MapView>
 
       {selectedPin && <Form onClose={() => setSelectedPin(null)} />}
