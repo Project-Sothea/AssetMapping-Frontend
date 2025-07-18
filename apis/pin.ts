@@ -1,7 +1,8 @@
 import { supabase } from '~/services/supabase';
 import { Pin } from '~/utils/globalTypes';
 
-export const createPin = async (pin: Pin) => {
+type createPin = Omit<Pin, 'id'>;
+export const create = async (pin: createPin) => {
   try {
     const { error } = await supabase.from('pins').insert(pin);
     if (error) {

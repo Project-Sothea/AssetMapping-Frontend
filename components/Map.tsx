@@ -7,6 +7,7 @@ import { Modal, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import { PinForm, PinFormValues } from './PinForm';
+import { pin } from '~/apis';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -24,19 +25,23 @@ export default function Map() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleDropPin = async (e: any) => {
-    const [long, lat] = (e.geometry as GeoJSON.Point).coordinates;
+    const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
 
-    if (long && lat) {
-      console.log('dropped', long, lat);
-      setDroppedCoords([long, lat]);
+    if (lng && lat) {
+      console.log('dropped', lng, lat);
+      setDroppedCoords([lng, lat]);
       setModalVisible(true);
     }
   };
 
   const handleSubmit = (formData: PinFormValues) => {
-    console.log('pushing to db', formData);
-    console.log('pushing to db', droppedCoords);
+    if (droppedCoords == null) {
+      return;
+    }
+    console.log('creating new pin in db');
 
+    const newPin = { ...formData, lng: droppedCoords[0], lat: droppedCoords[1] };
+    pin.create(newPin);
     setModalVisible(false);
     setDroppedCoords(null);
   };

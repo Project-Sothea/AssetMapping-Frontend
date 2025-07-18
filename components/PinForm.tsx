@@ -13,11 +13,12 @@ const PinFormSchema = Yup.object().shape({
 
 export type PinFormValues = {
   name: string;
-  address?: string;
-  stateProvince?: string;
-  postalCode?: string;
-  country?: string;
-  description?: string;
+  address: string | null;
+  state_province: string | null;
+  postal_code: string | null;
+  country: string | null;
+  description: string | null;
+  type: string;
 };
 
 type PinFormProps = {
@@ -30,10 +31,11 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
       initialValues={{
         name: '',
         address: '',
-        stateProvince: '',
-        postalCode: '',
+        state_province: '',
+        postal_code: '',
         country: '',
         description: '',
+        type: 'normal',
       }}
       validationSchema={PinFormSchema}
       onSubmit={onSubmit}>
@@ -42,8 +44,8 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
           {[
             { name: 'name', label: 'Name', required: true },
             { name: 'address', label: 'Address' },
-            { name: 'stateProvince', label: 'State/ Province' },
-            { name: 'postalCode', label: 'Postal Code' },
+            { name: 'state_province', label: 'State/ Province' },
+            { name: 'postal_code', label: 'Postal Code' },
             { name: 'country', label: 'Country' },
             { name: 'description', label: 'Description' },
           ].map(({ name, label, required }) => (
