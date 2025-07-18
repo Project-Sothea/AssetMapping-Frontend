@@ -8,6 +8,7 @@ import { useState } from 'react';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import { PinForm, PinFormValues } from './PinForm';
 import { pin } from '~/apis';
+import { useFetchPins } from '~/hooks/Pins';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -23,6 +24,8 @@ export default function Map() {
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const { data: pins, error, isLoading } = useFetchPins();
 
   const handleDropPin = async (e: any) => {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
