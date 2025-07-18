@@ -3,7 +3,6 @@ import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 
 export const uploadImageAsync = async (uri: string, filename: string) => {
-  // fetch the local file uri
   const contentType = 'image/jpg';
   const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
 

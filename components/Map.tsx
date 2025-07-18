@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
 import MapboxGL from '~/services/mapbox';
@@ -9,6 +10,7 @@ import { PinForm, PinFormValues } from './PinForm';
 import { useCreatePin, useFetchPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
 import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
+import { v4 as uuidv4 } from 'uuid';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -42,9 +44,10 @@ export default function Map() {
 
     console.log('creating new pin in db...');
     try {
+      const uuid = uuidv4();
       const uploadedImageUrls = await Promise.all(
         formData.images.map((image, idx) => {
-          const filename = `pins/${Date.now()}-${idx}.jpg`;
+          const filename = `${uuid}/${Date.now()}-${idx}.jpg`;
           return uploadImageAsync(image.uri, filename);
         })
       );
@@ -53,6 +56,7 @@ export default function Map() {
         lng: droppedCoords[0],
         lat: droppedCoords[1],
         images: uploadedImageUrls,
+        id: uuid,
       };
 
       createPin.mutate(newPin);

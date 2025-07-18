@@ -38,15 +38,12 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
 
     const pickerResult = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
-      base64: true,
       quality: 0.7,
     });
 
-    if (!pickerResult.canceled && pickerResult.assets.length > 0) {
-      const asset = pickerResult.assets[0];
-      const uri = asset.uri;
+    if (!pickerResult.canceled && pickerResult.assets && pickerResult.assets.length > 0) {
+      const uri = pickerResult.assets[0].uri;
 
-      // Append new image object with uri and mimeType
       const newImage = { uri };
       setFieldValue('images', [...images, newImage]);
     } else {
