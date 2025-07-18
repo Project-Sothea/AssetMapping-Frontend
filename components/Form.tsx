@@ -430,12 +430,7 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
         />
       )}
 
-
-
-
-      {/* Continue with rest of health + education + water questions using same pattern... */}
-
-      <Button title="Submit" onPress={() => console.log('Form submission logic here')} />
+      <Button title="Submit" onPress={() => console.log('Form submission')} />
     </ScrollView>
   );
 }
