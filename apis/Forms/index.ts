@@ -1,5 +1,5 @@
-import { Form } from '~/utils/database.types';
 import { supabase } from '~/services/supabase';
+import { Form } from '~/utils/globalTypes';
 
 export const getForms = async () => {
   try {
