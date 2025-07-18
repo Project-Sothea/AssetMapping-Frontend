@@ -48,3 +48,16 @@ export const useSoftDeleteForm = () => {
     },
   });
 };
+
+export const useFormsSync = () => {
+  const queryClient = useQueryClient();
+
+  // return useMutation(
+  //   (lastSyncTime: string) => formsSync(lastSyncTime),
+  //   {
+  //     onSuccess: () => {
+  //       queryClient.invalidateQueries(['forms']);
+  //     },
+  //   }
+  // );
+};

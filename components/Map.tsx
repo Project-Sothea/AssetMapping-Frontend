@@ -7,55 +7,58 @@ import Mapbox, {
   SymbolLayer,
 } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
-import pin from '../assets/pin.png';
 import homes from '~/data/homes.json';
 import MapboxGL from '~/services/mapbox';
 import Form from './Form';
 import { View } from 'react-native';
 import React, { useState } from 'react';
+import type { Feature, FeatureCollection, Point } from 'geojson';
 
-const mapStyleURL = MapboxGL.StyleURL.Outdoors;
+const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
-Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY || '');
+type PinProps = { id: string; name: string };
+type Pin = Feature<Point, PinProps>;
 
 export default function Map() {
-  const points = homes.map((home) => point([home.long, home.lat]));
-  const homesFeatures = featureCollection(points);
+  const points: Pin[] = homes.map(
+    (pin) => point([pin.long, pin.lat], { id: pin.id, name: pin.name }) as Pin
+  );
+  const homesFeatures: FeatureCollection<Point, PinProps> = featureCollection(points);
 
-  const [droppedPins, setDroppedPins] = useState<any[]>([]);
-  const [selectedPin, setSelectedPin] = useState<any | null>(null);
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const handleDropPin = async (e: any) => {
+    const [droppedCoords] = (e.geometry as GeoJSON.Point).coordinates;
+    if (droppedCoords) {
+      console.log('dropped', droppedCoords);
+    }
+  };
+
+  const handleOpenPin = async (e: any) => {
+    const pressedPin = e.features?.[0];
+    if (pressedPin) {
+      console.log('Pressed feature:', pressedPin);
+      setSelectedPin(pressedPin);
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <MapView
         style={{ flex: 1 }}
-        styleURL={mapStyleURL}
-        onLongPress={(e) => {
-          const coords = (e.geometry as GeoJSON.Point).coordinates;
-          const newPin = point(coords);
-          setDroppedPins((prev) => [...prev, newPin]);
-          setSelectedPin(newPin);
-        }}>
+        styleURL={MAP_STYLE_URL}
+        compassEnabled
+        scaleBarEnabled
+        onLongPress={handleDropPin}>
         <Camera followUserLocation followZoomLevel={16} />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 
-        <ShapeSource id="houses" shape={homesFeatures}>
+        <ShapeSource id="houses" shape={homesFeatures} onPress={handleOpenPin}>
           <SymbolLayer
             id="homes-icons"
             style={{
               iconImage: 'pin',
-              iconSize: 0.1,
-            }}
-          />
-          <Images images={{ pin }} />
-        </ShapeSource>
-
-        <ShapeSource id="user-pins" shape={featureCollection(droppedPins)}>
-          <SymbolLayer
-            id="user-pins-layer"
-            style={{
-              iconImage: 'pin',
-              iconSize: 0.1,
+              iconSize: 0.05,
             }}
           />
         </ShapeSource>

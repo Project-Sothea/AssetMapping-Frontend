@@ -3,21 +3,20 @@ import { ScrollView, View, Text, TextInput, StyleSheet, Button } from 'react-nat
 import Checkbox from 'expo-checkbox';
 import RadioForm from 'react-native-simple-radio-button';
 
-type FormProps = {onClose: () => void;};
+type FormProps = { onClose: () => void };
 
 const Form: React.FC<FormProps> = ({ onClose }) => {
-
-    const options = {
+  const options = {
     yesNo: [
-        { label: 'Yes', value: 'yes' },
-        { label: 'No', value: 'no' },
+      { label: 'Yes', value: 'yes' },
+      { label: 'No', value: 'no' },
     ],
     yesNoDontWant: [
-        { label: 'Yes', value: 'yes' },
-        { label: 'No', value: 'no' },
-        { label: "Don't want to come", value: 'dontWant' },
+      { label: 'Yes', value: 'yes' },
+      { label: 'No', value: 'no' },
+      { label: "Don't want to come", value: 'dontWant' },
     ],
-    };
+  };
 
   // Section 1: General
   const [village, setVillage] = useState('');
@@ -77,16 +76,25 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
 
   return (
     <ScrollView style={styles.container}>
+      <Button title="Cancel" color="red" onPress={onClose} />
       <Text style={styles.heading}>General</Text>
       <Text>Which village are you from?*</Text>
       <RadioForm
-        radio_props={[{ label: 'KS', value: 'KS' }, { label: 'SO', value: 'SO' }]}
+        radio_props={[
+          { label: 'KS', value: 'KS' },
+          { label: 'SO', value: 'SO' },
+        ]}
         initial={-1}
         onPress={(val: string) => setVillage(val)}
       />
 
       <Text>What is your village identifier number?*</Text>
-      <TextInput style={styles.input} value={villageId} onChangeText={setVillageId} placeholder="e.g. A1, B2" />
+      <TextInput
+        style={styles.input}
+        value={villageId}
+        onChangeText={setVillageId}
+        placeholder="e.g. A1, B2"
+      />
 
       <Text>Are you physically able to attend our health screening in December?</Text>
       <RadioForm
@@ -98,23 +106,48 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <Text style={styles.heading}>Health</Text>
       <Text>Do you have any long-term conditions?</Text>
       {[
-        'MSK Conditions', 'GI Conditions', 'Eye/Visual Acuity', 'Hypertension', 'High Cholesterol',
-        'Neurological', "Don't have any", 'Other'
+        'MSK Conditions',
+        'GI Conditions',
+        'Eye/Visual Acuity',
+        'Hypertension',
+        'High Cholesterol',
+        'Neurological',
+        "Don't have any",
+        'Other',
       ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox value={longTermConditions.includes(opt)} onValueChange={() => handleCheckbox(opt, longTermConditions, setLongTermConditions)} />
+          <Checkbox
+            value={longTermConditions.includes(opt)}
+            onValueChange={() => handleCheckbox(opt, longTermConditions, setLongTermConditions)}
+          />
           <Text>{opt}</Text>
         </View>
       ))}
       {longTermConditions.includes('Other') && (
-        <TextInput style={styles.input} placeholder="Please specify" value={otherCondition} onChangeText={setOtherCondition} />
+        <TextInput
+          style={styles.input}
+          placeholder="Please specify"
+          value={otherCondition}
+          onChangeText={setOtherCondition}
+        />
       )}
 
       <Text>If yes, please specify.</Text>
-      <TextInput style={styles.input} value={conditionDetails} onChangeText={setConditionDetails} multiline />
+      <TextInput
+        style={styles.input}
+        value={conditionDetails}
+        onChangeText={setConditionDetails}
+        multiline
+      />
 
       <Text>How do you manage your condition?</Text>
-      {['Go to the doctor\'s', 'Get medicine', 'I do not manage', "I don't know how to manage", 'Other'].map((opt) => (
+      {[
+        "Go to the doctor's",
+        'Get medicine',
+        'I do not manage',
+        "I don't know how to manage",
+        'Other',
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={managementMethods.includes(opt)}
@@ -124,24 +157,45 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
         </View>
       ))}
       {managementMethods.includes('Other') && (
-        <TextInput style={styles.input} placeholder="Please specify" value={otherManagement} onChangeText={setOtherManagement} />
+        <TextInput
+          style={styles.input}
+          placeholder="Please specify"
+          value={otherManagement}
+          onChangeText={setOtherManagement}
+        />
       )}
 
       <Text>What do you do when you are sick and Project Sothea is not around to help?</Text>
-      {['Don\'t do anything', 'Seek medical help', 'Take herbal or traditional medicine available in the village', 'Other'].map((opt) => (
+      {[
+        "Don't do anything",
+        'Seek medical help',
+        'Take herbal or traditional medicine available in the village',
+        'Other',
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox value={whatDoWhenSick.includes(opt)} onValueChange={() => handleCheckbox(opt, whatDoWhenSick, setWhatDoWhenSick)} />
+          <Checkbox
+            value={whatDoWhenSick.includes(opt)}
+            onValueChange={() => handleCheckbox(opt, whatDoWhenSick, setWhatDoWhenSick)}
+          />
           <Text>{opt}</Text>
         </View>
       ))}
       {whatDoWhenSick.includes('Other') && (
-        <TextInput style={styles.input} placeholder="Please specify" value={otherSickAction} onChangeText={setOtherSickAction} />
+        <TextInput
+          style={styles.input}
+          placeholder="Please specify"
+          value={otherSickAction}
+          onChangeText={setOtherSickAction}
+        />
       )}
 
       <Text>Do you know where to find a doctor if you are not feeling well?</Text>
       <RadioForm
-        radio_props={[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }, 
-            { label: "I don't find a doctor", value: 'noFind' }]}
+        radio_props={[
+          { label: 'Yes', value: 'yes' },
+          { label: 'No', value: 'no' },
+          { label: "I don't find a doctor", value: 'noFind' },
+        ]}
         initial={-1}
         onPress={setKnowDoctor}
       />
@@ -150,19 +204,33 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <RadioForm radio_props={options.yesNo} initial={-1} onPress={setOwnTransport} />
 
       <Text>Where do you go to buy your medicine?</Text>
-      {[ 'Pharmacy', "I don't know where to go", "I don't wish to buy medicine", 'Other' ].map((opt) => (
-        <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox value={whereBuyMedicine === opt} onValueChange={() => setWhereBuyMedicine(opt)} />
-          <Text>{opt}</Text>
-        </View>
-      ))}
+      {['Pharmacy', "I don't know where to go", "I don't wish to buy medicine", 'Other'].map(
+        (opt) => (
+          <View key={opt} style={styles.checkboxContainer}>
+            <Checkbox
+              value={whereBuyMedicine === opt}
+              onValueChange={() => setWhereBuyMedicine(opt)}
+            />
+            <Text>{opt}</Text>
+          </View>
+        )
+      )}
       {whereBuyMedicine === 'Other' && (
-        <TextInput style={styles.input} placeholder="Please specify" value={otherBuyMedicine} onChangeText={setOtherBuyMedicine} />
+        <TextInput
+          style={styles.input}
+          placeholder="Please specify"
+          value={otherBuyMedicine}
+          onChangeText={setOtherBuyMedicine}
+        />
       )}
 
       <Text>Do you know what the poverty card scheme is about?</Text>
       <RadioForm
-        radio_props={[{ label: 'Yes and I use it', value: 'use' }, { label: "Yes but I don't use it", value: 'noUse' }, { label: 'No', value: 'no' }]}
+        radio_props={[
+          { label: 'Yes and I use it', value: 'use' },
+          { label: "Yes but I don't use it", value: 'noUse' },
+          { label: 'No', value: 'no' },
+        ]}
         initial={-1}
         onPress={setPovertyCard}
       />
@@ -170,10 +238,7 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <Text>Do you brush your teeth?</Text>
       {['Yes twice a day', 'Yes once a day', 'No', 'Other'].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={brushTeeth === opt}
-            onValueChange={() => setBrushTeeth(opt)}
-          />
+          <Checkbox value={brushTeeth === opt} onValueChange={() => setBrushTeeth(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
@@ -196,40 +261,59 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
 
       <Text style={styles.heading}>Education</Text>
       <Text>What is diarrhoea?</Text>
-      {['Back pain', 'Water and loose stools', 'Nose bleed', 'Hearing loss', 'Toothache', "I don't know"].map((opt) => (
+      {[
+        'Back pain',
+        'Water and loose stools',
+        'Nose bleed',
+        'Hearing loss',
+        'Toothache',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={diarrhoea === opt}
-            onValueChange={() => setDiarrhoea(opt)}
-          />
+          <Checkbox value={diarrhoea === opt} onValueChange={() => setDiarrhoea(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>What should I do if I have diarrhoea?</Text>
-      {['Stop drinking water', 'Drink more water', 'Eat cold foods', 'Drink alcohol', 'Exercise more', "I don't know"].map((opt) => (
+      {[
+        'Stop drinking water',
+        'Drink more water',
+        'Eat cold foods',
+        'Drink alcohol',
+        'Exercise more',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={diarrhoeaAction === opt}
-            onValueChange={() => setDiarrhoeaAction(opt)}
-          />
+          <Checkbox value={diarrhoeaAction === opt} onValueChange={() => setDiarrhoeaAction(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>How does a common cold look like?</Text>
-      {['Coughing & runny nose & sore throat & fever', 'Diarrhoea', 'Eye swelling', 'Bloody stools', 'Ringing in the ears', "I don't know"].map((opt) => (
+      {[
+        'Coughing & runny nose & sore throat & fever',
+        'Diarrhoea',
+        'Eye swelling',
+        'Bloody stools',
+        'Ringing in the ears',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={coldLookLike === opt}
-            onValueChange={() => setColdLookLike(opt)}
-          />
+          <Checkbox value={coldLookLike === opt} onValueChange={() => setColdLookLike(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>If I have a common cold, what should I do?</Text>
-      {['Drink more cold water', 'Cover my mouth when I cough and sneeze', 'Stand in the rain', 'Engage in strenuous exercise', 'Wear a mask to prevent spread of infection', "I don't know"].map((opt) => (
+      {[
+        'Drink more cold water',
+        'Cover my mouth when I cough and sneeze',
+        'Stand in the rain',
+        'Engage in strenuous exercise',
+        'Wear a mask to prevent spread of infection',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={coldAction.includes(opt)}
@@ -240,18 +324,29 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       ))}
 
       <Text>What is a musculoskeletal related injury?</Text>
-      {['Aching and stiffness', 'Headache', 'Hand tremors', 'Constipation', 'Blurry vision', "I don't know"].map((opt) => (
+      {[
+        'Aching and stiffness',
+        'Headache',
+        'Hand tremors',
+        'Constipation',
+        'Blurry vision',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={mskInjury === opt}
-            onValueChange={() => setMskInjury(opt)}
-          />
+          <Checkbox value={mskInjury === opt} onValueChange={() => setMskInjury(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>How should I approach my musculoskeletal injury?</Text>
-      {['Prevent exertion with exercise', 'Get medical help', 'Increase movement', 'Press aggressively on the area of pain', 'Gently rotate the joint (if not severely painful) a few times a day', "I don't know"].map((opt) => (
+      {[
+        'Prevent exertion with exercise',
+        'Get medical help',
+        'Increase movement',
+        'Press aggressively on the area of pain',
+        'Gently rotate the joint (if not severely painful) a few times a day',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={mskAction.includes(opt)}
@@ -262,18 +357,29 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       ))}
 
       <Text>What is hypertension?</Text>
-      {['High blood sugar', 'High blood pressure', 'High blood fat', 'Stomach pain', 'Headache', "I don't know"].map((opt) => (
+      {[
+        'High blood sugar',
+        'High blood pressure',
+        'High blood fat',
+        'Stomach pain',
+        'Headache',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={hypertension === opt}
-            onValueChange={() => setHypertension(opt)}
-          />
+          <Checkbox value={hypertension === opt} onValueChange={() => setHypertension(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>What should I do if I have been diagnosed with hypertension?</Text>
-      {['Exercise more', 'Eat less salty food', 'Eat more fried food', 'Consume more coffee', 'Consume more fruits and vegetables', "I don't know"].map((opt) => (
+      {[
+        'Exercise more',
+        'Eat less salty food',
+        'Eat more fried food',
+        'Consume more coffee',
+        'Consume more fruits and vegetables',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={hypertensionAction.includes(opt)}
@@ -284,18 +390,28 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       ))}
 
       <Text>What is high cholesterol?</Text>
-      {['High blood sugar', 'High blood pressure', 'High blood fat', 'Stomach pain', 'Headache', "I don't know"].map((opt) => (
+      {[
+        'High blood sugar',
+        'High blood pressure',
+        'High blood fat',
+        'Stomach pain',
+        'Headache',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={cholesterol === opt}
-            onValueChange={() => setCholesterol(opt)}
-          />
+          <Checkbox value={cholesterol === opt} onValueChange={() => setCholesterol(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>What should I do if I have been diagnosed with high cholesterol?</Text>
-      {['Rest more by increasing sedentary activity', 'Decrease intake of fatty foods and sugary drinks', 'Try to lose weight to stay within the healthy range', 'Quit smoking', 'Stop consuming fruits and vegetables'].map((opt) => (
+      {[
+        'Rest more by increasing sedentary activity',
+        'Decrease intake of fatty foods and sugary drinks',
+        'Try to lose weight to stay within the healthy range',
+        'Quit smoking',
+        'Stop consuming fruits and vegetables',
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={cholesterolAction.includes(opt)}
@@ -306,18 +422,28 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       ))}
 
       <Text>What is diabetes?</Text>
-      {['High blood sugar', 'High blood pressure', 'High blood fat', 'Stomach pain', 'Headache', "I don't know"].map((opt) => (
+      {[
+        'High blood sugar',
+        'High blood pressure',
+        'High blood fat',
+        'Stomach pain',
+        'Headache',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={diabetes === opt}
-            onValueChange={() => setDiabetes(opt)}
-          />
+          <Checkbox value={diabetes === opt} onValueChange={() => setDiabetes(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
 
       <Text>What should I do if I have been diagnosed with diabetes?</Text>
-      {['Drink sweet drinks', 'Regular exercise', 'Consume more fried food', 'Avoid skipping meals', 'Consume more alcohol'].map((opt) => (
+      {[
+        'Drink sweet drinks',
+        'Regular exercise',
+        'Consume more fried food',
+        'Avoid skipping meals',
+        'Consume more alcohol',
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={diabetesAction.includes(opt)}
@@ -331,10 +457,7 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <Text>Do you wash your hands before meals?</Text>
       {['Yes', 'No'].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={handBeforeMeal === opt}
-            onValueChange={() => setHandBeforeMeal(opt)}
-          />
+          <Checkbox value={handBeforeMeal === opt} onValueChange={() => setHandBeforeMeal(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
@@ -342,10 +465,7 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <Text>Do you wash your hands after using the toilet?</Text>
       {['Yes', 'No'].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={handAfterToilet === opt}
-            onValueChange={() => setHandAfterToilet(opt)}
-          />
+          <Checkbox value={handAfterToilet === opt} onValueChange={() => setHandAfterToilet(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
@@ -353,10 +473,7 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       <Text>Eating well-cooked and clean food is important in maintaining my health.</Text>
       {['Agree', 'Disagree'].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={eatCleanFood === opt}
-            onValueChange={() => setEatCleanFood(opt)}
-          />
+          <Checkbox value={eatCleanFood === opt} onValueChange={() => setEatCleanFood(opt)} />
           <Text>{opt}</Text>
         </View>
       ))}
@@ -371,15 +488,17 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
 
       <Text style={styles.heading}>Water</Text>
       <Text>Where do you get water for your daily use?</Text>
-      {['Boiled water', 'Filtered water', 'Bottled water', 'Rainwater', 'Lake water', 'Others'].map((opt) => (
-        <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={waterSources.includes(opt)}
-            onValueChange={() => handleCheckbox(opt, waterSources, setWaterSources)}
-          />
-          <Text>{opt}</Text>
-        </View>
-      ))}
+      {['Boiled water', 'Filtered water', 'Bottled water', 'Rainwater', 'Lake water', 'Others'].map(
+        (opt) => (
+          <View key={opt} style={styles.checkboxContainer}>
+            <Checkbox
+              value={waterSources.includes(opt)}
+              onValueChange={() => handleCheckbox(opt, waterSources, setWaterSources)}
+            />
+            <Text>{opt}</Text>
+          </View>
+        )
+      )}
       {waterSources.includes('Others') && (
         <TextInput
           style={styles.input}
@@ -390,7 +509,15 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       )}
 
       <Text>What kinds of water do you think are NOT safe for drinking?</Text>
-      {['Unboiled water', 'Rainwater', 'Lake water', 'Water with visible dirt or debris', 'Water stored in open container for a long time', 'Unclean water is SAFE to drink', "I don't know"].map((opt) => (
+      {[
+        'Unboiled water',
+        'Rainwater',
+        'Lake water',
+        'Water with visible dirt or debris',
+        'Water stored in open container for a long time',
+        'Unclean water is SAFE to drink',
+        "I don't know",
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={unsafeWater.includes(opt)}
@@ -412,7 +539,15 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
       ))}
 
       <Text>Are there any reasons you would not use a water filter?</Text>
-      {['I have a water filter', 'Cost', 'Inconvenience', 'Water tastes bad', 'Water filters are unavailable', 'Water filter does not last very long', 'Others'].map((opt) => (
+      {[
+        'I have a water filter',
+        'Cost',
+        'Inconvenience',
+        'Water tastes bad',
+        'Water filters are unavailable',
+        'Water filter does not last very long',
+        'Others',
+      ].map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
             value={notUsingWaterFilter.includes(opt)}
@@ -430,15 +565,12 @@ const Form: React.FC<FormProps> = ({ onClose }) => {
         />
       )}
 
-
-
-
       {/* Continue with rest of health + education + water questions using same pattern... */}
 
       <Button title="Submit" onPress={() => console.log('Form submission logic here')} />
     </ScrollView>
   );
-}
+};
 
 export default Form;
 

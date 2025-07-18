@@ -1,5 +1,5 @@
 import { Form } from '~/utils/database.types';
-import { supabase } from '~/utils/supabase';
+import { supabase } from '~/services/supabase';
 
 export const getForms = async () => {
   try {
@@ -32,6 +32,43 @@ export const getForm = async (id: string) => {
   } catch (err) {
     console.error('Non-Supabase Error:', err);
     return null;
+  }
+};
+
+// for pull syncing, need to receive ISODateString i.e. Date().toISOString()
+export const syncPullLatestForms = async (lastSyncTime: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('forms')
+      .select('*')
+      .gt('updated_at', lastSyncTime)
+      .eq('is_active', true);
+    if (error) {
+      console.error('supabase error:', error.message);
+      return [];
+    }
+    return data;
+  } catch (err) {
+    console.error('Non-Supabase Error:', err);
+    return [];
+  }
+};
+
+export const syncForms = async (lastSyncTime: string) => {
+  try {
+    //fetch "dirty" data from database. const localChanges;
+    //call a supabase rpc:
+    //  const response = await supabase.rpc("syncForms", {
+    //  changes: localChanges,
+    //  lastSyncTime,
+    //  });
+    //Apply server changes to localDB:
+    //  await localDB.applyServerChanges(response.updatedForms);
+    //Clear synced flags:
+    //  await localDB.clearSyncFlags(localChanges.map(c => c.id));
+  } catch (err) {
+    console.error('Non-Supabase Error:', err);
+    return [];
   }
 };
 
