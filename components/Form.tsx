@@ -3,9 +3,12 @@ import { ScrollView, View, Text, TextInput, StyleSheet, Button } from 'react-nat
 import Checkbox from 'expo-checkbox';
 import RadioForm from 'react-native-simple-radio-button';
 
-type FormProps = {onClose: () => void;};
+type FormProps = {
+  pin: any; // or you can type it properly if you know the shape
+  onClose: () => void;
+};
 
-const Form: React.FC<FormProps> = ({ onClose }) => {
+const Form: React.FC<FormProps> = ({ pin, onClose }) => {
 
     const options = {
     yesNo: [

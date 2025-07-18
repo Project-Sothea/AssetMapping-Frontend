@@ -13,6 +13,7 @@ import MapboxGL from '~/services/mapbox';
 import Form from './Form';
 import { View } from 'react-native';
 import React, { useState } from 'react';
+import PinDetails from './PinDetails';
 
 const mapStyleURL = MapboxGL.StyleURL.Outdoors;
 
@@ -24,13 +25,15 @@ export default function Map() {
 
   const [droppedPins, setDroppedPins] = useState<any[]>([]);
   const [selectedPin, setSelectedPin] = useState<any | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
 
   return (
     <View style={{ flex: 1 }}>
       <MapView
         style={{ flex: 1 }}
         styleURL={mapStyleURL}
-        onLongPress={(e) => {
+        onLongPress={(e) => { // set new pin on long press 
           const coords = (e.geometry as GeoJSON.Point).coordinates;
           const newPin = point(coords);
           setDroppedPins((prev) => [...prev, newPin]);
@@ -62,7 +65,24 @@ export default function Map() {
         </ShapeSource>
       </MapView>
 
-      {selectedPin && <Form onClose={() => setSelectedPin(null)} />}
+      {selectedPin && !isEditing && (
+        <PinDetails
+          pin={selectedPin}
+          onClose={() => setSelectedPin(null)}
+          onEdit={() => setIsEditing(true)}
+        />
+      )}
+
+      {selectedPin && isEditing && (
+        <Form
+          pin={selectedPin}
+          onClose={() => {
+            setIsEditing(false);
+            setSelectedPin(null);
+          }}
+        />
+      )}
+
     </View>
   );
 }
