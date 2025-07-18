@@ -1,18 +1,12 @@
-import Mapbox, {
-  Camera,
-  Images,
-  LocationPuck,
-  MapView,
-  ShapeSource,
-  SymbolLayer,
-} from '@rnmapbox/maps';
+import { Camera, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
 import homes from '~/data/homes.json';
 import MapboxGL from '~/services/mapbox';
 import Form from './Form';
-import { View } from 'react-native';
-import React, { useState } from 'react';
+import { Modal, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
 import type { Feature, FeatureCollection, Point } from 'geojson';
+import { PinForm, PinFormValues } from './PinForm';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -25,13 +19,26 @@ export default function Map() {
   );
   const homesFeatures: FeatureCollection<Point, PinProps> = featureCollection(points);
 
-  const [pins, setPins] = useState<Pin[]>([]);
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   const handleDropPin = async (e: any) => {
-    const [droppedCoords] = (e.geometry as GeoJSON.Point).coordinates;
-    if (droppedCoords) {
-      console.log('dropped', droppedCoords);
+    const [long, lat] = (e.geometry as GeoJSON.Point).coordinates;
+
+    if (long && lat) {
+      console.log('dropped', long, lat);
+      setDroppedCoords([long, lat]);
+      setModalVisible(true);
     }
+  };
+
+  const handleSubmit = (formData: PinFormValues) => {
+    console.log('pushing to db', formData);
+    console.log('pushing to db', droppedCoords);
+
+    setModalVisible(false);
+    setDroppedCoords(null);
   };
 
   const handleOpenPin = async (e: any) => {
@@ -65,6 +72,51 @@ export default function Map() {
       </MapView>
 
       {selectedPin && <Form onClose={() => setSelectedPin(null)} />}
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Create Pin</Text>
+
+            <PinForm onSubmit={handleSubmit} />
+
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <Text style={{ color: 'white' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)', // semi-transparent dark background
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    width: '90%',
+    padding: 20,
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  closeButton: {
+    marginTop: 10,
+    backgroundColor: '#cc0000',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+});
