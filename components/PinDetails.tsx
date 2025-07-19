@@ -9,7 +9,7 @@ type PinDetailsProps = {
 export default function PinDetails({ pin }: PinDetailsProps) {
   const router = useRouter();
 
-  const handleAddForm = () => {
+  const handleViewForms = () => {
     router.push({ pathname: '/map/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
   };
 
@@ -52,7 +52,7 @@ export default function PinDetails({ pin }: PinDetailsProps) {
         <Text>{pin.type}</Text>
       </View>
 
-      <Button title="add form" onPress={handleAddForm}></Button>
+      <Button title="View Forms" onPress={handleViewForms}></Button>
     </View>
   );
 }

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createForm, softDeleteForm, getForm, getForms, updateForm } from '~/apis/Forms';
-import { Form } from '~/utils/database.types';
+import { Form } from '~/utils/globalTypes';
 
-export const useBulkFetchForms = () => {
+export const useFetchForms = (pin_id: string) => {
   return useQuery<Form[]>({
     queryKey: ['forms'],
-    queryFn: () => getForms(),
+    queryFn: () => getForms(pin_id),
   });
 };
 

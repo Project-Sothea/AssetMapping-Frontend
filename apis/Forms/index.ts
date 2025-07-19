@@ -1,9 +1,9 @@
 import { supabase } from '~/services/supabase';
 import { Form } from '~/utils/globalTypes';
 
-export const getForms = async () => {
+export const getForms = async (pin_id: string) => {
   try {
-    const { data, error } = await supabase.from('forms').select('*').eq('is_active', true);
+    const { data, error } = await supabase.from('forms').select('*').eq('pin_id', pin_id);
     if (error) {
       console.error('supabase error:', error.message);
       return [];

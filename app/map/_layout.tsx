@@ -15,7 +15,7 @@ export default function mapLayout() {
         options={({ route }) => {
           const { pinName } = route.params as { pinName?: string };
           return {
-            title: `${pinName ? `New Form for pin ${pinName}` : 'New Form'}`,
+            title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
           };
         }}
       />
