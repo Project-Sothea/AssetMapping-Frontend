@@ -6,6 +6,26 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button } from './Button';
 import Spacer from './customUI/Spacer';
+import { Form as FormType } from '~/utils/globalTypes';
+import { useCreateForm, useUpdateForm } from '~/hooks/Forms';
+
+// convert camelCase initial values to snake_case bc supabase needs snake_case
+const toSnakeCase = (obj: Record<string, any>) => {
+  const newObj: Record<string, any> = {};
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    newObj[snakeKey] = obj[key];
+  }
+  return newObj;
+};
+
+type FormProps = {
+  onClose: () => void;
+  pinId: string; 
+  formId?: string;
+  initialData?: Partial<FormType>;
+};
+
 const options = {
   yesNo: [
     { label: 'Yes', value: 'yes' },
@@ -27,8 +47,6 @@ const options = {
     { label: 'No', value: 'no' },
   ],
 };
-
-type FormProps = { onClose: () => void };
 
 const initialValues = {
   village: '',
@@ -85,7 +103,10 @@ const validationSchema = Yup.object().shape({
   brushTeeth: Yup.string().required('Required'),
 });
 
-export default function Form({ onClose }: FormProps) {
+export default function Form({ onClose, pinId, formId, initialData }: FormProps) {
+  const { mutate: createForm } = useCreateForm();
+  const { mutate: updateForm } = useUpdateForm();
+
   const handleCheckbox = (
     value: string,
     array: string[],
@@ -107,8 +128,16 @@ export default function Form({ onClose }: FormProps) {
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={(values) => {
+        const snakeCaseValues = toSnakeCase(values); // brushTeeth != brush_teeth (supabase wants this)
+        if (formId) {
+          updateForm({ id: formId, values: snakeCaseValues });
+        } else {
+          createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
         console.log('Submitted:', values);
+        }
       }}>
+
+      
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
         <ScrollView style={styles.container}>
           <Text style={styles.heading}>General</Text>
