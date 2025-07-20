@@ -12,8 +12,6 @@ import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { Pin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
-import { useFocusEffect } from 'expo-router';
-import React from 'react';
 import { useIsFocused } from '@react-navigation/native';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
