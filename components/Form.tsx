@@ -9,6 +9,16 @@ import Spacer from './customUI/Spacer';
 import { Form as FormType } from '~/utils/globalTypes';
 import { useCreateForm, useUpdateForm } from '~/hooks/Forms';
 
+// convert camelCase initial values to snake_case bc supabase needs snake_case
+const toSnakeCase = (obj: Record<string, any>) => {
+  const newObj: Record<string, any> = {};
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    newObj[snakeKey] = obj[key];
+  }
+  return newObj;
+};
+
 type FormProps = {
   onClose: () => void;
   pinId: string; 
@@ -96,7 +106,7 @@ const validationSchema = Yup.object().shape({
 export default function Form({ onClose, pinId, formId, initialData }: FormProps) {
   const { mutate: createForm } = useCreateForm();
   const { mutate: updateForm } = useUpdateForm();
-  
+
   const handleCheckbox = (
     value: string,
     array: string[],
@@ -118,10 +128,11 @@ export default function Form({ onClose, pinId, formId, initialData }: FormProps)
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={(values) => {
+        const snakeCaseValues = toSnakeCase(values); // brushTeeth != brush_teeth (supabase wants this)
         if (formId) {
-          updateForm({ id: formId, values });
+          updateForm({ id: formId, values: snakeCaseValues });
         } else {
-          createForm({ ...values, pin_id: pinId });
+          createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
         console.log('Submitted:', values);
         }
       }}>

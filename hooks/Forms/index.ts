@@ -20,7 +20,7 @@ export const useCreateForm = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (form: Form) => createForm(form),
+    mutationFn: (form: Partial<Form>) => createForm(form as any), // to avoid erroring when incomplete form/undefined field happens
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
     },
