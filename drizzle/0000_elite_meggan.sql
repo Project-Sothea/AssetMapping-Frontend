@@ -1,0 +1,21 @@
+CREATE TABLE `pins` (
+	`id` text PRIMARY KEY NOT NULL,
+	`created_at` text,
+	`updated_at` text,
+	`last_modified_by` text,
+	`deleted_at` text,
+	`failure_reason` text,
+	`status` text,
+	`last_synced_at` text,
+	`last_failed_sync_at` text,
+	`lat` real,
+	`lng` real,
+	`type` text,
+	`location_name` text,
+	`address` text,
+	`state_province` text,
+	`postal_code` text,
+	`country` text,
+	`description` text,
+	`images` text
+);

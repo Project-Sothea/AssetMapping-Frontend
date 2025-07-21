@@ -2,12 +2,21 @@ import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { Pin } from '~/utils/globalTypes';
 import { Button } from './Button';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { EditableForm } from './Pin/EditableForm';
 type PinDetailsProps = {
   pin: Pin;
 };
 
 export default function PinDetails({ pin }: PinDetailsProps) {
   const router = useRouter();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [pinDetails, setPinDetails] = useState({ ...pin });
+
+  const handleChange = (key: keyof Pin, value: string) => {
+    setPinDetails((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleViewForms = () => {
     router.push({ pathname: '/map/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });

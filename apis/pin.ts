@@ -1,5 +1,5 @@
 import { supabase } from '~/services/supabase';
-import { InsertPin } from '~/utils/globalTypes';
+import { InsertPin, Pin } from '~/utils/globalTypes';
 
 export const create = async (pin: InsertPin) => {
   try {
@@ -26,5 +26,26 @@ export const fetchAll = async () => {
   } catch (err) {
     console.error('Non-Supabase Error:', err);
     return [];
+  }
+};
+
+export const update = async (pin: Pin) => {
+  try {
+    const { error } = await supabase
+      .from('pins')
+      .update({
+        name: pin.name,
+        description: pin.description,
+        address: pin.address,
+        state_province: pin.state_province,
+        postal_code: pin.postal_code,
+        country: pin.country,
+        updated_at: Date(),
+      })
+      .eq('id', pin.id);
+
+    if (error) throw error;
+  } catch (e) {
+    console.error(e);
   }
 };

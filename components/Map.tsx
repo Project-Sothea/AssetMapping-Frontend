@@ -4,7 +4,7 @@ import MapboxGL from '~/services/mapbox';
 import { View, Alert } from 'react-native';
 import { useState } from 'react';
 import { PinFormValues } from './PinForm';
-import { useInsertPin, useFetchPins } from '~/hooks/Pins';
+import { useInsertPin, useFetchPins, useFetchLivePins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
 import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,10 +13,10 @@ import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollectio
 import { Pin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
-
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
+  const { data: livePins } = useFetchLivePins();
   const { data: pins = [], isLoading } = useFetchPins();
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
@@ -27,6 +27,7 @@ export default function Map() {
   const insertPin = useInsertPin();
   const screenIsFocused = useIsFocused();
 
+  // console.log(livePins);
   const handleDropPin = async (e: any) => {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
 

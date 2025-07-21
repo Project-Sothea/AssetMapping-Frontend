@@ -21,7 +21,7 @@ export const getForm = async (id: string) => {
       .from('forms')
       .select('*')
       .eq('id', id)
-      .eq('is_active', true)
+      .filter('deleted_at', 'is', null)
       .limit(1)
       .single();
     if (error) {
@@ -42,7 +42,7 @@ export const syncPullLatestForms = async (lastSyncTime: string) => {
       .from('forms')
       .select('*')
       .gt('updated_at', lastSyncTime)
-      .eq('is_active', true);
+      .filter('deleted_at', 'is', null);
     if (error) {
       console.error('supabase error:', error.message);
       return [];
@@ -98,7 +98,7 @@ export const softDeleteForm = async (id: string) => {
   try {
     const { error } = await supabase
       .from('forms')
-      .update({ is_active: false, deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
     if (error) {
       console.error('supabase error:', error.message);
