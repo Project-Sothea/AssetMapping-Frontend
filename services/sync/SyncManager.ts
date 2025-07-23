@@ -1,13 +1,21 @@
 import { db } from '../drizzleDb';
-import { Pin, pins } from '~/db/schema';
-import { convertKeysToCamel, jsonifyImages } from '~/utils/dataShapes';
+import { pins, Pin } from '~/db/schema';
+import {
+  convertKeysToCamel,
+  convertKeysToSnake,
+  jsonifyImages,
+  parseImages,
+} from '~/utils/dataShapes';
 import { RePin } from '~/utils/globalTypes';
-import { or, sql } from 'drizzle-orm';
+import { or, eq, sql, and, isNotNull, gt, inArray } from 'drizzle-orm';
+import { callPin } from '~/apis';
 
 class SyncManager {
   private static instance: SyncManager | null = null;
-  private isSyncing = false;
+  private isSyncing = false; //handle deduplication
   private lastSyncedAt: Date | null = null;
+  private lastSyncFailedAt: Date | null = null;
+  private lastSyncFailure: { at: Date; reason: string } | null = null;
 
   public static getInstance(): SyncManager {
     if (!SyncManager.instance) {
@@ -18,13 +26,32 @@ class SyncManager {
 
   private constructor() {}
 
-  public async pullToLocalDB(data: Pin[]) {
-    if (this.isSyncing) return;
-    if (data.length === 0) return;
-    this.isSyncing = true;
+  public async syncNow() {
     try {
+      this.setSyncStart();
+      await this.pullToLocalDB();
+      await this.pushToRemoteDB();
+      this.setSyncSuccess();
+    } catch (e) {
+      console.error(e);
+      this.setSyncFailure(e);
+    }
+  }
+
+  private async pullToLocalDB() {
+    try {
+      const unclean = await callPin.fetchAll();
+      if (unclean.length === 0) {
+        return;
+      }
+      console.log('fetched at:', Date(), unclean.length);
+      console.log('pins fetched:', unclean.length);
+
+      const data = this.cleanRemotePinData(unclean);
+
       const remoteUpdatedAt = sql.raw(`excluded.${pins.updatedAt.name}`);
       const remoteDeletedAt = sql.raw(`excluded.${pins.deletedAt.name}`);
+      const remoteCreatedAt = sql.raw(`excluded.${pins.createdAt.name}`);
 
       const ids = await db
         .insert(pins)
@@ -49,6 +76,7 @@ class SyncManager {
             END`),
             updatedAt: remoteUpdatedAt,
             deletedAt: remoteDeletedAt,
+            createdAt: remoteCreatedAt,
           },
           setWhere: or(
             sql`${remoteUpdatedAt} > ${pins.updatedAt}`,
@@ -57,39 +85,120 @@ class SyncManager {
         })
         .returning({ id: pins.id });
       console.log('ids returned: ', ids);
-      this.lastSyncedAt = new Date();
     } catch (e) {
       console.error(e);
-    } finally {
-      this.isSyncing = false;
+      throw new Error('failed to pull new data into local DB');
     }
   }
 
   private async pushToRemoteDB() {
     // TODO: implement push logic
+    try {
+      const changes = await db
+        .select({
+          id: pins.id,
+          name: pins.name,
+          lat: pins.lat,
+          lng: pins.lng,
+          type: pins.type,
+          address: pins.address,
+          state_province: pins.stateProvince,
+          postal_code: pins.postalCode,
+          country: pins.country,
+          description: pins.description,
+          images: pins.images,
+          updated_at: pins.updatedAt,
+          deleted_at: pins.deletedAt,
+          created_at: pins.createdAt,
+        })
+        .from(pins)
+        .where(
+          or(
+            eq(pins.status, 'dirty'), //pins updated / created offline
+            and(
+              //pins deleted offline (but not created offline)
+              eq(pins.status, 'deleted'),
+              isNotNull(pins.deletedAt),
+              gt(pins.deletedAt, pins.lastSyncedAt)
+            )
+          ) //need to update updated_at
+        );
+      console.log('changes returned:', changes.length);
+      if (changes.length === 0) {
+        return;
+      }
+      const data = this.cleanLocalData(changes);
+      await callPin.upsertAll(data);
+
+      const now = new Date().toISOString();
+      const ids = changes.map((pin) => pin.id);
+
+      await db
+        .update(pins)
+        .set({
+          status: sql.raw(`CASE 
+            WHEN excluded.${pins.deletedAt.name} IS NOT NULL THEN 'deleted' 
+            ELSE 'synced' 
+            END`),
+          lastSyncedAt: now,
+          failureReason: null, // clear any previous error
+        })
+        .where(inArray(pins.id, ids));
+    } catch (e) {
+      console.error(e);
+      throw new Error('failed to push changes to remote DB');
+      //possibly fallback to per batch?
+    }
   }
 
-  public cleanRemotePinData(data: RePin[]) {
+  private cleanRemotePinData(data: RePin[]) {
     return jsonifyImages(convertKeysToCamel(data));
+  }
+
+  private cleanLocalData(data: any) {
+    return parseImages(convertKeysToSnake(data));
+  }
+
+  private setSyncStart() {
+    if (this.isSyncing) throw new Error('Sync already in progress');
+    this.isSyncing = true;
+  }
+
+  private setSyncSuccess() {
+    this.isSyncing = false;
+    this.lastSyncedAt = new Date();
+    this.lastSyncFailedAt = null;
+    this.lastSyncFailure = null;
+  }
+
+  private setSyncFailure(error: unknown) {
+    this.isSyncing = false;
+    this.lastSyncFailedAt = new Date();
+    this.lastSyncFailure = {
+      at: this.lastSyncFailedAt,
+      reason: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
 export default SyncManager;
 
 /*
-            name: sql.raw(`excluded.${pins.name.name}`),
-            lat: sql.raw(`excluded.${pins.lat.name}`),
-            lng: sql.raw(`excluded.${pins.lng.name}`),
-            type: sql.raw(`excluded.${pins.type.name}`),
-            address: sql.raw(`excluded.${pins.address.name}`),
-            stateProvince: sql.raw(`excluded.${pins.stateProvince.name}`),
-            postalCode: sql.raw(`excluded.${pins.postalCode.name}`),
-            country: sql.raw(`excluded.${pins.country.name}`),
-            description: sql.raw(`excluded.${pins.description.name}`),
-            images: sql.raw(`excluded.${pins.images.name}`),
+          id: pins.id,
+          name: pins.name,
+          lat: pins.lat,
+          lng: pins.lng,
+          type: pins.type,
+          address: pins.address,
+          state_province: pins.stateProvince,
+          postal_code: pins.postalCode,
+          country: pins.country,
+          description: pins.description,
+          images: pins.images,
+          updated_at: pins.updatedAt,
+          deleted_at: pins.deletedAt,
+          created_at: pins.createdAt,
 
-            updatedAt: excludedUpdatedAt,
-            deletedAt: excludedDeletedAt,
 
 */
 

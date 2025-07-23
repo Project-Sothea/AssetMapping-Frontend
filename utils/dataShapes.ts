@@ -18,6 +18,26 @@ export function convertKeysToCamel(obj: any): any {
   return obj;
 }
 
+export function convertKeysToSnake(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(convertKeysToSnake);
+  } else if (obj !== null && typeof obj === 'object') {
+    return Object.entries(obj).reduce(
+      (acc, [key, value]) => {
+        const snakeKey = camelToSnake(key);
+        acc[snakeKey] = convertKeysToSnake(value);
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+  }
+  return obj;
+}
+
+function camelToSnake(str: string): string {
+  return str.replace(/([A-Z])/g, '_$1').toLowerCase();
+}
+
 // Must return the updated object:
 export function jsonifyImages(obj: any): any {
   if (Array.isArray(obj)) {
@@ -28,6 +48,32 @@ export function jsonifyImages(obj: any): any {
     return {
       ...obj,
       images: JSON.stringify(obj.images ?? []),
+    };
+  }
+
+  return obj;
+}
+
+export function parseImages(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(parseImages); // recursively handle array items
+  }
+
+  if (obj && typeof obj === 'object' && 'images' in obj) {
+    let images = obj.images;
+
+    // Only parse if it's a string (i.e. was JSON.stringify-ed)
+    if (typeof images === 'string') {
+      try {
+        images = JSON.parse(images);
+      } catch {
+        images = []; // fallback in case of invalid JSON
+      }
+    }
+
+    return {
+      ...obj,
+      images,
     };
   }
 

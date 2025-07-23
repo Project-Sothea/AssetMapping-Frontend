@@ -1,3 +1,4 @@
+import { Pin } from '~/db/schema';
 import { supabase } from '~/services/supabase';
 import { InsertPin, RePin } from '~/utils/globalTypes';
 
@@ -61,5 +62,16 @@ export const update = async (pin: RePin) => {
     if (error) throw error;
   } catch (e) {
     console.error(e);
+  }
+};
+
+export const upsertAll = async (pins: RePin[]) => {
+  try {
+    const { error } = await supabase.from('pins').upsert(pins, { onConflict: 'id' });
+
+    if (error) throw error;
+  } catch (e) {
+    console.error('Failed to update pins:', e);
+    throw new Error('error in upserting to remote DB');
   }
 };

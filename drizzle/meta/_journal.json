@@ -15,6 +15,20 @@
       "when": 1753121090874,
       "tag": "0001_equal_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1753293159431,
+      "tag": "0002_mean_wallow",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1753293755076,
+      "tag": "0003_acoustic_alice",
+      "breakpoints": true
     }
   ]
 }

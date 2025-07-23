@@ -8,7 +8,7 @@ import migrations from 'drizzle/migrations';
 const DATABASE_NAME = 'local.db';
 
 const expoDb = SQLite.openDatabaseSync(DATABASE_NAME, { enableChangeListener: true });
-export const db = drizzle(expoDb, { schema: { pins } });
+export const db = drizzle(expoDb, { schema: { pins } }); //add in a casing: 'snake_case'
 
 export function useRunMigrations() {
   return useMigrations(db, migrations);
