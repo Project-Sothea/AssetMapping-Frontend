@@ -13,7 +13,7 @@ export const pins = sqliteTable('pins', {
   lat: real('lat'),
   lng: real('lng'),
   type: text('type'),
-  locationName: text('location_name'),
+  name: text('name'),
   address: text('address'),
   stateProvince: text('state_province'),
   postalCode: text('postal_code'),

@@ -4,30 +4,31 @@ import MapboxGL from '~/services/mapbox';
 import { View, Alert } from 'react-native';
 import { useState } from 'react';
 import { PinFormValues } from './PinForm';
-import { useInsertPin, useFetchPins, useFetchLivePins } from '~/hooks/Pins';
+import { useInsertPin, useFetchActivePins, useFetchLivePins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
 import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
 import { v4 as uuidv4 } from 'uuid';
 import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
-import { Pin } from '~/utils/globalTypes';
+import { RePin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
   const { data: livePins } = useFetchLivePins();
-  const { data: pins = [], isLoading } = useFetchPins();
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
+  const [selectedPin, setSelectedPin] = useState<RePin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
 
+  // console.log('isFetching:', isFetching);
+  // console.log(livePins ? 'livePins exist' : 'livePins d.n.e');
   const pointCollection = convertPinsToPointCollection(pins);
   const insertPin = useInsertPin();
   const screenIsFocused = useIsFocused();
 
-  // console.log(livePins);
   const handleDropPin = async (e: any) => {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
 

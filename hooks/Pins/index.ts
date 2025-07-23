@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { callPin } from '~/apis';
 import { db } from '~/services/drizzleDb';
-import { InsertPin, Pin } from '~/utils/globalTypes';
+import { InsertPin, RePin } from '~/utils/globalTypes';
 import * as schema from '~/db/schema';
 
 export const useInsertPin = () => {
@@ -16,10 +16,18 @@ export const useInsertPin = () => {
   });
 };
 
-export const useFetchPins = () => {
-  return useQuery<Pin[]>({
+export const useFetchRemotePins = () => {
+  return useQuery<RePin[]>({
     queryKey: ['pins'],
     queryFn: () => callPin.fetchAll(),
+    refetchInterval: 10 * 1000,
+  });
+};
+
+export const useFetchActivePins = () => {
+  return useQuery<RePin[]>({
+    queryKey: ['activePins'],
+    queryFn: () => callPin.fetchAllActive(),
   });
 };
 

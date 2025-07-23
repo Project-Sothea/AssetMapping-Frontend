@@ -6,13 +6,14 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
 import * as SQLite from 'expo-sqlite';
-import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { pins } from '~/db/schema';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '~/drizzle/migrations';
+import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { AppSyncLayer } from '~/components/AppSyncLayer';
 
 export const DATABASE_NAME = 'local.db';
-
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
 export const db = drizzle(expoDB, { schema: { pins } });
 
@@ -28,6 +29,7 @@ export default function Layout() {
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'loading' | 'error' | 'done'>(
     'idle'
   );
+  useDrizzleStudio(expoDB);
 
   useEffect(() => {
     if (error) {
@@ -60,6 +62,7 @@ export default function Layout() {
           useSuspense>
           <QueryProvider>
             <SafeAreaProvider>
+              <AppSyncLayer />
               <Tabs>
                 <Tabs.Screen
                   name="index"

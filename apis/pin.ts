@@ -1,5 +1,5 @@
 import { supabase } from '~/services/supabase';
-import { InsertPin, Pin } from '~/utils/globalTypes';
+import { InsertPin, RePin } from '~/utils/globalTypes';
 
 export const create = async (pin: InsertPin) => {
   try {
@@ -13,6 +13,20 @@ export const create = async (pin: InsertPin) => {
 };
 
 export const fetchAll = async () => {
+  try {
+    const { data, error } = await supabase.from('pins').select('*');
+    if (error) {
+      console.error('supabase error:', error.message);
+      return [];
+    }
+    return data;
+  } catch (err) {
+    console.error('Non-Supabase Error:', err);
+    return [];
+  }
+};
+
+export const fetchAllActive = async () => {
   try {
     const { data, error } = await supabase
       .from('pins')
@@ -29,7 +43,7 @@ export const fetchAll = async () => {
   }
 };
 
-export const update = async (pin: Pin) => {
+export const update = async (pin: RePin) => {
   try {
     const { error } = await supabase
       .from('pins')
