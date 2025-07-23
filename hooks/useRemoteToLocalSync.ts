@@ -10,7 +10,7 @@ export const useRemoteToLocalSync = () => {
   useEffect(() => {
     if (remotePins && remotePins.length > 0) {
       console.log('pins fetched:', remotePins.length);
-      const clean = syncManager.cleanPinData(remotePins);
+      const clean = syncManager.cleanRemotePinData(remotePins);
       console.log('cleaned at:', Date());
       // console.log(clean);
       syncManager.pullToLocalDB(clean);

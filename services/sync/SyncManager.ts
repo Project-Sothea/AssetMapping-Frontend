@@ -69,7 +69,7 @@ class SyncManager {
     // TODO: implement push logic
   }
 
-  public cleanPinData(data: RePin[]) {
+  public cleanRemotePinData(data: RePin[]) {
     return jsonifyImages(convertKeysToCamel(data));
   }
 }
