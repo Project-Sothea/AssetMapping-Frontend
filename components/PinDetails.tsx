@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
-import { Pin } from '~/utils/globalTypes';
+import { RePin } from '~/utils/globalTypes';
 import { Button } from './Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { EditableForm } from './Pin/EditableForm';
 type PinDetailsProps = {
-  pin: Pin;
+  pin: RePin;
 };
 
 export default function PinDetails({ pin }: PinDetailsProps) {
@@ -14,7 +14,7 @@ export default function PinDetails({ pin }: PinDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [pinDetails, setPinDetails] = useState({ ...pin });
 
-  const handleChange = (key: keyof Pin, value: string) => {
+  const handleChange = (key: keyof RePin, value: string) => {
     setPinDetails((prev) => ({ ...prev, [key]: value }));
   };
 

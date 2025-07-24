@@ -1,10 +1,10 @@
-import { Pin } from '~/utils/globalTypes';
+import { RePin } from '~/utils/globalTypes';
 import ModalWrapper from './ModalWrapper';
 import PinDetails from './PinDetails';
 
 type PinDetailsModalProps = {
   visible: boolean;
-  pin: Pin;
+  pin: RePin;
   onClose: () => void;
 };
 

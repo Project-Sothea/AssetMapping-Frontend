@@ -2,6 +2,7 @@ import { Formik } from 'formik';
 import * as ImagePicker from 'expo-image-picker';
 import * as Yup from 'yup';
 import { View, TextInput, Button, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import * as ImageManager from '~/services/ImageManager';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -28,27 +29,14 @@ type PinFormProps = {
 };
 
 export const PinForm = ({ onSubmit }: PinFormProps) => {
-  const pickImage = async (setFieldValue: any, images: { uri: string }[]) => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      alert('Permission to access camera roll is required!');
-      return;
-    }
-
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!pickerResult.canceled && pickerResult.assets && pickerResult.assets.length > 0) {
-      const uri = pickerResult.assets[0].uri;
-
-      const newImage = { uri };
-      setFieldValue('images', [...images, newImage]);
+  const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
+    const { data, error } = await ImageManager.getPickedImage();
+    if (!error) {
+      setFieldValue('images', [...images, data]);
     } else {
-      console.warn('No images selected or picker was canceled.');
+      console.warn(error.message);
     }
+    return;
   };
 
   return (
@@ -111,7 +99,10 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
               ))}
             </ScrollView>
 
-            <Button title="Pick an image" onPress={() => pickImage(setFieldValue, values.images)} />
+            <Button
+              title="Pick an image"
+              onPress={() => appendNewImage(setFieldValue, values.images)}
+            />
 
             {/* Optionally display validation error */}
             {touched.images && errors.images && (
@@ -140,3 +131,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 });
+
+/*
+  const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      alert('Permission to access camera roll is required!');
+      return;
+    }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!pickerResult.canceled && pickerResult.assets && pickerResult.assets.length > 0) {
+      const localUriString = pickerResult.assets[0].uri;
+
+      const newImage = { uri: localUriString };
+      setFieldValue('images', [...images, newImage]);
+    } else {
+      console.warn('No images selected or picker was canceled.');
+    }
+  };
+*/

@@ -18,6 +18,7 @@ const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 export default function Map() {
   const { data: livePins } = useFetchLivePins();
   const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
+
   const [selectedPin, setSelectedPin] = useState<RePin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -38,28 +39,44 @@ export default function Map() {
     }
   };
 
-  const handlePinSubmit = async (formData: PinFormValues) => {
+  const handlePinSubmit = async (PinformData: PinFormValues) => {
     if (droppedCoords == null) return;
 
     console.log('creating new pin in db...');
     try {
       const uuid = uuidv4();
-      const uploadedImageUrls = await Promise.all(
-        formData.images.map((image, idx) => {
+      const results = await Promise.allSettled(
+        PinformData.images.map((image, idx) => {
           const filename = `${uuid}/${Date.now()}-${idx}.jpg`;
           return uploadImageAsync(image.uri, filename);
         })
       );
+
+      const successfulUploads = results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => (result as PromiseFulfilledResult<string>).value);
+
+      const failedUploads = results
+        .filter((result) => result.status === 'rejected')
+        .map((result, idx) => ({
+          image: PinformData.images[idx],
+          error: (result as PromiseRejectedResult).reason,
+        }));
+
+      if (failedUploads.length > 0) {
+        console.warn('Some images failed to upload');
+      }
       const newPin = {
-        ...formData,
+        ...PinformData,
         lng: droppedCoords[0],
         lat: droppedCoords[1],
-        images: uploadedImageUrls,
+        images: successfulUploads,
         id: uuid,
       };
 
       insertPin.mutate(newPin);
       Alert.alert(`${newPin.name} Pin Created!`);
+
       setModalVisible(false);
       setDroppedCoords(null);
     } catch (error) {

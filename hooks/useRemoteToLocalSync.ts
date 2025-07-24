@@ -11,7 +11,7 @@ export const useRemoteToLocalSync = () => {
       () => {
         syncManager.syncNow();
       },
-      10 * 60 * 1000
+      30 * 60 * 1000
     );
 
     return () => {

@@ -1,4 +1,3 @@
-import { Pin } from '~/db/schema';
 import { supabase } from '~/services/supabase';
 import { InsertPin, RePin } from '~/utils/globalTypes';
 

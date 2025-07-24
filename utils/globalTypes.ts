@@ -7,5 +7,4 @@ type dbPin = Database['public']['Tables']['pins']['Row'];
 
 export type Form = dbForm;
 export type RePin = dbPin;
-
 export type InsertPin = Omit<dbPin, 'deleted_at' | 'created_at' | 'updated_at'>;
