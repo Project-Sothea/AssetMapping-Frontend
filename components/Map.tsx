@@ -4,28 +4,27 @@ import MapboxGL from '~/services/mapbox';
 import { View, Alert } from 'react-native';
 import { useState } from 'react';
 import { PinFormValues } from './PinForm';
-import { useInsertPin, useFetchActivePins, useFetchLivePins } from '~/hooks/Pins';
+import { useFetchLocalPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
-import { RePin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
+import * as PinManager from '~/services/PinManager';
+import { Pin } from '~/db/schema';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
-  const { data: livePins } = useFetchLivePins();
-  const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
+  const { data: pins } = useFetchLocalPins();
+  // const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
 
-  const [selectedPin, setSelectedPin] = useState<RePin | null>(null);
+  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
 
   // console.log('isFetching:', isFetching);
   // console.log(livePins ? 'livePins exist' : 'livePins d.n.e');
-  const pointCollection = convertPinsToPointCollection(pins);
-  const insertPin = useInsertPin();
   const screenIsFocused = useIsFocused();
 
   const handleDropPin = async (e: any) => {
@@ -45,7 +44,7 @@ export default function Map() {
 
     console.log('creating new pin in db...');
     try {
-      insertPin.mutate({ ...PinformData, lng, lat });
+      await PinManager.createPin({ ...PinformData, lng, lat });
 
       Alert.alert(`Pin Created!`);
 
@@ -77,10 +76,14 @@ export default function Map() {
         <Camera followUserLocation followZoomLevel={16} />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 
-        {!isLoading && (
-          <ShapeSource id="houses" shape={pointCollection} onPress={handleOpenPin}>
+        {pins && (
+          <ShapeSource
+            id="pins"
+            shape={convertPinsToPointCollection(pins)}
+            onPress={handleOpenPin}
+            cluster={false}>
             <SymbolLayer
-              id="homes-icons"
+              id="pin-icons"
               style={{
                 iconImage: 'pin',
                 iconSize: 0.05,

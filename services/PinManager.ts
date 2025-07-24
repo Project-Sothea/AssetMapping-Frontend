@@ -4,7 +4,7 @@ import * as ImageManager from '~/services/ImageManager';
 import { db } from './drizzleDb';
 import { Pin, pins } from '~/db/schema';
 import { callPin } from '~/apis';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export type pinCreationData = PinFormValues & { lng: number; lat: number };
 

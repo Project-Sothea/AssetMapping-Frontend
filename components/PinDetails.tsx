@@ -1,20 +1,22 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
-import { RePin } from '~/utils/globalTypes';
 import { Button } from './Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { EditableForm } from './Pin/EditableForm';
+import { Pin } from '~/db/schema';
 type PinDetailsProps = {
-  pin: RePin;
+  pin: Pin;
 };
 
 export default function PinDetails({ pin }: PinDetailsProps) {
   const router = useRouter();
 
+  const imageURIs: string[] = pin.localImages ? JSON.parse(pin.localImages) : [];
+
   const [isEditing, setIsEditing] = useState(false);
   const [pinDetails, setPinDetails] = useState({ ...pin });
 
-  const handleChange = (key: keyof RePin, value: string) => {
+  const handleChange = (key: keyof Pin, value: string) => {
     setPinDetails((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -26,9 +28,9 @@ export default function PinDetails({ pin }: PinDetailsProps) {
     <View>
       <Text style={styles.title}>{pin.name}</Text>
 
-      {pin.images && pin.images.length > 0 && (
+      {imageURIs.length > 0 && (
         <ScrollView horizontal style={styles.imageScroll}>
-          {pin.images.map((uri, i) => (
+          {imageURIs.map((uri, i) => (
             <Image key={i} source={{ uri }} style={styles.image} />
           ))}
         </ScrollView>
@@ -43,12 +45,12 @@ export default function PinDetails({ pin }: PinDetailsProps) {
 
       <View style={styles.infoRow}>
         <Text style={styles.label}>State/Province: </Text>
-        <Text>{pin.state_province || 'N/A'}</Text>
+        <Text>{pin.stateProvince || 'N/A'}</Text>
       </View>
 
       <View style={styles.infoRow}>
         <Text style={styles.label}>Postal Code: </Text>
-        <Text>{pin.postal_code || 'N/A'}</Text>
+        <Text>{pin.postalCode || 'N/A'}</Text>
       </View>
 
       <View style={styles.infoRow}>

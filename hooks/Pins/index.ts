@@ -32,7 +32,7 @@ export const useFetchActivePins = () => {
   });
 };
 
-export const useFetchLivePins = () => {
+export const useFetchLocalPins = () => {
   const query = db.select().from(schema.pins);
   return useLiveQuery(query) ?? [];
 };
