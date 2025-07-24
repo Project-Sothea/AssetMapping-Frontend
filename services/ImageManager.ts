@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
-import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
+import { callImages } from '~/apis';
 
 export async function getPickedImage() {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -31,11 +31,15 @@ export async function getPickedImage() {
  * @returns Array of { localUri, galleryUri } for saved images
  */
 
-export async function saveGalleryImagesLocally(
+export async function saveImagesLocally(
   pinId: string,
   images: { uri: string }[]
-): Promise<{ localUri: string; galleryUri: string }[]> {
-  const savedImages: { localUri: string; galleryUri: string }[] = [];
+): Promise<{ success: string[]; fail: string[] }> {
+  if (!images || images.length === 0) {
+    return { success: [], fail: [] };
+  }
+
+  const result: { success: string[]; fail: string[] } = { success: [], fail: [] };
 
   try {
     // Ensure directory exists
@@ -47,56 +51,49 @@ export async function saveGalleryImagesLocally(
   }
 
   for (let i = 0; i < images.length; i++) {
-    const { uri: galleryUri } = images[i];
+    const { uri } = images[i];
     try {
       const filename = `${Date.now()}-${i}.jpg`; // Unique filename
       const localUri = `${FileSystem.documentDirectory}pins/${pinId}/${filename}`;
 
       // Copy the file from gallery URI to app local storage
       await FileSystem.copyAsync({
-        from: galleryUri,
+        from: uri,
         to: localUri,
       });
 
-      savedImages.push({ localUri, galleryUri });
+      result.success.push(localUri);
     } catch (error) {
-      console.warn(`Failed to save image ${galleryUri} locally:`, error);
-      // skip this one but continue saving others
+      console.warn(`Failed to save image ${uri} locally:`, error);
+      result.fail.push(uri);
     }
   }
 
-  return savedImages;
+  return result;
 }
 
-export async function uploadAndGetRemoteImageURIs(pinId: string, localUris: string[] | null) {
-  if (!localUris || localUris.length === 0) {
-    return { success: null, failed: null }; // or handle appropriately
+export async function saveImagesRemotely(pinId: string, images: string[] | null) {
+  if (!images || images.length === 0) {
+    return { success: [], fail: [] };
   }
 
   const results = await Promise.allSettled(
-    localUris.map((image, idx) => {
+    images.map((image, idx) => {
       const filename = `${pinId}/${Date.now()}-${idx}.jpg`;
-      return uploadImageAsync(image, filename);
+      return callImages.storeImage(image, filename);
     })
   );
 
-  const successfulUploads = results
+  const success = results
     .filter((result) => result.status === 'fulfilled')
     .map((result) => (result as PromiseFulfilledResult<string>).value);
 
-  const failedUploads = results
+  const fail = results
     .filter((result) => result.status === 'rejected')
     .map((result, idx) => ({
-      image: localUris[idx],
+      image: images[idx],
       error: (result as PromiseRejectedResult).reason,
     }));
 
-  if (failedUploads.length > 0) {
-    console.warn('Some images failed to upload');
-  }
-
-  return {
-    success: successfulUploads.length > 0 ? successfulUploads : null,
-    failed: failedUploads.length > 0 ? failedUploads : null,
-  };
+  return { success, fail };
 }

@@ -129,6 +129,7 @@ class SyncManager {
         return;
       }
       //push dirty data to remote
+      //TODO: abstract away callPin.upsertAll(data); to like replaceDirtyData
       const data = this.cleanLocalData(changes);
       await callPin.upsertAll(data);
 
