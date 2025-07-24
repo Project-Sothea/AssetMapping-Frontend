@@ -47,7 +47,7 @@ class SyncManager {
       console.log('fetched at:', Date(), unclean.length);
       console.log('pins fetched:', unclean.length);
 
-      const data = this.cleanRemotePinData(unclean);
+      const datas = this.cleanRemotePinData(unclean);
 
       const remoteUpdatedAt = sql.raw(`excluded.${pins.updatedAt.name}`);
       const remoteDeletedAt = sql.raw(`excluded.${pins.deletedAt.name}`);
@@ -55,7 +55,13 @@ class SyncManager {
 
       const ids = await db
         .insert(pins)
-        .values(data)
+        .values(
+          datas.map((data: any) => ({
+            ...data,
+            status: 'synced',
+            lastSyncedAt: new Date().toISOString(),
+          }))
+        )
         .onConflictDoUpdate({
           target: pins.id,
           set: {
@@ -141,7 +147,7 @@ class SyncManager {
         .update(pins)
         .set({
           status: sql.raw(`CASE 
-            WHEN excluded.${pins.deletedAt.name} IS NOT NULL THEN 'deleted' 
+            WHEN ${pins.deletedAt.name} IS NOT NULL THEN 'deleted' 
             ELSE 'synced' 
             END`),
           lastSyncedAt: now,
@@ -155,8 +161,8 @@ class SyncManager {
     }
   }
 
-  private cleanRemotePinData(data: RePin[]) {
-    return jsonifyImages(convertKeysToCamel(data));
+  private cleanRemotePinData(datas: RePin[]) {
+    return jsonifyImages(convertKeysToCamel(datas));
   }
 
   private cleanLocalData(data: any) {

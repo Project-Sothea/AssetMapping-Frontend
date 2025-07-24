@@ -17,7 +17,7 @@ export type Database = {
       forms: {
         Row: {
           brush_teeth: string | null
-          can_attend: string
+          can_attend: string | null
           cholesterol: string | null
           cholesterol_action: string[] | null
           cold_action: string[] | null
@@ -55,16 +55,16 @@ export type Database = {
           pin_id: string | null
           poverty_card: string | null
           unsafe_water: string[] | null
-          updated_at: string
-          village: string
-          village_id: string
+          updated_at: string | null
+          village: string | null
+          village_id: string | null
           water_sources: string[] | null
           what_do_when_sick: string[] | null
           where_buy_medicine: string | null
         }
         Insert: {
           brush_teeth?: string | null
-          can_attend: string
+          can_attend?: string | null
           cholesterol?: string | null
           cholesterol_action?: string[] | null
           cold_action?: string[] | null
@@ -102,16 +102,16 @@ export type Database = {
           pin_id?: string | null
           poverty_card?: string | null
           unsafe_water?: string[] | null
-          updated_at?: string
-          village: string
-          village_id: string
+          updated_at?: string | null
+          village?: string | null
+          village_id?: string | null
           water_sources?: string[] | null
           what_do_when_sick?: string[] | null
           where_buy_medicine?: string | null
         }
         Update: {
           brush_teeth?: string | null
-          can_attend?: string
+          can_attend?: string | null
           cholesterol?: string | null
           cholesterol_action?: string[] | null
           cold_action?: string[] | null
@@ -149,9 +149,9 @@ export type Database = {
           pin_id?: string | null
           poverty_card?: string | null
           unsafe_water?: string[] | null
-          updated_at?: string
-          village?: string
-          village_id?: string
+          updated_at?: string | null
+          village?: string | null
+          village_id?: string | null
           water_sources?: string[] | null
           what_do_when_sick?: string[] | null
           where_buy_medicine?: string | null
@@ -175,12 +175,12 @@ export type Database = {
           description: string | null
           id: string
           images: string[] | null
-          lat: number
-          lng: number
-          name: string
+          lat: number | null
+          lng: number | null
+          name: string | null
           postal_code: string | null
           state_province: string | null
-          type: string
+          type: string | null
           updated_at: string | null
         }
         Insert: {
@@ -191,12 +191,12 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[] | null
-          lat: number
-          lng: number
-          name: string
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
           postal_code?: string | null
           state_province?: string | null
-          type: string
+          type?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -207,12 +207,12 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[] | null
-          lat?: number
-          lng?: number
-          name?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
           postal_code?: string | null
           state_province?: string | null
-          type?: string
+          type?: string | null
           updated_at?: string | null
         }
         Relationships: []

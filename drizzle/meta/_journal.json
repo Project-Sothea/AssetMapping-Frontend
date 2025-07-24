@@ -43,6 +43,13 @@
       "when": 1753347620903,
       "tag": "0005_bright_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1753380208098,
+      "tag": "0006_bright_nitro",
+      "breakpoints": true
     }
   ]
 }

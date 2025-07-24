@@ -2,7 +2,7 @@ import 'react-native-get-random-values';
 import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PinFormValues } from './PinForm';
 import { useFetchLocalPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
@@ -17,6 +17,9 @@ const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 export default function Map() {
   const { data: pins } = useFetchLocalPins();
   // const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
+  useEffect(() => {
+    console.log('pins changed:', pins.length);
+  }, [pins]);
 
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);

@@ -13,6 +13,7 @@ export default function PinDetails({ pin }: PinDetailsProps) {
 
   const imageURIs: string[] = pin.localImages ? JSON.parse(pin.localImages) : [];
 
+  console.log(imageURIs);
   const [isEditing, setIsEditing] = useState(false);
   const [pinDetails, setPinDetails] = useState({ ...pin });
 
