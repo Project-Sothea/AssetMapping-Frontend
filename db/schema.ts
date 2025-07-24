@@ -1,9 +1,14 @@
+import { sql } from 'drizzle-orm';
 import { sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
 
 export const pins = sqliteTable('pins', {
   id: text('id').primaryKey(), // UUID
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
   failureReason: text('failure_reason'),
   status: text('status'),
@@ -19,6 +24,7 @@ export const pins = sqliteTable('pins', {
   country: text('country'),
   description: text('description'),
   images: text('images'), // stored as JSON string: JSON.stringify(imagesArray)
+  localImages: text('local_images'),
 });
 
 // Export pin to use as an interface in your app

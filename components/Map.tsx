@@ -6,13 +6,17 @@ import { useState } from 'react';
 import { PinFormValues } from './PinForm';
 import { useInsertPin, useFetchActivePins, useFetchLivePins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
-import { uploadImageAsync } from '~/utils/Map/uploadImageAsync';
 import { v4 as uuidv4 } from 'uuid';
 import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { RePin } from '~/utils/globalTypes';
 import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
+import * as ImageManager from '~/services/ImageManager';
+import { callPin } from '~/apis';
+import { db } from '~/services/drizzleDb';
+import { pins } from '~/db/schema';
+import { sql } from 'drizzle-orm';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
@@ -44,38 +48,40 @@ export default function Map() {
 
     console.log('creating new pin in db...');
     try {
-      const uuid = uuidv4();
-      const results = await Promise.allSettled(
-        PinformData.images.map((image, idx) => {
-          const filename = `${uuid}/${Date.now()}-${idx}.jpg`;
-          return uploadImageAsync(image.uri, filename);
-        })
-      );
+      const pinId = uuidv4();
+      //save images to local storage and get the localUri
+      const saved = await ImageManager.saveGalleryImagesLocally(pinId, PinformData.images);
+      const localUris = saved.map((img) => img.localUri);
 
-      const successfulUploads = results
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => (result as PromiseFulfilledResult<string>).value);
-
-      const failedUploads = results
-        .filter((result) => result.status === 'rejected')
-        .map((result, idx) => ({
-          image: PinformData.images[idx],
-          error: (result as PromiseRejectedResult).reason,
-        }));
-
-      if (failedUploads.length > 0) {
-        console.warn('Some images failed to upload');
-      }
-      const newPin = {
+      // create new pin row in local db
+      const localPin = {
         ...PinformData,
+        id: pinId,
         lng: droppedCoords[0],
         lat: droppedCoords[1],
-        images: successfulUploads,
-        id: uuid,
+        localImages: localUris.length > 0 ? JSON.stringify(localUris) : null,
+        images: null,
+        status: 'dirty',
       };
 
-      insertPin.mutate(newPin);
-      Alert.alert(`${newPin.name} Pin Created!`);
+      await callPin.insertLocal(localPin);
+
+      // push to remote
+      const { success } = await ImageManager.uploadAndGetRemoteImageURIs(pinId, localUris);
+
+      //insert into supabase and update the local version
+      const remotePin = {
+        ...PinformData,
+        images: success,
+        id: pinId,
+        lng: droppedCoords[0],
+        lat: droppedCoords[1],
+      };
+      insertPin.mutate(remotePin); //TODO: modify the local pin, update sync fields
+
+      await callPin.markPublicURIs(success, pinId);
+      await callPin.markSynced(pinId);
+      Alert.alert(`${remotePin.name} Created!`);
 
       setModalVisible(false);
       setDroppedCoords(null);

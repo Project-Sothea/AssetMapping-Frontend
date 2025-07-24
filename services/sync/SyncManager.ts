@@ -94,6 +94,7 @@ class SyncManager {
   private async pushToRemoteDB() {
     // TODO: implement push logic
     try {
+      //get any dirty data from local
       const changes = await db
         .select({
           id: pins.id,
@@ -114,25 +115,27 @@ class SyncManager {
         .from(pins)
         .where(
           or(
-            eq(pins.status, 'dirty'), //pins updated / created offline
+            eq(pins.status, 'dirty'), //pins updated or created offline
             and(
               //pins deleted offline (but not created offline)
               eq(pins.status, 'deleted'),
               isNotNull(pins.deletedAt),
               gt(pins.deletedAt, pins.lastSyncedAt)
             )
-          ) //need to update updated_at
+          ) //TODO: need to update updated_at
         );
       console.log('changes returned:', changes.length);
       if (changes.length === 0) {
         return;
       }
+      //push dirty data to remote
       const data = this.cleanLocalData(changes);
       await callPin.upsertAll(data);
 
       const now = new Date().toISOString();
       const ids = changes.map((pin) => pin.id);
 
+      //mark that dirty data has been synced
       await db
         .update(pins)
         .set({
@@ -147,7 +150,7 @@ class SyncManager {
     } catch (e) {
       console.error(e);
       throw new Error('failed to push changes to remote DB');
-      //possibly fallback to per batch?
+      //TODO: possibly fallback to per batch?
     }
   }
 

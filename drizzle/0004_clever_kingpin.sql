@@ -1,0 +1,1 @@
+ALTER TABLE `pins` ADD `local_images` text;
