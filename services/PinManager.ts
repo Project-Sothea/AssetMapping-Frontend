@@ -81,7 +81,7 @@ export const updatePin = async (data: PinFormValues) => {
     };
     await upsertPinLocally(dirtyPin);
 
-    //update images online
+    //Step 2.1: Update images online
     const currImages: string[] = currPin.images ? JSON.parse(currPin.images) : [];
 
     const { uploaded: publicURIs } = await ImageManager.updateImagesRemotely(
@@ -91,7 +91,7 @@ export const updatePin = async (data: PinFormValues) => {
     );
     await setImagesFieldLocally(publicURIs, pinId);
 
-    //update pins remotely
+    //Step 2.2: Update pins remotely
     const remotePin = {
       name: dirtyPin.name,
       lat: dirtyPin.lat,
@@ -104,6 +104,9 @@ export const updatePin = async (data: PinFormValues) => {
       state_province: dirtyPin.stateProvince,
       id: dirtyPin.id,
       images: publicURIs,
+      deleted_at: null,
+      created_at: dirtyPin.createdAt,
+      updated_at: dirtyPin.updatedAt,
     };
 
     await callPin.update(remotePin);
@@ -113,6 +116,43 @@ export const updatePin = async (data: PinFormValues) => {
   } catch (e) {
     console.error(e);
     throw new Error('Error updating pin');
+  }
+};
+
+export const deletePin = async (pin: Pin) => {
+  try {
+    const pinId = pin.id;
+    //Step 1.1: Delete images locally
+    await ImageManager.deleteAllImagesLocally(pinId);
+
+    //Step 1.2: Soft Delete pin locally
+    const deletedPin = await deletePinLocally(pin);
+
+    //Step 2.1: Delete images online
+    const publicImages = pin.images ? JSON.parse(pin.images) : [];
+    await ImageManager.deleteAllImagesRemotely(pinId, publicImages);
+
+    //Step 2.2: Soft Delete pin remotely
+    const remotePin = {
+      name: deletedPin.name,
+      lat: deletedPin.lat,
+      lng: deletedPin.lng,
+      type: deletedPin.type,
+      description: deletedPin.description,
+      country: deletedPin.country,
+      address: deletedPin.address,
+      postal_code: deletedPin.postalCode,
+      state_province: deletedPin.stateProvince,
+      id: deletedPin.id,
+      images: deletedPin.images,
+      deleted_at: deletedPin.deletedAt,
+      created_at: deletedPin.createdAt,
+      updated_at: deletedPin.updatedAt,
+    };
+    await callPin.update(remotePin); //soft delete
+  } catch (e) {
+    console.error(e);
+    throw new Error('Error deleting pin');
   }
 };
 
@@ -138,8 +178,41 @@ const upsertPinLocally = async (pin: Pin) => {
       })
       .returning({ id: pins.id });
   } catch (e) {
-    console.error('Failed to insert pin:', e);
-    throw new Error('Error creating pin locally');
+    console.error('Failed to upsert pin:', e);
+    throw new Error('Error upserting pin locally');
+  }
+};
+
+const deletePinLocally = async (pin: Pin) => {
+  const now = new Date().toISOString();
+  const deletedPin = {
+    id: pin.id,
+    name: null,
+    lat: null,
+    lng: null,
+    type: null,
+    address: null,
+    stateProvince: null,
+    postalCode: null,
+    country: null,
+    description: null,
+    images: null,
+    localImages: null,
+    failureReason: null,
+    status: 'deleted',
+    lastSyncedAt: pin.id,
+    lastFailedSyncAt: null,
+    createdAt: pin.createdAt,
+    updatedAt: now,
+    deletedAt: now,
+  };
+  //soft delete
+  try {
+    await upsertPinLocally(deletedPin);
+    return deletedPin;
+  } catch (e) {
+    console.error('failed to delete locally', e);
+    throw new Error('Error deleting pin locally');
   }
 };
 

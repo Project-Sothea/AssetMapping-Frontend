@@ -61,7 +61,6 @@ export default function Map() {
     console.log('updating pin in db...');
 
     try {
-      console.log(PinformData.name);
       await PinManager.updatePin({ ...PinformData });
 
       Alert.alert(`Pin Updated!`);
@@ -73,6 +72,27 @@ export default function Map() {
       setDroppedCoords(null);
     }
   };
+
+  const handleDeletePin = async (pin: Pin) => {
+    if (!pin.id) {
+      Alert.alert('Error deleting pin');
+      return;
+    }
+    console.log('deleting pin in db...');
+
+    try {
+      await PinManager.deletePin(pin);
+
+      Alert.alert(`Pin Deleted!`);
+    } catch (error) {
+      console.error('Error deleting pin:', error);
+      Alert.alert('Delete failed', 'Please try again.');
+    } finally {
+      setDetailsVisible(false);
+      setDroppedCoords(null);
+    }
+  };
+
   const handleOpenPin = async (e: any) => {
     const pressedFeature = e.features?.[0];
     if (pressedFeature) {
@@ -121,6 +141,7 @@ export default function Map() {
             console.log('closed pin');
           }}
           onUpdate={handlePinUpdate}
+          onDelete={handleDeletePin}
         />
       )}
       {droppedCoords && (

@@ -213,6 +213,77 @@ export async function updateImagesRemotely(
   return { uploaded, failedUpload, deleted, failedDelete };
 }
 
+export async function deleteAllImagesLocally(pinId: string): Promise<{
+  success: string[];
+  fail: { uri: string; error: any }[];
+}> {
+  const result = {
+    success: [] as string[],
+    fail: [] as { uri: string; error: any }[],
+  };
+
+  const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
+
+  try {
+    const files = await FileSystem.readDirectoryAsync(directory);
+
+    await Promise.all(
+      files.map(async (filename) => {
+        const uri = `${directory}${filename}`;
+        try {
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+          result.success.push(uri);
+        } catch (err) {
+          console.warn('Failed to delete file:', uri, err);
+          result.fail.push({ uri, error: err });
+        }
+      })
+    );
+
+    // Attempt to delete the directory itself after cleaning
+    try {
+      await FileSystem.deleteAsync(directory, { idempotent: true });
+    } catch (dirErr) {
+      console.warn('Failed to delete directory:', directory, dirErr);
+    }
+  } catch (err) {
+    console.warn('Failed to read directory (may not exist):', directory, err);
+    // Not throwing because directory might not exist (which is fine)
+  }
+
+  return result;
+}
+
+export async function deleteAllImagesRemotely(
+  pinId: string,
+  existingRemoteUris: string[]
+): Promise<{
+  deleted: string[];
+  failedDelete: { uri: string; error: any }[];
+}> {
+  // Extract filenames from all existing remote URIs
+  const filenames = existingRemoteUris.map(extractFilenameFromRemoteUri);
+
+  const deleteResults = await Promise.allSettled(
+    filenames.map((filename) => callImages.deleteImage(`${pinId}/${filename}`))
+  );
+
+  const deleted = deleteResults
+    .map((res, idx) => ({ res, idx }))
+    .filter(({ res }) => res.status === 'fulfilled')
+    .map(({ idx }) => `${pinId}/${filenames[idx]}`);
+
+  const failedDelete = deleteResults
+    .map((res, idx) => ({ res, idx }))
+    .filter(({ res }) => res.status === 'rejected')
+    .map(({ res, idx }) => ({
+      uri: `${pinId}/${filenames[idx]}`,
+      error: (res as PromiseRejectedResult).reason,
+    }));
+
+  return { deleted, failedDelete };
+}
+
 function extractFilenameFromRemoteUri(uri: string): string {
   return uri.split('/').pop()!;
 }

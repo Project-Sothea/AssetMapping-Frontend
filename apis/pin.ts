@@ -43,13 +43,12 @@ export const fetchAllActive = async () => {
   }
 };
 
-export const update = async (pin: Omit<RePin, 'created_at' | 'updated_at' | 'deleted_at'>) => {
+export const update = async (pin: RePin) => {
   try {
     const { error } = await supabase
       .from('pins')
       .update({
         ...pin,
-        updated_at: new Date(),
       })
       .eq('id', pin.id);
 

@@ -8,12 +8,19 @@ type PinDetailsModalProps = {
   pin: Pin;
   onClose: () => void;
   onUpdate: (formData: PinFormValues) => void;
+  onDelete: (pin: Pin) => void;
 };
 
-export const PinDetailsModal = ({ visible, pin, onClose, onUpdate }: PinDetailsModalProps) => {
+export const PinDetailsModal = ({
+  visible,
+  pin,
+  onClose,
+  onUpdate,
+  onDelete,
+}: PinDetailsModalProps) => {
   return (
     <ModalWrapper title={'Pin Details'} visible={visible} onClose={onClose}>
-      <PinDetails pin={pin} onUpdate={onUpdate} />
+      <PinDetails pin={pin} onUpdate={onUpdate} onDelete={onDelete} />
     </ModalWrapper>
   );
 };
