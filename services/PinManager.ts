@@ -69,6 +69,15 @@ const insertPinLocally = async (pin: Pin) => {
   }
 };
 
+export const getLocalPin = async (pinId: string) => {
+  try {
+    const localPin = await db.select().from(pins).where(eq(pins.id, pinId)).limit(1);
+    return localPin[0];
+  } catch (e) {
+    console.error('Failed to get pin:', e);
+    throw new Error('Error fetching pin locally');
+  }
+};
 const markAsSynced = async (pinId: string) => {
   await db
     .update(pins)

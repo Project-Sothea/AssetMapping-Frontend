@@ -1,8 +1,17 @@
 import { Formik } from 'formik';
-import * as ImagePicker from 'expo-image-picker';
 import * as Yup from 'yup';
-import { View, TextInput, Button, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import {
+  View,
+  TextInput,
+  Button,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Pressable,
+} from 'react-native';
 import * as ImageManager from '~/services/ImageManager';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -13,22 +22,38 @@ const PinFormSchema = Yup.object().shape({
   description: Yup.string(),
 });
 
+const defaultValues: PinFormValues = {
+  name: '',
+  address: '',
+  stateProvince: '',
+  postalCode: '',
+  country: '',
+  description: '',
+  type: 'normal',
+  images: [],
+};
+
 export type PinFormValues = {
-  name: string;
+  name: string | null;
   address: string | null;
   stateProvince: string | null;
   postalCode: string | null;
   country: string | null;
   description: string | null;
-  type: string;
+  type: string | null;
   images: { uri: string }[]; // array of images with uri
 };
 
 type PinFormProps = {
   onSubmit: (formData: PinFormValues) => void;
+  initialValues?: Partial<PinFormValues>;
 };
 
-export const PinForm = ({ onSubmit }: PinFormProps) => {
+export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
+  const mergedInitialValues = {
+    ...defaultValues,
+    ...initialValues,
+  };
   const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
     const { data, error } = await ImageManager.getPickedImage();
     if (!error) {
@@ -41,16 +66,7 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
 
   return (
     <Formik<PinFormValues>
-      initialValues={{
-        name: '',
-        address: '',
-        stateProvince: '',
-        postalCode: '',
-        country: '',
-        description: '',
-        type: 'normal',
-        images: [],
-      }}
+      initialValues={mergedInitialValues}
       validationSchema={PinFormSchema}
       onSubmit={onSubmit}>
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
@@ -90,13 +106,32 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
               horizontal
               showsHorizontalScrollIndicator={false}
               style={{ marginBottom: 8 }}>
-              {values.images.map((image, idx) => (
-                <Image
-                  key={idx}
-                  source={{ uri: image.uri }}
-                  style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
-                />
-              ))}
+              {values.images &&
+                values.images.map((image, idx) => (
+                  <View key={idx} style={{ position: 'relative', marginRight: 8 }}>
+                    <Image
+                      key={idx}
+                      source={{ uri: image.uri }}
+                      style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
+                    />
+                    <Pressable
+                      onPress={() => {
+                        const newImages = values.images.filter((_, i) => i !== idx);
+                        setFieldValue('images', newImages);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 8,
+                        backgroundColor: 'white',
+                        borderRadius: 12,
+                        padding: 2,
+                        zIndex: 1,
+                      }}>
+                      <MaterialIcons name="cancel" size={20} color="red" />
+                    </Pressable>
+                  </View>
+                ))}
             </ScrollView>
 
             <Button
@@ -110,7 +145,10 @@ export const PinForm = ({ onSubmit }: PinFormProps) => {
             )}
           </View>
 
-          <Button title="Create Pin" onPress={() => handleSubmit()} />
+          <Button
+            title={initialValues ? 'Update Pin' : 'Create Pin'}
+            onPress={() => handleSubmit()}
+          />
         </View>
       )}
     </Formik>

@@ -1,25 +1,21 @@
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View } from 'react-native';
 import { Button } from './Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { EditableForm } from './Pin/EditableForm';
 import { Pin } from '~/db/schema';
+import PinDetailsDisplay from './PinDetailsDisplay';
+import Spacer from './customUI/Spacer';
+import { PinForm, PinFormValues } from './PinForm';
+
 type PinDetailsProps = {
   pin: Pin;
+  onUpdate: (formData: PinFormValues) => void;
 };
 
-export default function PinDetails({ pin }: PinDetailsProps) {
+export default function PinDetails({ pin, onUpdate }: PinDetailsProps) {
   const router = useRouter();
 
-  const imageURIs: string[] = pin.localImages ? JSON.parse(pin.localImages) : [];
-
-  console.log(imageURIs);
   const [isEditing, setIsEditing] = useState(false);
-  const [pinDetails, setPinDetails] = useState({ ...pin });
-
-  const handleChange = (key: keyof Pin, value: string) => {
-    setPinDetails((prev) => ({ ...prev, [key]: value }));
-  };
 
   const handleViewForms = () => {
     router.push({ pathname: '/map/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
@@ -27,72 +23,32 @@ export default function PinDetails({ pin }: PinDetailsProps) {
 
   return (
     <View>
-      <Text style={styles.title}>{pin.name}</Text>
-
-      {imageURIs.length > 0 && (
-        <ScrollView horizontal style={styles.imageScroll}>
-          {imageURIs.map((uri, i) => (
-            <Image key={i} source={{ uri }} style={styles.image} />
-          ))}
-        </ScrollView>
+      {isEditing ? (
+        <PinForm onSubmit={onUpdate} initialValues={intoPinFormValues(pin)} />
+      ) : (
+        <PinDetailsDisplay pin={pin} />
       )}
-
-      <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Address: </Text>
-        <Text>{pin.address || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>State/Province: </Text>
-        <Text>{pin.stateProvince || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Postal Code: </Text>
-        <Text>{pin.postalCode || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Country: </Text>
-        <Text>{pin.country || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Type: </Text>
-        <Text>{pin.type}</Text>
-      </View>
-
-      <Button title="View Forms" onPress={handleViewForms}></Button>
+      <Button
+        title={isEditing ? 'View Pin' : 'Edit Pin'}
+        onPress={() => setIsEditing(!isEditing)}
+      />
+      <Spacer />
+      <Button title="View Forms" onPress={handleViewForms} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  imageScroll: {
-    marginBottom: 12,
-  },
-  image: {
-    width: 120,
-    height: 120,
-    marginRight: 10,
-    borderRadius: 8,
-  },
-  description: {
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  label: {
-    fontWeight: 'bold',
-  },
-});
+const intoPinFormValues = (pin: Pin): Partial<PinFormValues> => {
+  return {
+    name: pin.name ?? '',
+    address: pin.address ?? undefined,
+    stateProvince: pin.stateProvince ?? undefined,
+    postalCode: pin.postalCode ?? undefined,
+    country: pin.country ?? undefined,
+    description: pin.description ?? undefined,
+    type: pin.type ?? 'normal',
+    images: pin.localImages
+      ? JSON.parse(pin.localImages).map((uri: string) => ({ uri }))
+      : undefined,
+  };
+};

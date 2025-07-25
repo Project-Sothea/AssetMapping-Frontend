@@ -16,18 +16,12 @@ const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
   const { data: pins } = useFetchLocalPins();
-  // const { data: pins = [], isLoading, isFetching } = useFetchActivePins();
-  useEffect(() => {
-    console.log('pins changed:', pins.length);
-  }, [pins]);
 
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
 
-  // console.log('isFetching:', isFetching);
-  // console.log(livePins ? 'livePins exist' : 'livePins d.n.e');
   const screenIsFocused = useIsFocused();
 
   const handleDropPin = async (e: any) => {
@@ -59,6 +53,7 @@ export default function Map() {
     }
   };
 
+  const handlePinUpdate = async (PinformData: PinFormValues) => {};
   const handleOpenPin = async (e: any) => {
     const pressedFeature = e.features?.[0];
     if (pressedFeature) {
@@ -106,6 +101,7 @@ export default function Map() {
             setDetailsVisible(false);
             console.log('closed pin');
           }}
+          onUpdate={handlePinUpdate}
         />
       )}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Modal, View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
 
 type ModalWrapperProps = {
   visible: boolean;
@@ -13,13 +13,15 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ visible, onClose, title, ch
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          {title && <Text style={styles.modalTitle}>{title}</Text>}
+          <ScrollView>
+            {title && <Text style={styles.modalTitle}>{title}</Text>}
 
-          {children}
+            {children}
 
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={{ color: 'white' }}>Cancel</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={{ color: 'white' }}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </Modal>

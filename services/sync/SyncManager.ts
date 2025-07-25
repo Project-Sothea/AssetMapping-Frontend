@@ -1,5 +1,5 @@
 import { db } from '../drizzleDb';
-import { pins, Pin } from '~/db/schema';
+import { pins } from '~/db/schema';
 import {
   convertKeysToCamel,
   convertKeysToSnake,
