@@ -2,7 +2,7 @@ import 'react-native-get-random-values';
 import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PinFormValues } from './PinForm';
 import { useFetchLocalPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
@@ -34,14 +34,14 @@ export default function Map() {
   };
 
   const handlePinSubmit = async (PinformData: PinFormValues) => {
-    if (droppedCoords == null) return;
-
-    const lng = droppedCoords[0];
-    const lat = droppedCoords[1];
+    if (!PinformData.lat || !PinformData.lng) {
+      Alert.alert('Error creating pin');
+      return;
+    }
 
     console.log('creating new pin in db...');
     try {
-      await PinManager.createPin({ ...PinformData, lng, lat });
+      await PinManager.createPin({ ...PinformData });
 
       Alert.alert(`Pin Created!`);
 
@@ -53,7 +53,10 @@ export default function Map() {
     }
   };
 
-  const handlePinUpdate = async (PinformData: PinFormValues) => {};
+  const handlePinUpdate = async (PinformData: PinFormValues) => {
+    if (droppedCoords == null) return;
+    console.log('updating pin in db...');
+  };
   const handleOpenPin = async (e: any) => {
     const pressedFeature = e.features?.[0];
     if (pressedFeature) {
@@ -104,15 +107,17 @@ export default function Map() {
           onUpdate={handlePinUpdate}
         />
       )}
-
-      <PinFormModal
-        visible={modalVisible}
-        onClose={() => {
-          setModalVisible(false);
-          setDroppedCoords(null);
-        }}
-        onSubmit={handlePinSubmit}
-      />
+      {droppedCoords && (
+        <PinFormModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setDroppedCoords(null);
+          }}
+          onSubmit={handlePinSubmit}
+          coords={{ lng: droppedCoords[0], lat: droppedCoords[1] }}
+        />
+      )}
     </View>
   );
 }

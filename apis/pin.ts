@@ -12,17 +12,6 @@ export const create = async (pin: InsertPin) => {
   }
 };
 
-export const upsert = async (pin: RePin) => {
-  try {
-    const { error } = await supabase.from('pins').upsert(pin);
-    if (error) {
-      console.error('supabase error:', error.message);
-    }
-  } catch (err) {
-    console.error('Non-Supabase Error:', err);
-  }
-};
-
 export const fetchAll = async () => {
   try {
     const { data, error } = await supabase.from('pins').select('*');

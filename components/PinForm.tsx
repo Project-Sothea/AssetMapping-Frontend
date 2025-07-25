@@ -9,9 +9,10 @@ import {
   ScrollView,
   Image,
   Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import * as ImageManager from '~/services/ImageManager';
-import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -22,17 +23,6 @@ const PinFormSchema = Yup.object().shape({
   description: Yup.string(),
 });
 
-const defaultValues: PinFormValues = {
-  name: '',
-  address: '',
-  stateProvince: '',
-  postalCode: '',
-  country: '',
-  description: '',
-  type: 'normal',
-  images: [],
-};
-
 export type PinFormValues = {
   name: string | null;
   address: string | null;
@@ -41,19 +31,18 @@ export type PinFormValues = {
   country: string | null;
   description: string | null;
   type: string | null;
-  images: { uri: string }[]; // array of images with uri
+  localImages: { uri: string }[]; // array of images with uri
+  id: string;
+  lat: number | null;
+  lng: number | null;
 };
 
 type PinFormProps = {
   onSubmit: (formData: PinFormValues) => void;
-  initialValues?: Partial<PinFormValues>;
+  initialValues: PinFormValues;
 };
 
 export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
-  const mergedInitialValues = {
-    ...defaultValues,
-    ...initialValues,
-  };
   const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
     const { data, error } = await ImageManager.getPickedImage();
     if (!error) {
@@ -66,7 +55,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
 
   return (
     <Formik<PinFormValues>
-      initialValues={mergedInitialValues}
+      initialValues={initialValues}
       validationSchema={PinFormSchema}
       onSubmit={onSubmit}>
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
@@ -91,23 +80,23 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                 value={(values as any)[name]}
                 placeholder={`Enter ${label.toLowerCase()}`}
               />
-              {touched.images && errors.images && Array.isArray(errors.images) && (
+              {touched.localImages && errors.localImages && Array.isArray(errors.localImages) && (
                 <Text style={styles.error}>
-                  {(errors.images[0] as any)?.uri ?? 'Invalid image'}
+                  {(errors.localImages[0] as any)?.uri ?? 'Invalid image'}
                 </Text>
               )}
             </View>
           ))}
 
-          <View style={{ marginBottom: 20 }}>
+          <View>
             <Text style={{ marginBottom: 8 }}>Images</Text>
 
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={{ marginBottom: 8 }}>
-              {values.images &&
-                values.images.map((image, idx) => (
+              {values.localImages &&
+                values.localImages.map((image, idx) => (
                   <View key={idx} style={{ position: 'relative', marginRight: 8 }}>
                     <Image
                       key={idx}
@@ -116,7 +105,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                     />
                     <Pressable
                       onPress={() => {
-                        const newImages = values.images.filter((_, i) => i !== idx);
+                        const newImages = values.localImages.filter((_, i) => i !== idx);
                         setFieldValue('images', newImages);
                       }}
                       style={{
@@ -133,22 +122,25 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                   </View>
                 ))}
             </ScrollView>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                onPress={() => appendNewImage(setFieldValue, values.localImages)}
+                style={styles.imagePickerButton}>
+                <MaterialIcons name="image" size={24} color="blue" />
+                <Text style={styles.imagePickerText}>Pick an Image</Text>
+              </TouchableOpacity>
 
-            <Button
-              title="Pick an image"
-              onPress={() => appendNewImage(setFieldValue, values.images)}
-            />
+              <TouchableOpacity onPress={() => handleSubmit()} style={styles.saveButton}>
+                <MaterialIcons name="save" size={24} color="green" />
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Optionally display validation error */}
-            {touched.images && errors.images && (
-              <Text style={styles.error}>{errors.images as string}</Text>
+            {touched.localImages && errors.localImages && (
+              <Text style={styles.error}>{errors.localImages as string}</Text>
             )}
           </View>
-
-          <Button
-            title={initialValues ? 'Update Pin' : 'Create Pin'}
-            onPress={() => handleSubmit()}
-          />
         </View>
       )}
     </Formik>
@@ -168,29 +160,39 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 8,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center', // vertically center buttons
+    alignContent: 'space-between',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#D0E8FF',
+  },
+  imagePickerText: {
+    marginLeft: 8,
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: 'blue',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#e0f7e9',
+    borderRadius: 10,
+  },
+  saveButtonText: {
+    marginLeft: 8,
+    color: 'green',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
-
-/*
-  const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permissionResult.granted) {
-      alert('Permission to access camera roll is required!');
-      return;
-    }
-
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!pickerResult.canceled && pickerResult.assets && pickerResult.assets.length > 0) {
-      const localUriString = pickerResult.assets[0].uri;
-
-      const newImage = { uri: localUriString };
-      setFieldValue('images', [...images, newImage]);
-    } else {
-      console.warn('No images selected or picker was canceled.');
-    }
-  };
-*/

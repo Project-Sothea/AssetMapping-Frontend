@@ -1,25 +1,21 @@
 import { PinFormValues } from '~/components/PinForm';
-import { v4 as uuidv4 } from 'uuid';
 import * as ImageManager from '~/services/ImageManager';
 import { db } from './drizzleDb';
 import { Pin, pins } from '~/db/schema';
 import { callPin } from '~/apis';
 import { eq } from 'drizzle-orm';
 
-export type pinCreationData = PinFormValues & { lng: number; lat: number };
+export type pinCreationData = PinFormValues;
 
 export const createPin = async (data: pinCreationData) => {
   try {
-    const pinId = uuidv4();
-
     //Step 1.1: Save images locally
-    const { success: localURIs } = await ImageManager.saveImagesLocally(pinId, data.images);
+    const { success: localURIs } = await ImageManager.saveImagesLocally(data.id, data.localImages);
 
     //Step 1.2: Upload (dirty) pin locally
     const now = new Date().toISOString();
     const dirtyPin = {
       ...data,
-      id: pinId,
       localImages: JSON.stringify(localURIs),
       images: null,
       status: 'dirty',
@@ -33,7 +29,7 @@ export const createPin = async (data: pinCreationData) => {
     await insertPinLocally(dirtyPin);
 
     //Step 2.1: upload image online
-    const { success: publicURIs } = await ImageManager.saveImagesRemotely(pinId, localURIs);
+    const { success: publicURIs } = await ImageManager.saveImagesRemotely(data.id, localURIs);
 
     //Step 2.2: insert pin remotely
     const remotePin = {
@@ -46,18 +42,20 @@ export const createPin = async (data: pinCreationData) => {
       address: data.address,
       postal_code: data.postalCode,
       state_province: data.stateProvince,
-      id: pinId,
+      id: data.id,
       images: publicURIs,
     };
     await callPin.create(remotePin);
 
     //Step 3: mark pin locally
-    await setImagesFieldLocally(publicURIs, pinId);
-    await markAsSynced(pinId);
+    await setImagesFieldLocally(publicURIs, data.id);
+    await markAsSynced(data.id);
   } catch (e) {
     console.error(e);
   }
 };
+
+export const updatePin = async () => {};
 
 const insertPinLocally = async (pin: Pin) => {
   try {

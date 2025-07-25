@@ -38,17 +38,20 @@ export default function PinDetails({ pin, onUpdate }: PinDetailsProps) {
   );
 }
 
-const intoPinFormValues = (pin: Pin): Partial<PinFormValues> => {
+const intoPinFormValues = (pin: Pin): PinFormValues => {
   return {
-    name: pin.name ?? '',
-    address: pin.address ?? undefined,
-    stateProvince: pin.stateProvince ?? undefined,
-    postalCode: pin.postalCode ?? undefined,
-    country: pin.country ?? undefined,
-    description: pin.description ?? undefined,
-    type: pin.type ?? 'normal',
-    images: pin.localImages
+    id: pin.id,
+    name: pin.name,
+    address: pin.address,
+    stateProvince: pin.stateProvince,
+    postalCode: pin.postalCode,
+    country: pin.country,
+    description: pin.description,
+    type: pin.type,
+    localImages: pin.localImages
       ? JSON.parse(pin.localImages).map((uri: string) => ({ uri }))
-      : undefined,
+      : null,
+    lat: pin.lat,
+    lng: pin.lng,
   };
 };
