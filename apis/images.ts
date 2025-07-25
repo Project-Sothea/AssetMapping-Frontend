@@ -18,3 +18,25 @@ export const storeImage = async (uri: string, filename: string): Promise<string>
 
   return publicUrl;
 };
+
+export const deleteImage = async (publicUrl: string): Promise<boolean> => {
+  try {
+    const baseUrl = supabase.storage.from('pins').getPublicUrl('').data.publicUrl;
+    console.log('baseUrl', baseUrl);
+    // Strip base URL to get path: pins/<pinId>/<filename>
+    const path = publicUrl.replace(baseUrl, '').replace(/^\/+/, '');
+    console.log('path', path);
+
+    const { error } = await supabase.storage.from('pins').remove([path]);
+
+    if (error) {
+      console.error('Failed to delete image:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Unexpected error deleting image:', err);
+    return false;
+  }
+};

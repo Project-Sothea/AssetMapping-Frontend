@@ -46,7 +46,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
     const { data, error } = await ImageManager.getPickedImage();
     if (!error) {
-      setFieldValue('images', [...images, data]);
+      setFieldValue('localImages', [...images, data]);
     } else {
       console.warn(error.message);
     }
@@ -106,7 +106,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                     <Pressable
                       onPress={() => {
                         const newImages = values.localImages.filter((_, i) => i !== idx);
-                        setFieldValue('images', newImages);
+                        setFieldValue('localImages', newImages);
                       }}
                       style={{
                         position: 'absolute',

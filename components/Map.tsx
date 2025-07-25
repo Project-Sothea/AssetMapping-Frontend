@@ -44,18 +44,34 @@ export default function Map() {
       await PinManager.createPin({ ...PinformData });
 
       Alert.alert(`Pin Created!`);
-
-      setModalVisible(false);
-      setDroppedCoords(null);
     } catch (error) {
       console.error('Error uploading images or creating pin:', error);
       Alert.alert('Upload failed', 'Please try again.');
+    } finally {
+      setModalVisible(false);
+      setDroppedCoords(null);
     }
   };
 
   const handlePinUpdate = async (PinformData: PinFormValues) => {
-    if (droppedCoords == null) return;
+    if (!PinformData.lat || !PinformData.lng) {
+      Alert.alert('Error updating pin');
+      return;
+    }
     console.log('updating pin in db...');
+
+    try {
+      console.log(PinformData.name);
+      await PinManager.updatePin({ ...PinformData });
+
+      Alert.alert(`Pin Updated!`);
+    } catch (error) {
+      console.error('Error updating images or creating pin:', error);
+      Alert.alert('Save failed', 'Please try again.');
+    } finally {
+      setDetailsVisible(false);
+      setDroppedCoords(null);
+    }
   };
   const handleOpenPin = async (e: any) => {
     const pressedFeature = e.features?.[0];

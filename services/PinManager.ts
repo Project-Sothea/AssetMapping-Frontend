@@ -3,7 +3,7 @@ import * as ImageManager from '~/services/ImageManager';
 import { db } from './drizzleDb';
 import { Pin, pins } from '~/db/schema';
 import { callPin } from '~/apis';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 export type pinCreationData = PinFormValues;
 
@@ -30,6 +30,7 @@ export const createPin = async (data: pinCreationData) => {
 
     //Step 2.1: upload image online
     const { success: publicURIs } = await ImageManager.saveImagesRemotely(data.id, localURIs);
+    await setImagesFieldLocally(publicURIs, data.id);
 
     //Step 2.2: insert pin remotely
     const remotePin = {
@@ -47,20 +48,95 @@ export const createPin = async (data: pinCreationData) => {
     };
     await callPin.create(remotePin);
 
-    //Step 3: mark pin locally
-    await setImagesFieldLocally(publicURIs, data.id);
+    //Step 3: clean pin locally
     await markAsSynced(data.id);
   } catch (e) {
     console.error(e);
+    throw new Error('Error creating pin');
   }
 };
 
-export const updatePin = async () => {};
+export const updatePin = async (data: PinFormValues) => {
+  try {
+    const pinId = data.id;
+    //Step 1.1: Update images locally
+    const currPin = await getLocalPin(pinId);
+    const currLocalImages: string[] = currPin.localImages ? JSON.parse(currPin.localImages) : [];
+
+    const { success: localURIs } = await ImageManager.updateImagesLocally(
+      pinId,
+      data.localImages,
+      currLocalImages
+    );
+
+    //Step 1.2: Update pin locally
+    const now = new Date().toISOString();
+    const dirtyPin = {
+      ...currPin,
+      ...data,
+      localImages: JSON.stringify(localURIs),
+      images: null,
+      status: 'dirty',
+      updatedAt: now,
+    };
+    await upsertPinLocally(dirtyPin);
+
+    //update images online
+    const currImages: string[] = currPin.images ? JSON.parse(currPin.images) : [];
+
+    const { uploaded: publicURIs } = await ImageManager.updateImagesRemotely(
+      pinId,
+      localURIs,
+      currImages
+    );
+    await setImagesFieldLocally(publicURIs, pinId);
+
+    //update pins remotely
+    const remotePin = {
+      name: dirtyPin.name,
+      lat: dirtyPin.lat,
+      lng: dirtyPin.lng,
+      type: dirtyPin.type,
+      description: dirtyPin.description,
+      country: dirtyPin.country,
+      address: dirtyPin.address,
+      postal_code: dirtyPin.postalCode,
+      state_province: dirtyPin.stateProvince,
+      id: dirtyPin.id,
+      images: publicURIs,
+    };
+
+    await callPin.update(remotePin);
+
+    //clean pin locally
+    await markAsSynced(data.id);
+  } catch (e) {
+    console.error(e);
+    throw new Error('Error updating pin');
+  }
+};
 
 const insertPinLocally = async (pin: Pin) => {
   try {
     const localPin = await db.insert(pins).values(pin).returning();
     return localPin;
+  } catch (e) {
+    console.error('Failed to insert pin:', e);
+    throw new Error('Error creating pin locally');
+  }
+};
+
+const upsertPinLocally = async (pin: Pin) => {
+  try {
+    await db
+      .insert(pins)
+      .values(pin)
+      .onConflictDoUpdate({
+        target: pins.id,
+        set: { ...pin },
+        setWhere: sql`${pin.updatedAt} > ${pins.updatedAt}`,
+      })
+      .returning({ id: pins.id });
   } catch (e) {
     console.error('Failed to insert pin:', e);
     throw new Error('Error creating pin locally');
