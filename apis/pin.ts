@@ -64,7 +64,7 @@ export const upsertAll = async (pins: RePin[]) => {
 
     if (error) throw error;
   } catch (e) {
-    console.error('Failed to update pins:', e);
+    console.error('Failed to upsert pins:', e);
     throw new Error('error in upserting to remote DB');
   }
 };

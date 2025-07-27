@@ -4,6 +4,9 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { pins } from 'db/schema';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from 'drizzle/migrations';
+import { PgTable } from 'drizzle-orm/pg-core';
+import { SQLiteTable } from 'drizzle-orm/sqlite-core';
+import { getTableColumns, SQL, sql } from 'drizzle-orm';
 
 const DATABASE_NAME = 'local.db';
 
@@ -13,3 +16,21 @@ export const db = drizzle(expoDb, { schema: { pins } }); //add in a casing: 'sna
 export function useRunMigrations() {
   return useMigrations(db, migrations);
 }
+
+export const buildConflictUpdateColumns = <
+  T extends PgTable | SQLiteTable,
+  Q extends keyof T['_']['columns'],
+>(
+  table: T,
+  columns: Q[]
+) => {
+  const cls = getTableColumns(table);
+  return columns.reduce(
+    (acc, column) => {
+      const colName = cls[column].name;
+      acc[column] = sql.raw(`excluded.${colName}`);
+      return acc;
+    },
+    {} as Record<Q, SQL>
+  );
+};

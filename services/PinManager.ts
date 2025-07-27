@@ -200,7 +200,7 @@ const deletePinLocally = async (pin: Pin) => {
     localImages: null,
     failureReason: null,
     status: 'deleted',
-    lastSyncedAt: pin.id,
+    lastSyncedAt: now,
     lastFailedSyncAt: null,
     createdAt: pin.createdAt,
     updatedAt: now,
