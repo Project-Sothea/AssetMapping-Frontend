@@ -7,11 +7,11 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
     local: Pin[],
     remote: RePin[]
   ): {
-    toPullToLocal: RePin[];
-    toPushToRemote: Pin[];
+    toLocal: RePin[];
+    toRemote: Pin[];
   } {
-    const toPullToLocal: RePin[] = [];
-    const toPushToRemote: Pin[] = [];
+    const toLocal: RePin[] = [];
+    const toRemote: Pin[] = [];
 
     const allIds = new Set<string>([...local.map((p) => p.id), ...remote.map((p) => p.id)]);
 
@@ -21,13 +21,13 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
 
       //Case 1: New remote item
       if (!localItem && remoteItem) {
-        toPullToLocal.push(remoteItem);
+        toLocal.push(remoteItem);
         continue;
       }
 
       //Case 2: Only exists locally, push it
       if (!remoteItem && localItem) {
-        toPushToRemote.push(localItem);
+        toRemote.push(localItem);
         continue;
       }
 
@@ -36,13 +36,13 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
 
       if (remoteItem.deleted_at && !localItem.deletedAt) {
         // Remote says it's deleted → pull deletion to local
-        toPullToLocal.push(remoteItem);
+        toLocal.push(remoteItem);
         continue;
       }
 
       if (localItem.deletedAt && !remoteItem.deleted_at) {
         // Local says it's deleted → push deletion to remote
-        toPushToRemote.push(localItem);
+        toRemote.push(localItem);
         continue;
       }
 
@@ -50,20 +50,24 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
       const remoteTime = new Date(remoteItem.deleted_at ?? remoteItem.updated_at!).getTime();
 
       if (remoteTime > localTime) {
-        toPullToLocal.push(remoteItem);
+        toLocal.push(remoteItem);
       } else if (localTime > remoteTime) {
-        toPushToRemote.push(localItem);
+        toRemote.push(localItem);
       } else {
+        if (localItem.status === 'dirty') {
+          toRemote.push(localItem);
+        } else {
+        }
       }
     }
-    return { toPullToLocal, toPushToRemote };
+    return { toLocal, toRemote };
   }
 
-  convertToRemote(remoteItems: RePin[]): Pin[] {
+  convertToLocal(remoteItems: RePin[]): Pin[] {
     return remoteItems.map((item) => PinSyncStrategy.fromRePin(item));
   }
 
-  convertToLocal(pins: Pin[]): RePin[] {
+  convertToRemote(pins: Pin[]): RePin[] {
     return pins.map((item) => PinSyncStrategy.toRePin(item));
   }
 

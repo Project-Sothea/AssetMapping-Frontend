@@ -2,7 +2,6 @@ import SyncStrategy from './interfaces/SyncStrategy';
 import LocalRepository from './interfaces/LocalRepository';
 import RemoteRepository from './interfaces/RemoteRepository';
 
-//TODO: Turn into Generic to handle both forms and pins
 class SyncManager<LocalType, RemoteType> {
   private static instances: Map<string, SyncManager<any, any>> = new Map();
   private isSyncing = false; //handle deduplication
@@ -33,39 +32,23 @@ class SyncManager<LocalType, RemoteType> {
     try {
       if (this.isSyncing) return;
       this.setSyncStart();
-      await this.pullToLocalDB();
-      await this.pushToRemoteDB();
+      const remoteItems = await this.remoteRepo.fetchAll();
+      const localItems = await this.localRepo.fetchAll();
+      const { toLocal, toRemote } = this.syncStrategy.resolve(localItems, remoteItems);
+
+      const formattedToLocal = this.syncStrategy.convertToLocal(toLocal);
+      const formattedToRemote = this.syncStrategy.convertToRemote(toRemote);
+
+      await this.localRepo.upsertAll(formattedToLocal);
+      await this.remoteRepo.upsertAll(formattedToRemote);
+
+      await this.localRepo.markAsSynced(toRemote);
+
       this.setSyncSuccess();
       console.log('sync done', new Date());
     } catch (e: any) {
-      console.error(e);
+      console.error('SyncManager: syncNow()', e);
       this.setSyncFailure(e);
-    }
-  }
-
-  private async pullToLocalDB() {
-    try {
-      const remoteItems = await this.remoteRepo.fetchAll();
-      console.log('pulled from remote items: ', remoteItems.length);
-      if (remoteItems.length === 0) return;
-      const converted = this.syncStrategy.convertToRemote(remoteItems);
-      await this.localRepo.upsertFromRemote(converted);
-    } catch (e) {
-      console.error(e);
-      throw new Error('Failed to pull data from remote');
-    }
-  }
-  private async pushToRemoteDB() {
-    try {
-      const dirty = await this.localRepo.getDirty();
-      console.log('pulled from local items: ', dirty.length);
-      if (dirty.length === 0) return;
-      const formatted = this.syncStrategy.convertToLocal(dirty);
-      await this.remoteRepo.upsertAll(formatted);
-      await this.localRepo.markAsSynced(dirty);
-    } catch (e) {
-      console.error(e);
-      throw new Error('Failed to push data to remote');
     }
   }
 

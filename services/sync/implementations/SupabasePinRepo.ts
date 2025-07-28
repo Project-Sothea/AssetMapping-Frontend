@@ -9,6 +9,7 @@ export class SupabasePinRepo implements RemoteRepository<RePin> {
   }
 
   async upsertAll(pins: RePin[]): Promise<void> {
+    if (!pins || pins.length === 0) return;
     await callPin.upsertAll(pins);
     return;
   }

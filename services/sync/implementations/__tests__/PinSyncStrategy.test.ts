@@ -1,125 +1,114 @@
 import { Pin, RePin } from '~/utils/globalTypes';
 import { PinSyncStrategy } from '../PinSyncStrategy';
-
-const makePin = (overrides: Partial<Pin>): Pin => ({
-  id: 'default',
-  name: null,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-  deletedAt: null,
-  failureReason: null,
-  status: null,
-  lastSyncedAt: null,
-  lastFailedSyncAt: null,
-  lat: null,
-  lng: null,
-  type: null,
-  address: null,
-  stateProvince: null,
-  postalCode: null,
-  country: null,
-  description: null,
-  images: null,
-  localImages: null,
-  ...overrides,
-});
-
-const makeRePin = (overrides: Partial<RePin>): RePin => ({
-  id: 'default',
-  name: null,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  deleted_at: null,
-  description: null,
-  images: null,
-  lat: null,
-  lng: null,
-  type: null,
-  address: null,
-  state_province: null,
-  postal_code: null,
-  country: null,
-  ...overrides,
-});
+import { makePin, makeRePin } from '~/utils/testUtils';
 
 describe('PinSyncStrategy', () => {
   const strategy = new PinSyncStrategy();
 
-  test('pulls remote-only pins', () => {
-    const remote: RePin[] = [makeRePin({ id: '1', name: 'Remote only' })];
+  test('resolves a new remote pin properly', () => {
+    const remote: RePin[] = [
+      makeRePin({ id: '1', name: 'new Remote', updated_at: '2024-01-01T00:00:00Z' }),
+    ];
     const local: Pin[] = [];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPullToLocal).toEqual(remote);
-    expect(result.toPushToRemote).toEqual([]);
+    expect(result.toLocal).toEqual(remote);
+    expect(result.toRemote).toEqual([]);
   });
 
-  test('pushes local-only pins', () => {
-    const local = [makePin({ id: '1', name: 'Local only' })];
+  test('resolves a new local pin properly', () => {
     const remote: RePin[] = [];
+    const local: Pin[] = [
+      makePin({ id: '1', name: 'new Local', updatedAt: '2024-01-01T00:00:00Z', status: 'dirty' }),
+    ];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPushToRemote).toEqual(local);
-    expect(result.toPullToLocal).toEqual([]);
+    expect(result.toLocal).toEqual([]);
+    expect(result.toRemote).toEqual(local);
   });
 
   test('last-write-wins: remote is newer', () => {
     const id = '1';
-    const local = [makePin({ id, name: 'Old local', updatedAt: '2023-01-01T00:00:00Z' })];
+    const local = [
+      makePin({ id, name: 'Old local', updatedAt: '2023-01-01T00:00:00Z', status: 'synced' }),
+    ];
     const remote = [makeRePin({ id, name: 'New remote', updated_at: '2024-01-01T00:00:00Z' })];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPullToLocal).toEqual([remote[0]]);
-    expect(result.toPushToRemote).toEqual([]);
+    expect(result.toLocal).toEqual([remote[0]]);
+    expect(result.toRemote).toEqual([]);
   });
 
   test('last-write-wins: local is newer', () => {
     const id = '1';
-    const local = [makePin({ id, name: 'New local', updatedAt: '2024-01-01T00:00:00Z' })];
+    const local = [
+      makePin({ id, name: 'New local', updatedAt: '2024-01-01T00:00:00Z', status: 'synced' }),
+    ];
     const remote = [makeRePin({ id, name: 'Old remote', updated_at: '2023-01-01T00:00:00Z' })];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPullToLocal).toEqual([]);
-    expect(result.toPushToRemote).toEqual([local[0]]);
+    expect(result.toLocal).toEqual([]);
+    expect(result.toRemote).toEqual([local[0]]);
   });
 
   test('deletion wins over update: remote deleted, local updated', () => {
     const id = '1';
     const local = [
-      makePin({ id, name: 'Still here', updatedAt: '2024-06-01T00:00:00Z', deletedAt: null }),
+      makePin({
+        id,
+        name: 'Still here',
+        updatedAt: '2024-06-01T00:00:00Z',
+        deletedAt: null,
+        status: 'dirty',
+      }),
     ];
     const remote = [makeRePin({ id, deleted_at: '2024-07-01T00:00:00Z' })];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPullToLocal).toEqual([remote[0]]);
-    expect(result.toPushToRemote).toEqual([]);
+    expect(result.toLocal).toEqual([remote[0]]);
+    expect(result.toRemote).toEqual([]);
   });
 
   test('deletion wins over update: local deleted, remote updated', () => {
     const id = '1';
-    const local = [makePin({ id, deletedAt: '2024-07-01T00:00:00Z' })];
+    const local = [makePin({ id, deletedAt: '2024-07-01T00:00:00Z', status: 'dirty' })];
     const remote = [makeRePin({ id, updated_at: '2024-06-01T00:00:00Z', deleted_at: null })];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPushToRemote).toEqual([local[0]]);
-    expect(result.toPullToLocal).toEqual([]);
+    expect(result.toLocal).toEqual([]);
+    expect(result.toRemote).toEqual([local[0]]);
   });
 
-  test('equal timestamps = no sync', () => {
+  test('equal timestamps & local is "synced" = no sync', () => {
     const id = '1';
-    const local = [makePin({ id, name: 'Same', updatedAt: '2024-01-01T00:00:00Z' })];
+    const local = [
+      makePin({ id, name: 'Same', updatedAt: '2024-01-01T00:00:00Z', status: 'synced' }),
+    ];
     const remote = [makeRePin({ id, name: 'Same', updated_at: '2024-01-01T00:00:00Z' })];
 
     const result = strategy.resolve(local, remote);
 
-    expect(result.toPushToRemote).toEqual([]);
-    expect(result.toPullToLocal).toEqual([]);
+    expect(result.toLocal).toEqual([]);
+    expect(result.toRemote).toEqual([]);
+  });
+
+  test('equal timestamps & local is "dirty" = sync', () => {
+    const id = '1';
+    const local = [
+      makePin({ id, name: 'Same', updatedAt: '2024-01-01T00:00:00Z', status: 'dirty' }),
+    ];
+    const remote = [makeRePin({ id, name: 'Same', updated_at: '2024-01-01T00:00:00Z' })];
+
+    const result = strategy.resolve(local, remote);
+
+    expect(result.toLocal).toEqual([]);
+    expect(result.toRemote).toEqual([local[0]]);
   });
 
   describe('fromRePin', () => {
@@ -219,7 +208,7 @@ describe('PinSyncStrategy', () => {
       expect(result).toEqual(expected);
     });
 
-    it('returns null for images if local.images is null', () => {
+    it('returns null for images if images (local) is null', () => {
       const local = makePin({ images: null });
       const result = PinSyncStrategy.toRePin(local);
       expect(result.images).toBeNull();

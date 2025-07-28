@@ -12,17 +12,9 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
     }));
   }
 
-  public async upsertFromRemote(items: Pin[]) {
-    const now = new Date().toISOString();
-    const pins = items.map((item) => ({
-      ...item,
-      status: 'synced',
-      lastSyncedAt: now,
-    }));
-    await this.upsertAll(pins);
-  }
-
+  //upserts data (in Pin format) into local db from a remote source
   async upsertAll(items: Pin[]): Promise<void> {
+    if (!items || items.length === 0) return;
     const now = new Date().toISOString();
 
     await db
@@ -52,6 +44,8 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
             'status',
           ]),
           updatedAt: now,
+          status: 'synced',
+          lastSyncedAt: now,
         },
       });
 
@@ -65,5 +59,10 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
     const now = new Date().toISOString();
 
     await db.update(pins).set({ lastSyncedAt: now }).where(inArray(pins.id, ids));
+  }
+
+  async fetchAll(): Promise<Pin[]> {
+    const localData = await db.select().from(pins);
+    return localData;
   }
 }

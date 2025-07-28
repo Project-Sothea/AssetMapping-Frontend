@@ -3,9 +3,9 @@ export default interface SyncStrategy<LocalType, RemoteType> {
     local: LocalType[],
     remote: RemoteType[]
   ): {
-    toPullToLocal: RemoteType[];
-    toPushToRemote: LocalType[];
+    toLocal: RemoteType[];
+    toRemote: LocalType[];
   };
-  convertToRemote(remoteItems: RemoteType[]): LocalType[];
-  convertToLocal(pins: LocalType[]): RemoteType[];
+  convertToLocal(remoteItems: RemoteType[]): LocalType[];
+  convertToRemote(pins: LocalType[]): RemoteType[];
 }
