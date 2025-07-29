@@ -23,6 +23,12 @@ describe('SyncManager', () => {
       upsertAll: jest.fn(),
       getDirty: jest.fn(),
       markAsSynced: jest.fn(),
+      get: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+      updateFieldsBatch: jest.fn(),
     };
 
     remoteRepo = {

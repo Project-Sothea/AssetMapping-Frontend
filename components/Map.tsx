@@ -10,9 +10,14 @@ import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
-import * as PinManager from '~/services/PinManager';
+// import * as PinManager from '~/services/PinManager';
 import { Pin } from '~/db/schema';
+import { PinManager } from '~/services/PinManager';
+import { DrizzlePinRepo } from '~/services/sync/implementations/DrizzlePinRepo';
+import { pinSyncManager } from '~/services/sync/pinSyncManager';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
+
+const pinManager = new PinManager(new DrizzlePinRepo());
 
 export default function Map() {
   const { data: pins } = useFetchLocalPins();
@@ -33,7 +38,7 @@ export default function Map() {
     }
   };
 
-  const handlePinSubmit = async (PinformData: PinFormValues) => {
+  const handlePinCreate = async (PinformData: PinFormValues) => {
     if (!PinformData.lat || !PinformData.lng) {
       Alert.alert('Error creating pin');
       return;
@@ -41,8 +46,8 @@ export default function Map() {
 
     console.log('creating new pin in db...');
     try {
-      await PinManager.createPin({ ...PinformData });
-
+      await pinManager.createLocally(PinformData);
+      await pinSyncManager.syncNow();
       Alert.alert(`Pin Created!`);
     } catch (error) {
       console.error('Error uploading images or creating pin:', error);
@@ -59,9 +64,11 @@ export default function Map() {
       return;
     }
     console.log('updating pin in db...');
+    console.log(PinformData);
 
     try {
-      await PinManager.updatePin({ ...PinformData });
+      await pinManager.updateLocally(PinformData);
+      await pinSyncManager.syncNow();
 
       Alert.alert(`Pin Updated!`);
     } catch (error) {
@@ -81,7 +88,8 @@ export default function Map() {
     console.log('deleting pin in db...');
 
     try {
-      await PinManager.deletePin(pin);
+      await pinManager.deleteLocally(pin);
+      await pinSyncManager.syncNow();
 
       Alert.alert(`Pin Deleted!`);
     } catch (error) {
@@ -151,7 +159,7 @@ export default function Map() {
             setModalVisible(false);
             setDroppedCoords(null);
           }}
-          onSubmit={handlePinSubmit}
+          onSubmit={handlePinCreate}
           coords={{ lng: droppedCoords[0], lat: droppedCoords[1] }}
         />
       )}

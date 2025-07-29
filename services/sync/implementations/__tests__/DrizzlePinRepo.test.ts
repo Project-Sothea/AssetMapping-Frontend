@@ -104,15 +104,22 @@ describe('DrizzlePinRepo', () => {
 
   it('marks pins as synced', async () => {
     const mockWhere = jest.fn().mockResolvedValue(undefined);
+
+    let setArg: any = null;
+    const mockSet = jest.fn((arg) => {
+      setArg = arg;
+      return { where: mockWhere };
+    });
+
     (db.update as jest.Mock).mockReturnValue({
-      set: () => ({
-        where: mockWhere,
-      }),
+      set: mockSet,
     });
 
     await repo.markAsSynced([samplePin]);
+
     expect(db.update).toHaveBeenCalledWith(pins);
     expect(mockWhere).toHaveBeenCalled();
+    expect(setArg.status).toBe('synced');
   });
 
   it('does nothing when markAsSynced is passed empty array', async () => {

@@ -1,6 +1,7 @@
 import SyncStrategy from './interfaces/SyncStrategy';
 import LocalRepository from './interfaces/LocalRepository';
 import RemoteRepository from './interfaces/RemoteRepository';
+import { ImageSyncService } from './ImageSyncService';
 
 class SyncManager<LocalType, RemoteType> {
   private static instances: Map<string, SyncManager<any, any>> = new Map();
@@ -13,10 +14,11 @@ class SyncManager<LocalType, RemoteType> {
     key: 'pin' | 'form',
     syncStrategy: SyncStrategy<LocalType, RemoteType>,
     localRepo: LocalRepository<LocalType>,
-    remoteRepo: RemoteRepository<RemoteType>
+    remoteRepo: RemoteRepository<RemoteType>,
+    imageSyncService?: ImageSyncService<LocalType>
   ): SyncManager<LocalType, RemoteType> {
     if (!SyncManager.instances.has(key)) {
-      const instance = new SyncManager(syncStrategy, localRepo, remoteRepo);
+      const instance = new SyncManager(syncStrategy, localRepo, remoteRepo, imageSyncService);
       SyncManager.instances.set(key, instance);
     }
     return SyncManager.instances.get(key)!;
@@ -25,23 +27,36 @@ class SyncManager<LocalType, RemoteType> {
   private constructor(
     private syncStrategy: SyncStrategy<LocalType, RemoteType>,
     private localRepo: LocalRepository<LocalType>,
-    private remoteRepo: RemoteRepository<RemoteType>
+    private remoteRepo: RemoteRepository<RemoteType>,
+    private imageSyncService?: ImageSyncService<LocalType>
   ) {}
 
   public async syncNow() {
     try {
       if (this.isSyncing) return;
       this.setSyncStart();
+      console.log('syncing...');
       const remoteItems = await this.remoteRepo.fetchAll();
+      console.log('remote fetched OK');
       const localItems = await this.localRepo.fetchAll();
+      console.log('local fetched OK');
       const { toLocal, toRemote } = this.syncStrategy.resolve(localItems, remoteItems);
+      console.log('toLocal', toLocal);
+      console.log('toRemote', toRemote);
 
-      const formattedToLocal = this.syncStrategy.convertToLocal(toLocal);
       const formattedToRemote = this.syncStrategy.convertToRemote(toRemote);
+      const formattedToLocal = this.syncStrategy.convertToLocal(toLocal);
+
+      console.log('syncImagesLocal ok');
 
       await this.localRepo.upsertAll(formattedToLocal);
       await this.remoteRepo.upsertAll(formattedToRemote);
 
+      if (this.imageSyncService) {
+        const success = await this.imageSyncService.syncRemoteImagesToLocal(formattedToLocal);
+        await this.localRepo.updateFieldsBatch(success);
+      }
+      await this.localRepo.markAsSynced(formattedToLocal);
       await this.localRepo.markAsSynced(toRemote);
 
       this.setSyncSuccess();

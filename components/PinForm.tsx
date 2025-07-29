@@ -3,7 +3,6 @@ import * as Yup from 'yup';
 import {
   View,
   TextInput,
-  Button,
   Text,
   StyleSheet,
   ScrollView,
@@ -12,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import * as ImageManager from '~/services/ImageManager';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
@@ -31,7 +30,7 @@ export type PinFormValues = {
   country: string | null;
   description: string | null;
   type: string | null;
-  localImages: { uri: string }[]; // array of images with uri
+  localImages: string[]; // array of images with uri
   id: string;
   lat: number | null;
   lng: number | null;
@@ -43,7 +42,7 @@ type PinFormProps = {
 };
 
 export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
-  const appendNewImage = async (setFieldValue: any, images: { uri: string }[]) => {
+  const appendNewImage = async (setFieldValue: any, images: string[]) => {
     const { data, error } = await ImageManager.getPickedImage();
     if (!error) {
       setFieldValue('localImages', [...images, data]);
@@ -100,7 +99,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                   <View key={idx} style={{ position: 'relative', marginRight: 8 }}>
                     <Image
                       key={idx}
-                      source={{ uri: image.uri }}
+                      source={{ uri: image }}
                       style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
                     />
                     <Pressable

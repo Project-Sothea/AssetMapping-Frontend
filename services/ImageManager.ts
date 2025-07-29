@@ -34,7 +34,7 @@ export async function getPickedImage() {
 
 export async function saveImagesLocally(
   pinId: string,
-  images: { uri: string }[]
+  images: string[]
 ): Promise<{ success: string[]; fail: string[] }> {
   if (!images || images.length === 0) {
     return { success: [], fail: [] };
@@ -52,21 +52,21 @@ export async function saveImagesLocally(
   }
 
   for (let i = 0; i < images.length; i++) {
-    const { uri } = images[i];
+    const img = images[i];
     try {
       const filename = generateNewFileName();
       const localUri = `${FileSystem.documentDirectory}pins/${pinId}/${filename}`;
 
       // Copy the file from gallery URI to app local storage
       await FileSystem.copyAsync({
-        from: uri,
+        from: img,
         to: localUri,
       });
 
       result.success.push(localUri);
     } catch (error) {
-      console.warn(`Failed to save image ${uri} locally:`, error);
-      result.fail.push(uri);
+      console.warn(`Failed to save image ${img} locally:`, error);
+      result.fail.push(img);
     }
   }
 
@@ -79,7 +79,7 @@ export async function saveImagesRemotely(pinId: string, images: string[] | null)
   }
 
   const results = await Promise.allSettled(
-    images.map((image, idx) => {
+    images.map((image) => {
       const filename = `${pinId}/${extractFilenameFromLocalUri(image)}`;
       return callImages.storeImage(image, filename);
     })
@@ -101,9 +101,19 @@ export async function saveImagesRemotely(pinId: string, images: string[] | null)
 
 export async function updateImagesLocally(
   pinId: string,
-  newImages: { uri: string }[], // new images from user (could be local or remote uris)
-  existingLocalUris: string[] // previously saved local URIs
+  newImages: string[] = [], // new images from user (could be from photos or remote images)
+  existingLocalUris: string[] = [] // previously saved local Images
 ): Promise<{ success: string[]; fail: string[] }> {
+  if (!newImages) {
+    console.warn('newImages is null or undefined');
+    return { success: [], fail: [] };
+  }
+
+  if (!Array.isArray(existingLocalUris)) {
+    console.warn('existingLocalUris is not an array:', existingLocalUris);
+    existingLocalUris = [];
+  }
+
   const result: { success: string[]; fail: string[] } = { success: [], fail: [] };
   const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
 
@@ -114,9 +124,11 @@ export async function updateImagesLocally(
   }
 
   // Find which existing local files are no longer needed
-  const newUrisSet = new Set(newImages.map((img) => img.uri));
+  const newUrisSet = new Set(newImages);
   const toDelete = existingLocalUris.filter((uri) => !newUrisSet.has(uri));
 
+  console.log('newImages', newImages);
+  console.log('toDelete', toDelete);
   // Delete removed files
   await Promise.all(
     toDelete.map(async (uri) => {
@@ -134,21 +146,36 @@ export async function updateImagesLocally(
   // Now process all newImages: if they already exist locally, keep; else copy them
   for (let i = 0; i < newImages.length; i++) {
     const img = newImages[i];
-    if (existingLocalUris.includes(img.uri)) {
+    console.log('ImageManager img', img);
+    if (existingLocalUris.includes(img)) {
       // Already saved locally, keep it
-      updatedLocalUris.push(img.uri);
-      result.success.push(img.uri);
+      updatedLocalUris.push(img);
+      result.success.push(img);
     } else {
       // New image, copy it locally
       try {
         const filename = generateNewFileName();
         const localUri = `${directory}${filename}`;
-        await FileSystem.copyAsync({ from: img.uri, to: localUri });
+
+        if (img.startsWith('file://')) {
+          // local file: copy
+          await FileSystem.copyAsync({ from: img, to: localUri });
+        } else if (img.startsWith('http://') || img.startsWith('https://')) {
+          // remote URL: download
+          const downloadRes = await FileSystem.downloadAsync(img, localUri);
+          if (downloadRes.status !== 200) {
+            throw new Error(`Failed to download image: HTTP status ${downloadRes.status}`);
+          }
+        } else {
+          // unknown URI scheme
+          throw new Error(`Unsupported URI scheme for image: ${img}`);
+        }
+
         updatedLocalUris.push(localUri);
         result.success.push(localUri);
       } catch (err) {
-        console.warn('Failed to copy new image locally:', img.uri, err);
-        result.fail.push(img.uri);
+        console.warn('Failed to copy new image locally:', img, err);
+        result.fail.push(img);
       }
     }
   }

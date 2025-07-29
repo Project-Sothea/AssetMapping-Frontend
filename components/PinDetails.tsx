@@ -25,9 +25,7 @@ const intoPinFormValues = (pin: Pin): PinFormValues => {
     country: pin.country,
     description: pin.description,
     type: pin.type,
-    localImages: pin.localImages
-      ? JSON.parse(pin.localImages).map((uri: string) => ({ uri }))
-      : null,
+    localImages: pin.localImages ? JSON.parse(pin.localImages) : null,
     lat: pin.lat,
     lng: pin.lng,
   };

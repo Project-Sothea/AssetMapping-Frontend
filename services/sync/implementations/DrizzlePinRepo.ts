@@ -58,11 +58,88 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
 
     const now = new Date().toISOString();
 
-    await db.update(pins).set({ lastSyncedAt: now }).where(inArray(pins.id, ids));
+    await db
+      .update(pins)
+      .set({
+        lastSyncedAt: now,
+        updatedAt: now,
+        status: 'synced',
+        lastFailedSyncAt: null,
+        failureReason: null, // clear any previous error
+      })
+      .where(inArray(pins.id, ids));
   }
 
   async fetchAll(): Promise<Pin[]> {
     const localData = await db.select().from(pins);
     return localData;
+  }
+
+  async get(id: string): Promise<Pin> {
+    const pin = await db
+      .select()
+      .from(pins)
+      .where(eq(pins.id, id))
+      .limit(1)
+      .then((rows) => rows[0] || null);
+
+    return pin;
+  }
+  async create(item: Pin): Promise<void> {
+    await db.insert(pins).values(item);
+  }
+
+  async update(pin: Pin): Promise<void> {
+    const now = new Date().toISOString();
+    await db
+      .update(pins)
+      .set({
+        ...pin,
+        updatedAt: now,
+      })
+      .where(eq(pins.id, pin.id));
+  }
+
+  async upsert(pin: Pin): Promise<void> {
+    const now = new Date().toISOString();
+
+    await db
+      .insert(pins)
+      .values(pin)
+      .onConflictDoUpdate({
+        target: pins.id,
+        set: {
+          ...pin,
+          updatedAt: now,
+        },
+      });
+  }
+
+  async delete(id: string): Promise<void> {
+    const now = new Date().toISOString();
+    await db
+      .update(pins)
+      .set({
+        name: null,
+        lat: null,
+        lng: null,
+        type: null,
+        address: null,
+        description: null,
+        updatedAt: now,
+        deletedAt: now,
+        status: 'dirty',
+        images: null,
+        localImages: null,
+      })
+      .where(eq(pins.id, id));
+  }
+
+  async updateFieldsBatch(updates: { id: string; fields: Partial<Pin> }[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (const update of updates) {
+        await tx.update(pins).set(update.fields).where(eq(pins.id, update.id));
+      }
+    });
   }
 }
