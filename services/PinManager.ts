@@ -29,8 +29,10 @@ export class PinManager implements EntityManager<PinFormValues, PinFormValues, P
     };
 
     await this.localRepo.create(dirtyPin);
+    console.log('createLocally: localURIs', localURIs);
 
     const { success: publicURIs } = await ImageManager.saveImagesRemotely(pinId, localURIs);
+    console.log('success', publicURIs);
     await setImagesFieldLocally(publicURIs, pinId);
   }
 

@@ -18,7 +18,7 @@ export async function getPickedImage() {
 
   if (!pickerObj.canceled && pickerObj.assets && pickerObj.assets.length > 0) {
     const galleryUriString = pickerObj.assets[0].uri;
-    const newImage = { uri: galleryUriString };
+    const newImage = galleryUriString;
     return { data: newImage, error: null };
   }
   return { data: null, error: new Error('No images selected or picker was canceled') };
@@ -37,6 +37,7 @@ export async function saveImagesLocally(
   images: string[]
 ): Promise<{ success: string[]; fail: string[] }> {
   if (!images || images.length === 0) {
+    console.log('saveImagesLocally: no images');
     return { success: [], fail: [] };
   }
 
@@ -53,6 +54,7 @@ export async function saveImagesLocally(
 
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
+    console.log('saveImagesLocally: img', i, ':', img);
     try {
       const filename = generateNewFileName();
       const localUri = `${FileSystem.documentDirectory}pins/${pinId}/${filename}`;
@@ -62,8 +64,10 @@ export async function saveImagesLocally(
         from: img,
         to: localUri,
       });
+      console.log('saveImagesLocally: result of img', i, ':', localUri);
 
       result.success.push(localUri);
+      console.log('Updated success array:', result.success);
     } catch (error) {
       console.warn(`Failed to save image ${img} locally:`, error);
       result.fail.push(img);
