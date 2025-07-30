@@ -4,7 +4,6 @@ import { pinSyncManager } from '~/services/sync/pinSyncManager';
 export const useRemoteToLocalSync = () => {
   useEffect(() => {
     console.log('begin Interval');
-    pinSyncManager.syncNow();
     const interval = setInterval(
       () => {
         pinSyncManager.syncNow();

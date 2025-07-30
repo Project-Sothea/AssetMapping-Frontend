@@ -2,6 +2,7 @@ import SyncStrategy from './interfaces/SyncStrategy';
 import LocalRepository from './interfaces/LocalRepository';
 import RemoteRepository from './interfaces/RemoteRepository';
 import { ImageSyncService } from './ImageSyncService';
+import { ConnectivityManager } from '../ConnectivityManager';
 
 class SyncManager<LocalType, RemoteType> {
   private static instances: Map<string, SyncManager<any, any>> = new Map();
@@ -33,6 +34,11 @@ class SyncManager<LocalType, RemoteType> {
 
   public async syncNow() {
     try {
+      if (!ConnectivityManager.getInstance().getConnectionStatus()) {
+        console.log('Skipping sync: offline');
+        return;
+      }
+
       if (this.isSyncing) return;
       this.setSyncStart();
       console.log('syncing...');
@@ -103,97 +109,3 @@ class SyncManager<LocalType, RemoteType> {
 }
 
 export default SyncManager;
-
-/*
-          id: pins.id,
-          name: pins.name,
-          lat: pins.lat,
-          lng: pins.lng,
-          type: pins.type,
-          address: pins.address,
-          state_province: pins.stateProvince,
-          postal_code: pins.postalCode,
-          country: pins.country,
-          description: pins.description,
-          images: pins.images,
-          updated_at: pins.updatedAt,
-          deleted_at: pins.deletedAt,
-          created_at: pins.createdAt,
-
-
-*/
-
-// private async initSubscriptions() {
-//   this.appState = AppState.currentState;
-//   const netInfoState = await NetInfo.fetch();
-//   this.hasConnection = !!netInfoState.isConnected && !!netInfoState.isInternetReachable;
-
-//   // 2. Setup listeners AFTER initial state
-//   this.AppSubscription = AppState.addEventListener('change', this.setAppState.bind(this));
-//   this.unsubscribe = NetInfo.addEventListener(this.setConnected.bind(this));
-
-//   // 3. Start or not depending on readiness
-//   this.handleStateChange();
-// }
-// private setAppState(state: AppStateStatus) {
-//   console.log('app state: ', state);
-//   this.appState = state;
-//   this.handleStateChange();
-// }
-
-// private setConnected(state: NetInfoState) {
-//   console.log('internet state: ', state.isConnected);
-//   this.hasConnection = !!state.isConnected && !!state.isInternetReachable;
-//   this.handleStateChange();
-// }
-
-// private isReadyToSync() {
-//   return this.appState === 'active' && this.hasConnection;
-// }
-
-// private handleStateChange() {
-//   if (this.isReadyToSync()) {
-//     this.startPolling();
-//   } else {
-//     this.dispose();
-//   }
-// }
-
-//   public async manualSync() {
-//   if (!this.isReadyToSync() || this.isSyncing) return;
-//   await this.pullFromRemote();
-// }
-
-// public dispose() {
-//   console.log('disposing', this.timerId);
-//   this.stopPolling(); // clearInterval
-//   this.AppSubscription.remove();
-//   this.unsubscribe();
-// }
-
-//   public async startPolling() {
-//   if (this.timerId) {
-//     console.log('polling already active. skip setInterval');
-//     return this.timerId;
-//   }
-//   console.log('Starting syncManager polling...');
-//   // if (this.isReadyToSync()) {
-//   //   await this.pullFromRemote();
-//   // }
-//   this.timerId = setInterval(() => {
-//     //   if (this.isReadyToSync()) {
-//     //     this.pullFromRemote();
-//     //   }
-//     console.log('ran: ', this.timerId);
-//   }, this.syncDelayMs);
-
-//   return this.timerId;
-// }
-
-// public stopPolling() {
-//   if (this.timerId) {
-//     console.log('clearing:', this.timerId);
-//     clearInterval(this.timerId);
-//     this.timerId = null;
-//   }
-// }
