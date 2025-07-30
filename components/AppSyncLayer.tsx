@@ -1,6 +1,6 @@
 // components/AppSyncLayer.tsx
-
 import { useEffect } from 'react';
+import { useConnectivityMonitor } from '~/hooks/useConnectivityMonitor';
 import { useRemoteToLocalSync } from '~/hooks/useRemoteToLocalSync';
 import { ConnectivityManager } from '~/services/ConnectivityManager';
 import { pinSyncManager } from '~/services/sync/pinSyncManager';
@@ -21,6 +21,8 @@ export const AppSyncLayer = () => {
       manager.unsubscribe(handleConnectivityChange);
     };
   }, []);
+
+  // useConnectivityMonitor(); // <-- Add this
 
   useRemoteToLocalSync();
   return null;

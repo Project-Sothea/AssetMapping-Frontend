@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
+import { SyncStatusBar } from '~/components/SyncStatusBar';
 
 export default function mapLayout() {
   return (
@@ -7,7 +7,8 @@ export default function mapLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: 'Map',
+          headerTitle: () => <SyncStatusBar />,
+          headerTitleAlign: 'center',
         }}
       />
       <Stack.Screen

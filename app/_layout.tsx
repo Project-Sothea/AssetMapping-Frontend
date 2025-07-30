@@ -12,6 +12,7 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '~/drizzle/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { AppSyncLayer } from '~/components/AppSyncLayer';
+import { SyncStatusBar } from '~/components/SyncStatusBar';
 
 export const DATABASE_NAME = 'local.db';
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
@@ -63,25 +64,29 @@ export default function Layout() {
           <QueryProvider>
             <SafeAreaProvider>
               <AppSyncLayer />
-              <Tabs>
+              <Tabs
+                screenOptions={{
+                  headerTitle: () => <SyncStatusBar />,
+                  headerTitleAlign: 'center',
+                }}>
                 <Tabs.Screen
                   name="index"
                   options={{
-                    title: 'Home',
+                    // Remove the default title because it's replaced by SyncStatusHeader
                     tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="home" color={color} />,
                   }}
                 />
                 <Tabs.Screen
                   name="map"
                   options={{
-                    headerShown: false,
+                    headerShown: false, // keeping this as you had it
                     tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="map" color={color} />,
                   }}
                 />
                 <Tabs.Screen
                   name="download"
                   options={{
-                    title: 'MapManager',
+                    // Remove the title here as well
                     tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="book" color={color} />,
                   }}
                 />
