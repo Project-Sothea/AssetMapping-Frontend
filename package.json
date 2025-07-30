@@ -22,6 +22,7 @@
     "@turf/helpers": "^7.2.0",
     "babel-plugin-inline-import": "^3.0.0",
     "base64-arraybuffer": "^1.0.2",
+    "blob-util": "^2.0.2",
     "drizzle-orm": "^0.44.3",
     "expo": "^53.0.11",
     "expo-checkbox": "^4.1.4",

@@ -139,10 +139,14 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
   }
 
   async updateFieldsBatch(updates: { id: string; fields: Partial<Pin> }[]): Promise<void> {
-    await db.transaction(async (tx) => {
-      for (const update of updates) {
-        await tx.update(pins).set(update.fields).where(eq(pins.id, update.id));
-      }
-    });
+    // await db.transaction(async (tx) => {
+    //   for (const update of updates) {
+    //     await tx.update(pins).set(update.fields).where(eq(pins.id, update.id));
+    //   }
+    // });
+    for (const update of updates) {
+      console.log('updating local images field');
+      await db.update(pins).set(update.fields).where(eq(pins.id, update.id));
+    }
   }
 }

@@ -44,8 +44,8 @@ class SyncManager<LocalType, RemoteType> {
       console.log('local fetched OK');
 
       const { toLocal, toRemote } = this.syncStrategy.resolve(localItems, remoteItems);
-      // console.log('toLocal', toLocal);
-      // console.log('toRemote', toRemote);
+      console.log('toLocal', toLocal);
+      console.log('toRemote', toRemote);
 
       const formattedToRemote = this.syncStrategy.convertToRemote(toRemote);
       const formattedToLocal = this.syncStrategy.convertToLocal(toLocal);
@@ -80,6 +80,7 @@ class SyncManager<LocalType, RemoteType> {
       fields: Partial<LocalType>;
     }[]
   ) {
+    console.log('setlocalImagesField', localImages);
     await this.localRepo.updateFieldsBatch(localImages);
   }
 

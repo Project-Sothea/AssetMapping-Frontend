@@ -93,13 +93,7 @@ export class PinManager implements EntityManager<PinFormValues, PinFormValues, P
 export type pinCreationData = PinFormValues;
 
 const setImagesFieldLocally = async (images: string[], pinId: string) => {
-  console.log('images', images);
   const stringified = JSON.stringify(images);
-  console.log('stringified', stringified);
-
-  const pin = await db.select().from(pins).where(eq(pins.id, pinId));
-  console.log('Pin exists?', pin.length > 0, pin);
-
   await db
     .update(pins)
     .set({
