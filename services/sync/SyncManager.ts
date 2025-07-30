@@ -36,10 +36,13 @@ class SyncManager<LocalType, RemoteType> {
       if (this.isSyncing) return;
       this.setSyncStart();
       console.log('syncing...');
+
       const remoteItems = await this.remoteRepo.fetchAll();
       console.log('remote fetched OK');
+
       const localItems = await this.localRepo.fetchAll();
       console.log('local fetched OK');
+
       const { toLocal, toRemote } = this.syncStrategy.resolve(localItems, remoteItems);
       // console.log('toLocal', toLocal);
       // console.log('toRemote', toRemote);
@@ -53,8 +56,12 @@ class SyncManager<LocalType, RemoteType> {
       await this.remoteRepo.upsertAll(formattedToRemote);
 
       if (this.imageSyncService) {
-        const success = await this.imageSyncService.syncRemoteImagesToLocal(formattedToLocal);
-        await this.localRepo.updateFieldsBatch(success);
+        const incomingData: { id: string; images: string }[] = formattedToLocal.map((item) => ({
+          id: (item as any).id,
+          images: (item as any).images,
+        }));
+        const localImages = await this.imageSyncService.syncRemoteToLocal(incomingData); //
+        await this.setlocalImagesField(localImages);
       }
       await this.localRepo.markAsSynced(formattedToLocal);
       await this.localRepo.markAsSynced(toRemote);
@@ -65,6 +72,15 @@ class SyncManager<LocalType, RemoteType> {
       console.error('SyncManager: syncNow()', e);
       this.setSyncFailure(e);
     }
+  }
+
+  public async setlocalImagesField(
+    localImages: {
+      id: string;
+      fields: Partial<LocalType>;
+    }[]
+  ) {
+    await this.localRepo.updateFieldsBatch(localImages);
   }
 
   private setSyncStart() {

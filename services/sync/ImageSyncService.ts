@@ -12,17 +12,17 @@ export class ImageSyncService<LocalType> {
   }
 
   //no comparison logic, just directly uploads entire list of images
-  async syncRemoteImageToLocal(item: LocalType): Promise<string[]> {
-    const id: string = (item as any).id;
+  async syncRemoteImageToLocal(item: { id: string; images: string }): Promise<string[]> {
+    const id: string = item.id;
     const existing_item = await this.localRepo.get(id);
     console.log('ok', existing_item);
 
-    const remote: string[] = JSON.parse((item as any).images ?? '[]');
+    const remote: string[] = JSON.parse(item.images ?? '[]');
     const local = existing_item ? (existing_item as any).images : [];
     console.log('local,', local);
     console.log('remote,', remote);
 
-    const { success } = await ImageManager.updateImagesLocally((item as any).id, remote, local);
+    const { success } = await ImageManager.updateImagesLocally(item.id, remote, local);
     console.log('success', success);
     return success;
   }
@@ -41,15 +41,15 @@ export class ImageSyncService<LocalType> {
     }
   }
 
-  async syncRemoteImagesToLocal(
-    items: LocalType[]
+  async syncRemoteToLocal(
+    items: { id: string; images: string }[]
   ): Promise<{ id: string; fields: Partial<LocalType> }[]> {
     const updates: { id: string; fields: Partial<LocalType> }[] = [];
 
     for (const item of items) {
       const uploaded = await this.syncRemoteImageToLocal(item);
       updates.push({
-        id: (item as any).id,
+        id: item.id,
         fields: {
           localImages: JSON.stringify(uploaded),
         } as any,

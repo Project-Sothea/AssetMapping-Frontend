@@ -102,17 +102,20 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
 
   async upsert(pin: Pin): Promise<void> {
     const now = new Date().toISOString();
-
-    await db
-      .insert(pins)
-      .values(pin)
-      .onConflictDoUpdate({
-        target: pins.id,
-        set: {
-          ...pin,
-          updatedAt: now,
-        },
-      });
+    try {
+      await db
+        .insert(pins)
+        .values(pin)
+        .onConflictDoUpdate({
+          target: pins.id,
+          set: {
+            ...pin,
+            updatedAt: now,
+          },
+        });
+    } catch (e) {
+      console.warn(e);
+    }
   }
 
   async delete(id: string): Promise<void> {

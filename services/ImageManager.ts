@@ -32,73 +32,76 @@ export async function getPickedImage() {
  * @returns Array of { localUri, galleryUri } for saved images
  */
 
-export async function saveImagesLocally(
+export async function saveToFileSystem(
   pinId: string,
   images: string[]
 ): Promise<{ success: string[]; fail: string[] }> {
-  if (!images || images.length === 0) {
-    console.log('saveImagesLocally: no images');
-    return { success: [], fail: [] };
+  const success: string[] = [];
+  const fail: string[] = [];
+
+  if (!images?.length) {
+    console.log('saveToFileSystem: no images to save');
+    return { success, fail };
   }
 
-  const result: { success: string[]; fail: string[] } = { success: [], fail: [] };
+  const baseDir = `${FileSystem.documentDirectory}pins/${pinId}/`;
 
   try {
-    // Ensure directory exists
-    const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
-    await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
+    await FileSystem.makeDirectoryAsync(baseDir, { intermediates: true });
   } catch (dirErr) {
     console.warn('Failed to create directory for images:', dirErr);
     // Proceed anyway - makeDirectoryAsync is idempotent
   }
 
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i];
-    console.log('saveImagesLocally: img', i, ':', img);
+  for (const [i, img] of images.entries()) {
+    console.log(`Saving image ${i}: ${img}`);
+    const filename = generateNewFileName();
+    const localUri = `${baseDir}${filename}`;
+
     try {
-      const filename = generateNewFileName();
-      const localUri = `${FileSystem.documentDirectory}pins/${pinId}/${filename}`;
-
-      // Copy the file from gallery URI to app local storage
-      await FileSystem.copyAsync({
-        from: img,
-        to: localUri,
-      });
-      console.log('saveImagesLocally: result of img', i, ':', localUri);
-
-      result.success.push(localUri);
-      console.log('Updated success array:', result.success);
-    } catch (error) {
-      console.warn(`Failed to save image ${img} locally:`, error);
-      result.fail.push(img);
+      await FileSystem.copyAsync({ from: img, to: localUri });
+      success.push(localUri);
+      console.log(`→ Saved locally as ${localUri}`);
+    } catch (err) {
+      console.warn(`✖ Failed to save image ${img}:`, err);
+      fail.push(img);
     }
   }
 
-  return result;
+  return { success, fail };
 }
 
-export async function saveImagesRemotely(pinId: string, images: string[] | null) {
-  if (!images || images.length === 0) {
-    return { success: [], fail: [] };
+export async function saveToRemote(
+  pinId: string,
+  images: string[] | null
+): Promise<{
+  success: string[];
+  fail: { image: string; error: unknown }[];
+}> {
+  const success: string[] = [];
+  const fail: { image: string; error: unknown }[] = [];
+
+  if (!images?.length) {
+    return { success, fail };
   }
 
-  const results = await Promise.allSettled(
-    images.map((image) => {
-      const filename = `${pinId}/${extractFilenameFromLocalUri(image)}`;
-      return callImages.storeImage(image, filename);
-    })
-  );
+  const uploadTasks = images.map((image) => {
+    const filename = `${pinId}/${extractFilenameFromLocalUri(image)}`;
+    console.log(filename);
+    return callImages.uploadToRemote(image, filename);
+  });
 
-  const success = results
-    .filter((result) => result.status === 'fulfilled')
-    .map((result) => (result as PromiseFulfilledResult<string>).value);
+  const results = await Promise.allSettled(uploadTasks);
 
-  const fail = results
-    .filter((result) => result.status === 'rejected')
-    .map((result, idx) => ({
-      image: images[idx],
-      error: (result as PromiseRejectedResult).reason,
-    }));
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      success.push(result.value);
+    } else {
+      fail.push({ image: images[index], error: result.reason });
+      console.log(result.status);
+      console.warn(`Failed to upload image: ${images[index]}`, result.reason);
+    }
+  });
 
   return { success, fail };
 }
@@ -197,24 +200,29 @@ export async function updateImagesRemotely(
   deleted: string[];
   failedDelete: { uri: string; error: any }[];
 }> {
+  console.log('newImages', newImages);
+  console.log('existingRemoteUris', existingRemoteUris);
+
   const newFilenames = newImages.map((uri) => extractFilenameFromLocalUri(uri));
   const newFilenamesSet = new Set(newFilenames);
 
   // Extract filenames from remote URIs and figure out which to delete
   const existingFilenames = existingRemoteUris.map((uri) => extractFilenameFromRemoteUri(uri));
   const toDelete = existingFilenames.filter((filename) => !newFilenamesSet.has(filename));
-
+  console.log('updateImagesRemotely: toDelete', toDelete);
   // Upload new images
   const uploadResults = await Promise.allSettled(
     newImages.map((image) => {
       const filename = extractFilenameFromLocalUri(image);
-      return callImages.storeImage(image, `${pinId}/${filename}`);
+      return callImages.uploadToRemote(image, `${pinId}/${filename}`);
     })
   );
 
+  console.log('uploadResults', uploadResults);
   const uploaded = uploadResults
     .filter((res) => res.status === 'fulfilled')
     .map((res) => (res as PromiseFulfilledResult<string>).value);
+  console.log('uploaded', uploaded);
 
   const failedUpload = uploadResults
     .map((res, idx) => ({ res, idx }))
@@ -223,11 +231,13 @@ export async function updateImagesRemotely(
       image: newImages[idx],
       error: (res as PromiseRejectedResult).reason,
     }));
+  console.log('failedUpload', failedUpload);
 
   // Delete removed images
   const deleteResults = await Promise.allSettled(
     toDelete.map((filename) => callImages.deleteImage(`${pinId}/${filename}`))
   );
+  console.log('updateImagesRemotely: deleteResults', deleteResults);
 
   const deleted = deleteResults
     .filter((res) => res.status === 'fulfilled')
