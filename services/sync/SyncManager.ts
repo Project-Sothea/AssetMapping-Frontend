@@ -2,7 +2,6 @@ import SyncStrategy from './interfaces/SyncStrategy';
 import LocalRepository from './interfaces/LocalRepository';
 import RemoteRepository from './interfaces/RemoteRepository';
 import { ImageSyncService } from './ImageSyncService';
-import { ConnectivityManager } from '../ConnectivityManager';
 
 class SyncManager<LocalType, RemoteType> {
   private static instances: Map<string, SyncManager<any, any>> = new Map();
@@ -34,11 +33,6 @@ class SyncManager<LocalType, RemoteType> {
 
   public async syncNow() {
     try {
-      if (!ConnectivityManager.getInstance().getConnectionStatus()) {
-        console.log('Skipping sync: offline');
-        return;
-      }
-
       if (this.isSyncing) return;
       this.setSyncStart();
       console.log('syncing...');
@@ -80,7 +74,27 @@ class SyncManager<LocalType, RemoteType> {
     }
   }
 
-  public async setlocalImagesField(
+  public getSyncStatus(): { state: string; at: string } {
+    if (this.isSyncing) {
+      return { state: 'Syncing', at: 'n.a.' };
+    }
+
+    // If last sync failed is more recent than last successful sync
+    if (
+      this.lastSyncFailedAt &&
+      (!this.lastSyncedAt || this.lastSyncFailedAt > this.lastSyncedAt)
+    ) {
+      return { state: 'Local', at: this.lastSyncFailedAt.toISOString() };
+    }
+
+    // If last successful sync is more recent or exists without failure
+    if (this.lastSyncedAt) {
+      return { state: 'Remote', at: this.lastSyncedAt.toISOString() };
+    }
+
+    return { state: 'Unsynced', at: 'n.a.' };
+  }
+  private async setlocalImagesField(
     localImages: {
       id: string;
       fields: Partial<LocalType>;

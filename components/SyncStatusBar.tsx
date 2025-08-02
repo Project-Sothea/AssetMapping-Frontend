@@ -1,10 +1,57 @@
 // components/SyncStatusHeader.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ConnectivityManager } from '~/services/ConnectivityManager';
 import { pinSyncManager } from '~/services/sync/pinSyncManager';
+import { formatTimestamp } from '~/utils/getCurrentTimeStamp';
 
 export const SyncStatusBar = () => {
+  const TIMER = 5 * 60 * 1000;
+
+  const [syncStatus, setSyncStatus] = useState(pinSyncManager.getSyncStatus());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('sync status', syncStatus);
+      const latestStatus = pinSyncManager.getSyncStatus();
+      setSyncStatus(latestStatus);
+    }, TIMER);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const colorMap: Record<string, string> = {
+    Syncing: '#3498db', // Blue
+    Remote: '#2ecc71', // Green
+    Local: '#f39c12', // Orange
+    Unsynced: '#e74c3c', // Red
+  };
+
+  const color = colorMap[syncStatus.state] || 'gray';
+
+  return (
+    <View style={styles.container}>
+      <Text style={[styles.statusText, { color }]} numberOfLines={1}>
+        {syncStatus.state}
+        {syncStatus.at !== 'n.a.' ? ` (${formatTimestamp(syncStatus.at)})` : ''}
+      </Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    // Center content vertically and horizontally in header title
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+/*
   const [isConnected, setIsConnected] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -49,25 +96,4 @@ export const SyncStatusBar = () => {
   };
 
   const status = getStatus();
-
-  return (
-    <View style={styles.container}>
-      <Text style={[styles.statusText, { color: status.color }]} numberOfLines={1}>
-        {status.text}
-      </Text>
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    // Center content vertically and horizontally in header title
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+ */
