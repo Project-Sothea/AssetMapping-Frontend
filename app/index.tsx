@@ -1,15 +1,19 @@
 import { Stack } from 'expo-router';
-import { Text } from 'react-native';
-import Form from '~/components/Form';
-import { PinForm } from '~/components/PinForm';
-import { useFetchForm } from '~/hooks/Forms/index';
+import { ActivityIndicator, Button, Text } from 'react-native';
+import { useInternetAvailability } from '~/hooks/useInternetAvailability';
 
 export default function Home() {
+  const { isConnected, isLoading, recheckConnection } = useInternetAvailability();
+
+  if (isLoading) {
+    return <ActivityIndicator />;
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: 'Home' }} />
-      <Text>Hi</Text>
-      {/* <Form onClose={() => console.log()}></Form> */}
+      <Text>{isConnected ? 'Online' : 'Offline'}</Text>
+      <Button title="Recheck" onPress={recheckConnection} />
     </>
   );
 }

@@ -1,12 +1,22 @@
 import { offlineManager } from '@rnmapbox/maps';
 import { Button } from '~/components/Button';
-import { Text, View, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
 import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
 import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
 import Spacer from '~/components/customUI/Spacer';
 import { packSreO } from '~/data/testingData';
+import { CreatePackForm } from '~/components/CreatePackForm';
 
 type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
 // Example:
@@ -22,63 +32,85 @@ type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
 // }
 
 export default function Home() {
-  const { mutateAsync: createPackMutation } = useCreatePack();
+  const { mutateAsync: createPackMutation, progress } = useCreatePack();
   const { mutateAsync: deletePackMutation } = useDeletePack();
   const { data: packs, isPending } = useFetchPacks();
 
   return (
     <ScreenWrapper>
-      <Spacer />
-
-      <Button
-        title="Create Pack"
-        onPress={async () => {
-          try {
-            await createPackMutation(packSreO);
-          } catch (err) {
-            console.error(err);
-          }
-        }}
-      />
-      <Spacer />
-      <Button
-        title="Delete Pack"
-        onPress={async () => {
-          try {
-            await deletePackMutation(packSreO.name);
-            console.log('successful delete: ', packSreO.name);
-          } catch (err) {
-            console.error(err);
-          }
-        }}
-      />
-
-      <Text>Downloaded Packs:</Text>
-      {isPending ? (
-        <ActivityIndicator />
-      ) : (
-        <FlatList
-          data={packs}
-          keyExtractor={(item) => item.name}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Text style={styles.title}>📦 {item.name}</Text>
-            </View>
-          )}
+      <ScrollView>
+        <Spacer />
+        <CreatePackForm
+          onSubmit={async (pack) => {
+            try {
+              await createPackMutation(pack);
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          progress={progress}
         />
-      )}
+
+        <Spacer />
+
+        {packs &&
+          packs.map((item) => (
+            <View key={item.name} style={styles.item}>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert('Delete Pack', `Are you sure you want to delete "${item.name}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await deletePackMutation(item.name);
+                          console.log('Deleted pack:', item.name);
+                        } catch (err) {
+                          console.error('Delete error:', err);
+                        }
+                      },
+                    },
+                  ]);
+                }}
+                style={styles.deleteButton}>
+                <View style={styles.row}>
+                  <Text style={styles.title}>📦 {item.name}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          ))}
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   item: {
-    backgroundColor: '#f9c2ff',
-    padding: 3,
-    marginVertical: 5,
-    marginHorizontal: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    marginBottom: 4,
+    borderRadius: 8,
   },
   title: {
-    fontSize: 10,
+    fontSize: 16,
+  },
+  deleteButton: {
+    padding: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignContent: 'space-between',
+    alignItems: 'center',
+  },
+  deleteText: {
+    fontSize: 18,
+    color: 'red',
   },
 });

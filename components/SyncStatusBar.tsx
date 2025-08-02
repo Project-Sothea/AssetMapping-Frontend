@@ -39,10 +39,10 @@ export const SyncStatusBar = () => {
       manager.unsubscribe(handleConnectionChange);
       pinSyncManager.syncNow = originalSyncNow;
     };
-  }, []);
+  });
 
   const getStatus = () => {
-    if (!isConnected) return { text: 'Offline', color: '#999' };
+    if (!isConnected) return { text: 'Offline', color: 'red' };
     if (isSyncing) return { text: 'Syncing...', color: '#007AFF' };
     if (syncError) return { text: 'Sync Failed', color: '#FF3B30' };
     return { text: 'Online', color: '#34C759' };

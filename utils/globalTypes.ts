@@ -1,5 +1,6 @@
 import { pins } from '~/db/schema';
 import { Database } from './database.types';
+import { offlineManager } from '@rnmapbox/maps';
 
 type dbForm = Database['public']['Tables']['forms']['Row'];
 type dbPin = Database['public']['Tables']['pins']['Row'];
@@ -22,3 +23,7 @@ export type LocalMetadata = {
 export type Localised<T> = T & LocalMetadata;
 
 export type Delocalised<T extends LocalMetadata> = Omit<T, keyof LocalMetadata>;
+
+export type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
+
+export type CreateOfflinePackProps = Parameters<typeof offlineManager.createPack>[0];

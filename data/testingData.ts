@@ -1,7 +1,5 @@
-import { offlineManager } from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
-
-type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
+import { UseCreatePackProps } from '~/utils/globalTypes';
 
 export const coordsSreO = {
   maxLat: 12.83,
