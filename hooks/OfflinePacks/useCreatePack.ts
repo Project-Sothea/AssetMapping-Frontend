@@ -5,15 +5,17 @@ import { CreateOfflinePackProps } from '~/utils/globalTypes';
 
 export default function useCreatePack() {
   const [progress, setProgress] = useState<number>(0);
+  const [name, setName] = useState<string>('');
 
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (options: CreateOfflinePackProps) => CreateOfflinePack(options, setProgress),
+    mutationFn: (options: CreateOfflinePackProps) =>
+      CreateOfflinePack(options, setProgress, setName),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['offlinePacks'] }),
   });
 
-  return { ...mutation, progress };
+  return { ...mutation, progress, name };
 }
 
 /*

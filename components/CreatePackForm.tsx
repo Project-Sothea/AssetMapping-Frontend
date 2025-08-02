@@ -1,12 +1,11 @@
-import React from 'react';
-import { View, TextInput, StyleSheet, Text, KeyboardAvoidingView, Platform } from 'react-native';
-import { Button } from '~/components/Button';
+import { View, TextInput, StyleSheet, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { UseCreatePackProps } from '~/utils/globalTypes';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
 import Spacer from './customUI/Spacer';
+import { IdempotentButton } from './IdempotentButton';
 
 interface Props {
   onSubmit: (pack: UseCreatePackProps) => void;
@@ -139,8 +138,12 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
             />
           </View>
           <Spacer />
-
-          <Button title="Create Pack" onPress={handleSubmit as any} />
+          <IdempotentButton
+            title="Create Pack"
+            onPress={() => {
+              handleSubmit();
+            }}
+          />
           <Spacer />
           <View style={styles.progressContainer}>
             <View style={[styles.progressBar, { width: `${progress}%` }]} />

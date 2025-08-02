@@ -4,14 +4,16 @@ import { CreateOfflinePackProps } from '~/utils/globalTypes';
 
 export const CreateOfflinePack = async (
   options: CreateOfflinePackProps,
-  onProgress: (percentage: number) => void
+  setProgress: (progress: number) => void,
+  setName: (name: string) => void
 ) => {
   console.log(options);
   try {
     await offlineManager.createPack(options, (pack, status) => {
       console.log('pack: ', pack);
       console.log('status: ', status);
-      onProgress(status.percentage);
+      setProgress(status.percentage);
+      setName(status.name);
     });
   } catch (err) {
     console.error('Offline pack error:', err);
