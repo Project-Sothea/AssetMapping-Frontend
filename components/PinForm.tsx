@@ -18,7 +18,6 @@ const PinFormSchema = Yup.object().shape({
   address: Yup.string(),
   stateProvince: Yup.string(),
   postalCode: Yup.string(),
-  country: Yup.string(),
   description: Yup.string(),
 });
 
@@ -27,7 +26,6 @@ export type PinFormValues = {
   address: string | null;
   stateProvince: string | null;
   postalCode: string | null;
-  country: string | null;
   description: string | null;
   type: string | null;
   localImages: string[]; // array of images with uri
@@ -64,7 +62,6 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
             { name: 'address', label: 'Address' },
             { name: 'stateProvince', label: 'State/ Province' },
             { name: 'postalCode', label: 'Postal Code' },
-            { name: 'country', label: 'Country' },
             { name: 'description', label: 'Description' },
           ].map(({ name, label, required }) => (
             <View key={name}>

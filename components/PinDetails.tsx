@@ -22,7 +22,6 @@ const intoPinFormValues = (pin: Pin): PinFormValues => {
     address: pin.address,
     stateProvince: pin.stateProvince,
     postalCode: pin.postalCode,
-    country: pin.country,
     description: pin.description,
     type: pin.type,
     localImages: pin.localImages ? JSON.parse(pin.localImages) : null,
