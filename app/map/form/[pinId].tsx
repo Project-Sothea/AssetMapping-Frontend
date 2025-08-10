@@ -4,24 +4,29 @@ import { useState } from 'react';
 import Form from 'components/Form';
 import { useCreateForm, useFetchForms, useSoftDeleteForm, useUpdateForm } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
+import { FormDetailsModal } from '~/components/FormDetailsModal';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const { data: forms, error, isLoading } = useFetchForms(pinId);
 
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const { mutate: createForm } = useCreateForm();
   const { mutate: updateForm } = useUpdateForm();
   const { mutate: softDeleteForm } = useSoftDeleteForm();
 
+  const handleModalClose = () => {
+    setSelectedForm(null);
+    setModalVisible(false);
+    console.log('closed form');
+  };
+
   const handleEdit = (form: FormType) => {
-    if (selectedForm?.id === form.id) {
-      // Clicking Edit again closes edit mode
-      setSelectedForm(null);
-    } else {
-      setSelectedForm(form);
-    }
+    console.log('village', form.village);
+    setModalVisible(true);
+    setSelectedForm(form);
   };
 
   const handleDelete = (formId: string) => {
@@ -61,22 +66,27 @@ export default function FormScreen() {
       {forms?.map((form) => (
         <View key={form.id} style={styles.formCard}>
           <Text>Submitted on: {new Date(form.created_at).toLocaleString()}</Text>
-          <Button
-            title={form.id === selectedForm?.id ? 'Unselect' : 'Edit'}
-            onPress={() => handleEdit(form)}
-          />
+          <Button title="View" onPress={() => handleEdit(form)} />
           <View style={styles.spacer} />
           <Button color="red" title="Delete" onPress={() => handleDelete(form.id)} />
         </View>
       ))}
 
       <View style={styles.formSpacer} />
-      <Text style={styles.subheading}>{selectedForm ? 'Edit Form' : 'Create New Form'}</Text>
-      <Form
+      <Text style={styles.subheading}>Create New Form</Text>
+      <Button
+        title="Create New Form"
+        onPress={() => {
+          setSelectedForm(null);
+          setModalVisible(true);
+        }}
+      />
+
+      <FormDetailsModal
+        visible={modalVisible}
         pinId={pinId}
-        formId={selectedForm?.id}
-        initialData={selectedForm || undefined}
-        onClose={handleSubmit}
+        selectedForm={selectedForm}
+        onClose={handleModalClose}
       />
     </ScrollView>
   );

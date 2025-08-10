@@ -13,7 +13,7 @@ type FormProps = {
   onClose: (values: any) => void;
   pinId: string;
   formId?: string;
-  initialData?: Partial<FormType>;
+  initialData: Partial<FormType> | null;
 };
 
 const options = {
@@ -93,7 +93,14 @@ const validationSchema = Yup.object().shape({
   // brushTeeth: Yup.string().required('Required'),
 });
 
-export default function Form({ onClose }: FormProps) {
+export default function Form({ onClose, formId, initialData }: FormProps) {
+  console.log('initialData:', initialData);
+  const mergedInitialValues = {
+    ...initialValues,
+    ...initialData, // overwrite defaults with whatever came from the DB
+  };
+  console.log('mergedInitialValues:', mergedInitialValues);
+
   const handleCheckbox = (
     value: string,
     array: string[],
@@ -111,7 +118,10 @@ export default function Form({ onClose }: FormProps) {
   };
 
   return (
-    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onClose}>
+    <Formik
+      initialValues={mergedInitialValues}
+      validationSchema={validationSchema}
+      onSubmit={onClose}>
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
         <ScrollView style={styles.container}>
           <Text style={styles.heading}>General</Text>
