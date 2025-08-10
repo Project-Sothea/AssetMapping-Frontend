@@ -39,11 +39,6 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       </View>
 
       <View style={styles.infoRow}>
-        <Text style={styles.label}>Country: </Text>
-        <Text>{pin.country || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
         <Text style={styles.label}>Type: </Text>
         <Text>{pin.type}</Text>
       </View>
