@@ -1,7 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
-import Form from 'components/Form';
 import { useCreateForm, useFetchForms, useSoftDeleteForm, useUpdateForm } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
 import { FormDetailsModal } from '~/components/FormDetailsModal';

@@ -50,6 +50,13 @@
       "when": 1753380208098,
       "tag": "0006_bright_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1754839405170,
+      "tag": "0007_chief_vulcan",
+      "breakpoints": true
     }
   ]
 }
