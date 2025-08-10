@@ -7,12 +7,14 @@ type PinDetailsModalProps = {
   pinId: string;
   selectedForm: FormType | null;
   onClose: () => void;
+  onSubmit: (values: any) => void;
 };
 
 export const FormDetailsModal = ({
   visible,
   pinId,
   onClose,
+  onSubmit,
   selectedForm,
 }: PinDetailsModalProps) => {
   return (
@@ -20,7 +22,12 @@ export const FormDetailsModal = ({
       title={selectedForm ? 'Edit Form' : 'Create Form'}
       visible={visible}
       onClose={onClose}>
-      <Form onClose={onClose} pinId={pinId} formId={selectedForm?.id} initialData={selectedForm} />
+      <Form
+        onSubmit={onSubmit}
+        pinId={pinId}
+        formId={selectedForm?.id}
+        initialData={selectedForm}
+      />
     </ModalWrapper>
   );
 };

@@ -41,7 +41,6 @@ export default function FormScreen() {
   };
 
   const handleSubmit = (values: any) => {
-    //TODO: only update the selectedForm
     console.log('submitting');
     const snakeCaseValues = toSnakeCase(values);
 
@@ -53,6 +52,8 @@ export default function FormScreen() {
       createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
       Alert.alert('Form Created!');
     }
+
+    setModalVisible(false);
   };
 
   return (
@@ -87,6 +88,7 @@ export default function FormScreen() {
         pinId={pinId}
         selectedForm={selectedForm}
         onClose={handleModalClose}
+        onSubmit={handleSubmit}
       />
     </ScrollView>
   );
