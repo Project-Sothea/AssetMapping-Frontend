@@ -15,7 +15,6 @@ export const PinFormModal = ({ visible, onClose, onSubmit, coords }: PinFormModa
     address: '',
     stateProvince: '',
     postalCode: '',
-    country: '',
     description: '',
     type: 'normal',
     localImages: [],

@@ -9,15 +9,19 @@ export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const { data: forms, error, isLoading } = useFetchForms(pinId);
 
-  const [selectedForm, setSelectedForm] = useState<number | null>(null);
-  const [editingForm, setEditingForm] = useState<FormType | null>(null);
+  const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
 
   const { mutate: createForm } = useCreateForm();
   const { mutate: updateForm } = useUpdateForm();
   const { mutate: softDeleteForm } = useSoftDeleteForm();
 
-  const handleEdit = (forms: FormType) => {
-    setEditingForm(forms);
+  const handleEdit = (form: FormType) => {
+    if (selectedForm?.id === form.id) {
+      // Clicking Edit again closes edit mode
+      setSelectedForm(null);
+    } else {
+      setSelectedForm(form);
+    }
   };
 
   const handleDelete = (formId: string) => {
@@ -26,52 +30,56 @@ export default function FormScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => softDeleteForm(formId),
+        onPress: () => softDeleteForm(formId), //TODO: handled by some hook or FormManager Class?
       },
     ]);
   };
 
   const handleSubmit = (values: any) => {
+    //TODO: only update the selectedForm
     console.log('submitting');
-    const snakeCaseValues = toSnakeCase(values); // brushTeeth != brush_teeth (supabase wants this)
-    if (forms) {
-      forms.forEach((form) => {
-        updateForm({ id: form.id, values: snakeCaseValues });
-      });
+    const snakeCaseValues = toSnakeCase(values);
+
+    if (selectedForm) {
+      updateForm({ id: selectedForm.id, values: snakeCaseValues });
+      setSelectedForm(null);
+      Alert.alert('Form Updated!');
     } else {
       createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
-      setEditingForm(null);
       Alert.alert('Form Created!');
     }
-
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
-
-        {isLoading && <Text>Loading forms...</Text>}
-        {error && <Text>Error fetching forms.</Text>}
-        {forms?.length === 0 && !isLoading && <Text>No forms submitted yet.</Text>}
-
-        {forms?.map((forms) => (
-          <View key={forms.id} style={styles.formCard}>
-            <Text>Submitted on: {new Date(forms.created_at).toLocaleString()}</Text>
-            <Button title="Edit" onPress={() => handleEdit(forms)} />
-            <View style={styles.spacer} />
-            <Button color="red" title="Delete" onPress={() => handleDelete(forms.id)} />
-          </View>
-        ))}
-
-        <View style={styles.formSpacer} />
-        <Text style={styles.subheading}>{editingForm ? 'Edit Form' : 'Create New Form'}</Text>
-        <Form
-          pinId={pinId}
-          formId={editingForm?.id}
-          initialData={editingForm || undefined}
-          onClose={handleSubmit}
-        />
-      </ScrollView>
-    );
   };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
+
+      {isLoading && <Text>Loading forms...</Text>}
+      {error && <Text>Error fetching forms.</Text>}
+      {forms?.length === 0 && !isLoading && <Text>No forms submitted yet.</Text>}
+
+      {forms?.map((form) => (
+        <View key={form.id} style={styles.formCard}>
+          <Text>Submitted on: {new Date(form.created_at).toLocaleString()}</Text>
+          <Button
+            title={form.id === selectedForm?.id ? 'Unselect' : 'Edit'}
+            onPress={() => handleEdit(form)}
+          />
+          <View style={styles.spacer} />
+          <Button color="red" title="Delete" onPress={() => handleDelete(form.id)} />
+        </View>
+      ))}
+
+      <View style={styles.formSpacer} />
+      <Text style={styles.subheading}>{selectedForm ? 'Edit Form' : 'Create New Form'}</Text>
+      <Form
+        pinId={pinId}
+        formId={selectedForm?.id}
+        initialData={selectedForm || undefined}
+        onClose={handleSubmit}
+      />
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({

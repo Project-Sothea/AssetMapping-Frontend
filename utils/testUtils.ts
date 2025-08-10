@@ -55,7 +55,6 @@ export const makePin = (overrides: Partial<Pin>): Pin => ({
   address: null,
   stateProvince: null,
   postalCode: null,
-  country: null,
   description: null,
   images: null,
   localImages: null,
@@ -76,6 +75,5 @@ export const makeRePin = (overrides: Partial<RePin>): RePin => ({
   address: null,
   state_province: null,
   postal_code: null,
-  country: null,
   ...overrides,
 });
