@@ -67,7 +67,7 @@ class SyncManager<LocalType, RemoteType> {
       await this.localRepo.markAsSynced(toRemote);
 
       this.setSyncSuccess();
-      console.log('sync done', new Date());
+      console.log('sync success!', new Date());
     } catch (e: any) {
       console.error('SyncManager: syncNow()', e);
       this.setSyncFailure(e);

@@ -125,7 +125,6 @@ describe('PinSyncStrategy', () => {
         address: '123 Village Rd',
         state_province: 'Kampong',
         postal_code: '123456',
-        country: 'SG',
         description: 'A well',
         images: ['img1.jpg', 'img2.jpg'],
       });
@@ -142,7 +141,6 @@ describe('PinSyncStrategy', () => {
         address: '123 Village Rd',
         stateProvince: 'Kampong',
         postalCode: '123456',
-        country: 'SG',
         description: 'A well',
         images: JSON.stringify(['img1.jpg', 'img2.jpg']),
       });
@@ -182,7 +180,6 @@ describe('PinSyncStrategy', () => {
         address: '123 Village Rd',
         stateProvince: 'Kampong',
         postalCode: '123456',
-        country: 'SG',
         description: 'A well',
         images: JSON.stringify(['img1.jpg', 'img2.jpg']),
       });
@@ -199,7 +196,6 @@ describe('PinSyncStrategy', () => {
         address: '123 Village Rd',
         state_province: 'Kampong',
         postal_code: '123456',
-        country: 'SG',
         description: 'A well',
         images: ['img1.jpg', 'img2.jpg'],
       });

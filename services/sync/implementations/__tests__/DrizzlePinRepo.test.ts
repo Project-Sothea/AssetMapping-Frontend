@@ -32,7 +32,6 @@ describe('DrizzlePinRepo', () => {
     type: 'hospital',
     images: JSON.stringify(['img1.png']),
     localImages: '[]',
-    country: 'SG',
     postalCode: '123456',
     address: '1 Test Road',
     stateProvince: 'Central',

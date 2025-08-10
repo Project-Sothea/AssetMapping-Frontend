@@ -30,7 +30,6 @@ export class DrizzlePinRepo implements LocalRepository<Pin> {
             'type',
             'images',
             'localImages',
-            'country',
             'postalCode',
             'address',
             'stateProvince',

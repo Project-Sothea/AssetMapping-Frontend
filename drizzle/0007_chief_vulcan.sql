@@ -45,5 +45,3 @@ CREATE TABLE `forms` (
 	`what_do_when_sick` text,
 	`where_buy_medicine` text
 );
---> statement-breakpoint
-ALTER TABLE `pins` DROP COLUMN `country`;

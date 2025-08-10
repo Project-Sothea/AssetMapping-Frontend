@@ -88,7 +88,6 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
       address: remote.address,
       stateProvince: remote.state_province,
       postalCode: remote.postal_code,
-      country: remote.country,
       description: remote.description,
       images: remote.images ? JSON.stringify(remote.images) : null,
       localImages: null,
@@ -108,7 +107,6 @@ export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {
       address: local.address,
       state_province: local.stateProvince,
       postal_code: local.postalCode,
-      country: local.country,
       description: local.description,
       images: local.images ? JSON.parse(local.images) : null,
     };
