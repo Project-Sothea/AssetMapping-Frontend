@@ -1,4 +1,3 @@
-import React from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet } from 'react-native';
 import Checkbox from 'expo-checkbox';
 import RadioForm from 'react-native-simple-radio-button';
@@ -7,21 +6,12 @@ import * as Yup from 'yup';
 import { Button } from './Button';
 import Spacer from './customUI/Spacer';
 import { Form as FormType } from '~/utils/globalTypes';
-import { useCreateForm, useUpdateForm } from '~/hooks/Forms';
 
 // convert camelCase initial values to snake_case bc supabase needs snake_case
-const toSnakeCase = (obj: Record<string, any>) => {
-  const newObj: Record<string, any> = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-    newObj[snakeKey] = obj[key];
-  }
-  return newObj;
-};
 
 type FormProps = {
-  onClose: () => void;
-  pinId: string; 
+  onClose: (values: any) => void;
+  pinId: string;
   formId?: string;
   initialData?: Partial<FormType>;
 };
@@ -94,19 +84,16 @@ const initialValues = {
 const validationSchema = Yup.object().shape({
   village: Yup.string().required('Required'),
   villageId: Yup.string().required('Required'),
-  managementMethods: Yup.array().min(1, 'Please select at least one option'),
-  whatDoWhenSick: Yup.array().min(1, 'Please select at least one option'),
-  knowDoctor: Yup.string().required('Required'),
-  ownTransport: Yup.string().required('Required'),
-  whereBuyMedicine: Yup.string().required('Required'),
-  povertyCard: Yup.string().required('Required'),
-  brushTeeth: Yup.string().required('Required'),
+  // managementMethods: Yup.array().min(1, 'Please select at least one option'),
+  // whatDoWhenSick: Yup.array().min(1, 'Please select at least one option'),
+  // knowDoctor: Yup.string().required('Required'),
+  // ownTransport: Yup.string().required('Required'),
+  // whereBuyMedicine: Yup.string().required('Required'),
+  // povertyCard: Yup.string().required('Required'),
+  // brushTeeth: Yup.string().required('Required'),
 });
 
-export default function Form({ onClose, pinId, formId, initialData }: FormProps) {
-  const { mutate: createForm } = useCreateForm();
-  const { mutate: updateForm } = useUpdateForm();
-
+export default function Form({ onClose }: FormProps) {
   const handleCheckbox = (
     value: string,
     array: string[],
@@ -124,20 +111,7 @@ export default function Form({ onClose, pinId, formId, initialData }: FormProps)
   };
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={validationSchema}
-      onSubmit={(values) => {
-        const snakeCaseValues = toSnakeCase(values); // brushTeeth != brush_teeth (supabase wants this)
-        if (formId) {
-          updateForm({ id: formId, values: snakeCaseValues });
-        } else {
-          createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
-        console.log('Submitted:', values);
-        }
-      }}>
-
-      
+    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onClose}>
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
         <ScrollView style={styles.container}>
           <Text style={styles.heading}>General</Text>
