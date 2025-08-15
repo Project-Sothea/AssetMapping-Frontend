@@ -65,7 +65,7 @@ export default function FormScreen() {
 
       {forms?.map((form) => (
         <View key={form.id} style={styles.formCard}>
-          <Text>Submitted on: {new Date(form.created_at).toLocaleString()}</Text>
+          <Text>Submitted on: {new Date(form.createdAt).toLocaleString()}</Text>
           <Button title="View" onPress={() => handleEdit(form)} />
           <View style={styles.spacer} />
           <Button color="red" title="Delete" onPress={() => handleDelete(form.id)} />

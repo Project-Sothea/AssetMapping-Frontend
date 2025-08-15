@@ -57,6 +57,20 @@
       "when": 1754839405170,
       "tag": "0007_chief_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1755272617298,
+      "tag": "0008_dark_sabra",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1755272766196,
+      "tag": "0009_clammy_mole_man",
+      "breakpoints": true
     }
   ]
 }

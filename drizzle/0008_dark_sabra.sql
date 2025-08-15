@@ -1,0 +1,1 @@
+ALTER TABLE `forms` ADD `status` text;

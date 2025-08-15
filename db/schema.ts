@@ -32,8 +32,14 @@ export const forms = sqliteTable('forms', {
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at'),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
+  failureReason: text('failure_reason'),
+  status: text('status'),
+  lastSyncedAt: text('last_synced_at'),
+  lastFailedSyncAt: text('last_failed_sync_at'),
 
   pinId: text('pin_id'),
   villageId: text('village_id'),

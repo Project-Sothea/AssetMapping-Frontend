@@ -1,5 +1,5 @@
 import { Pin } from '~/db/schema';
-import SyncStrategy from '../interfaces/SyncStrategy';
+import SyncStrategy from '../../interfaces/SyncStrategy';
 import { RePin } from '~/utils/globalTypes';
 
 export class PinSyncStrategy implements SyncStrategy<Pin, RePin> {

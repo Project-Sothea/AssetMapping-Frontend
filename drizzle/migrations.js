@@ -9,6 +9,8 @@ import m0004 from './0004_clever_kingpin.sql';
 import m0005 from './0005_bright_namor.sql';
 import m0006 from './0006_bright_nitro.sql';
 import m0007 from './0007_chief_vulcan.sql';
+import m0008 from './0008_dark_sabra.sql';
+import m0009 from './0009_clammy_mole_man.sql';
 
   export default {
     journal,
@@ -20,7 +22,9 @@ m0003,
 m0004,
 m0005,
 m0006,
-m0007
+m0007,
+m0008,
+m0009
     }
   }
   

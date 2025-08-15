@@ -1,3 +1,4 @@
+// Update the import path to the correct location of DrizzlePinRepo
 import { DrizzlePinRepo } from '../DrizzlePinRepo';
 import { db } from '~/services/drizzleDb';
 import { Pin, pins } from '~/db/schema';

@@ -1,5 +1,5 @@
 import { Pin, pins } from '~/db/schema';
-import LocalRepository from '../interfaces/LocalRepository';
+import LocalRepository from '../../interfaces/LocalRepository';
 import { buildConflictUpdateColumns, db } from '~/services/drizzleDb';
 import { inArray, eq } from 'drizzle-orm';
 

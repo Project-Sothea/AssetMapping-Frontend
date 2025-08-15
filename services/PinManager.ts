@@ -4,7 +4,7 @@ import { db } from './drizzleDb';
 import { Pin, pins } from '~/db/schema';
 import { eq } from 'drizzle-orm';
 import { EntityManager } from './EntityManager';
-import { DrizzlePinRepo } from './sync/implementations/DrizzlePinRepo';
+import { DrizzlePinRepo } from './sync/implementations/pins/DrizzlePinRepo';
 import { getCurrentTimeStamp } from '~/utils/getCurrentTimeStamp';
 import { pinSyncManager } from './sync/pinSyncManager';
 

@@ -13,7 +13,7 @@ import { useIsFocused } from '@react-navigation/native';
 // import * as PinManager from '~/services/PinManager';
 import { Pin } from '~/db/schema';
 import { PinManager } from '~/services/PinManager';
-import { DrizzlePinRepo } from '~/services/sync/implementations/DrizzlePinRepo';
+import { DrizzlePinRepo } from '~/services/sync/implementations/pins/DrizzlePinRepo';
 import { pinSyncManager } from '~/services/sync/pinSyncManager';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 

@@ -1,8 +1,8 @@
 import { Pin, RePin } from '~/utils/globalTypes';
 import SyncManager from './SyncManager';
-import { PinSyncStrategy } from './implementations/PinSyncStrategy';
-import { DrizzlePinRepo } from './implementations/DrizzlePinRepo';
-import { SupabasePinRepo } from './implementations/SupabasePinRepo';
+import { PinSyncStrategy } from './implementations/pins/PinSyncStrategy';
+import { DrizzlePinRepo } from './implementations/pins/DrizzlePinRepo';
+import { SupabasePinRepo } from './implementations/pins/SupabasePinRepo';
 import { ImageSyncService } from './ImageSyncService';
 
 const localPinRepo = new DrizzlePinRepo(); // only create this once
@@ -15,10 +15,3 @@ export const pinSyncManager = SyncManager.getInstance<Pin, RePin>(
   remotePinRepo,
   new ImageSyncService(localPinRepo)
 );
-
-// ConnectivityManager.getInstance().subscribe((isConnected) => {
-//   console.log('[Network]', isConnected ? 'Online' : 'Offline');
-//   if (isConnected) {
-//     pinSyncManager.syncNow(); // kick off sync
-//   }
-// });
