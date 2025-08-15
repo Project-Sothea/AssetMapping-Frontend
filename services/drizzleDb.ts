@@ -34,3 +34,40 @@ export const buildConflictUpdateColumns = <
     {} as Record<Q, SQL>
   );
 };
+
+//custom functions
+export function buildUpsertSet<T extends Record<string, any>>(
+  table: T,
+  exclude: (keyof T)[],
+  systemOverrides: Partial<Record<keyof T, any>> = {}
+) {
+  const cols = Object.keys(table).filter((col) => !exclude.includes(col as keyof T));
+
+  const set: Record<string, any> = {};
+  for (const col of cols) {
+    set[col] = (table as any)[col];
+  }
+
+  return {
+    ...set,
+    ...systemOverrides,
+  };
+}
+
+export function buildSoftDeleteSet<T extends Record<string, any>>(
+  table: T,
+  exclude: (keyof T)[],
+  systemOverrides: Partial<Record<keyof T, any>> = {}
+) {
+  const set: Record<string, any> = {};
+
+  for (const col of Object.keys(table)) {
+    if (exclude.includes(col as keyof T)) continue;
+    set[col] = null; // default nullify
+  }
+
+  return {
+    ...set,
+    ...systemOverrides,
+  };
+}
