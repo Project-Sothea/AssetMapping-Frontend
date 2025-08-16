@@ -39,7 +39,6 @@ export abstract class BaseSyncHandler<
 
     console.log('Upserting local items:', localUpserts.length);
     console.log('Upserting remote items:', remoteUpserts.length);
-
     await Promise.all([
       this.localRepo.upsertAll(localUpserts),
       this.remoteRepo.upsertAll(remoteUpserts),

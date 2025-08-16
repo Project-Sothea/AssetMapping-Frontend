@@ -1,3 +1,4 @@
+import { ScrollView } from 'react-native';
 import ModalWrapper from './ModalWrapper';
 import { PinForm, PinFormValues } from './PinForm';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,8 +25,11 @@ export const PinFormModal = ({ visible, onClose, onSubmit, coords }: PinFormModa
   };
 
   return (
-    <ModalWrapper title={'Create Pin'} visible={visible} onClose={onClose}>
-      <PinForm onSubmit={onSubmit} initialValues={initialValues} />
+    // PinFormModal.tsx (updated button layout and spacing)
+    <ModalWrapper title="Create Pin" visible={visible} onClose={onClose}>
+      <ScrollView>
+        <PinForm onSubmit={onSubmit} initialValues={initialValues} />
+      </ScrollView>
     </ModalWrapper>
   );
 };

@@ -5,6 +5,7 @@ import { useFetchLocalForms } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
 import { FormDetailsModal } from '~/components/FormDetailsModal';
 import { localFormRepo } from '~/services/sync/syncService';
+import { FormCard } from '~/components/Form/FormCard';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
@@ -15,17 +16,15 @@ export default function FormScreen() {
   const handleModalClose = () => {
     setSelectedForm(null);
     setModalVisible(false);
-    console.log('closed form');
   };
 
   const handleFormEdit = (form: FormType) => {
-    console.log('village', form.village);
     setModalVisible(true);
     setSelectedForm(form);
   };
 
   const handleFormDelete = (formId: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this forms?', [
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this form?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -36,13 +35,10 @@ export default function FormScreen() {
   };
 
   const handleFormSubmit = (values: any) => {
-    console.log('submitting');
-
     if (selectedForm) {
       localFormRepo.update(values);
-      // updateForm({ id: selectedForm.id, values: snakeCaseValues });
-      setSelectedForm(null);
       Alert.alert('Form Updated!');
+      setSelectedForm(null);
     } else {
       localFormRepo.create(values);
       Alert.alert('Form Created!');
@@ -52,29 +48,30 @@ export default function FormScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
       <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
 
-      {forms?.length === 0 && <Text>No forms submitted yet.</Text>}
+      {forms?.length === 0 && (
+        <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
+      )}
 
-      {forms?.map((form) => (
-        <View key={form.id} style={styles.formCard}>
-          <Text>Submitted on: {new Date(form.createdAt).toLocaleString()}</Text>
-          <Button title="View" onPress={() => handleFormEdit(form)} />
-          <View style={styles.spacer} />
-          <Button color="red" title="Delete" onPress={() => handleFormDelete(form.id)} />
-        </View>
-      ))}
+      <View style={styles.formsList}>
+        {forms?.map((form) => (
+          <FormCard key={form.id} form={form} onEdit={handleFormEdit} onDelete={handleFormDelete} />
+        ))}
+      </View>
 
-      <View style={styles.formSpacer} />
-      <Text style={styles.subheading}>Create New Form</Text>
-      <Button
-        title="Create New Form"
-        onPress={() => {
-          setSelectedForm(null);
-          setModalVisible(true);
-        }}
-      />
+      <View style={styles.newFormSection}>
+        <Text style={styles.subheading}>Create New Form</Text>
+        <Button
+          title="Create New Form"
+          color="#3498db"
+          onPress={() => {
+            setSelectedForm(null);
+            setModalVisible(true);
+          }}
+        />
+      </View>
 
       <FormDetailsModal
         visible={modalVisible}
@@ -88,30 +85,40 @@ export default function FormScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    backgroundColor: '#f7f9fc', // light background
+  },
   container: {
     padding: 16,
   },
   heading: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 12,
+    color: '#2c3e50',
   },
   subheading: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     marginBottom: 8,
+    color: '#34495e',
   },
-  formCard: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    marginBottom: 10,
+  emptyText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 12,
   },
-  spacer: {
-    height: 8,
+  formsList: {
+    marginBottom: 24,
   },
-  formSpacer: {
-    height: 20,
+  newFormSection: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

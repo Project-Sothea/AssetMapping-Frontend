@@ -8,6 +8,7 @@ import { Form as FormType } from '~/utils/globalTypes';
 import GeneralSection from './Form/GeneralSection';
 import WaterSection from './Form/WaterSection';
 import HealthSection from './Form/HealthSection';
+import { parseArrayFields } from '~/utils/dataShapes';
 
 const validationSchema = Yup.object().shape({
   village: Yup.string().required('Required'),
@@ -23,9 +24,9 @@ type FormProps = {
 };
 
 export default function Form({ onSubmit, pinId, initialData }: FormProps) {
-  console.log('village id:', initialData?.villageId);
   const mergedInitialValues = React.useMemo(() => {
-    const normalizedInitialData = initialData ? snakeToCamel(initialData) : {};
+    const normalizedInitialData = initialData ? parseArrayFields(snakeToCamel(initialData)) : {};
+    console.log('initialData:', normalizedInitialData);
     return {
       pinId: pinId,
       village: '',
@@ -70,7 +71,7 @@ export default function Form({ onSubmit, pinId, initialData }: FormProps) {
       otherWaterFilterReason: '',
       ...normalizedInitialData,
     };
-  }, [initialData]);
+  }, [initialData, pinId]);
 
   return (
     <Formik

@@ -143,52 +143,77 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   );
 };
 
+// PinForm.tsx (update styles)
 const styles = StyleSheet.create({
   container: { padding: 20 },
   input: {
     borderWidth: 1,
-    borderColor: '#888',
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: 4,
+    borderColor: '#ccc',
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  label: {
+    fontWeight: '600',
+    marginBottom: 4,
+    fontSize: 14,
   },
   error: {
     color: 'red',
     marginBottom: 8,
+    fontSize: 12,
+  },
+  section: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   buttonRow: {
     flexDirection: 'row',
-    alignItems: 'center', // vertically center buttons
-    alignContent: 'space-between',
     justifyContent: 'space-between',
-    marginTop: 12,
+    marginTop: 16,
   },
   imagePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#D0E8FF',
   },
-  imagePickerText: {
-    marginLeft: 8,
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: 'blue',
-  },
+  imagePickerText: { marginLeft: 8, fontWeight: 'bold', color: '#3498db' },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: '#e0f7e9',
-    borderRadius: 10,
+    borderRadius: 12,
   },
-  saveButtonText: {
-    marginLeft: 8,
-    color: 'green',
-    fontWeight: 'bold',
-    fontSize: 16,
+  saveButtonText: { marginLeft: 8, color: '#2ecc71', fontWeight: 'bold' },
+  imageThumbnailContainer: {
+    position: 'relative',
+    marginRight: 10,
+  },
+  imageThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 2,
+    zIndex: 1,
   },
 });

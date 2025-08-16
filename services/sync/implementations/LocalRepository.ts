@@ -42,6 +42,10 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
     if (ids.length === 0) return;
     const now = new Date().toISOString();
 
+    console.log(
+      'items to sync',
+      items.map((items) => items.id)
+    );
     await this.db
       .update(this.table)
       .set({
