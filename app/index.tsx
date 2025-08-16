@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { Button } from '~/components/Button';
-import { syncManagerInstance } from '~/services/sync/syncManagerInstance';
+import { syncManagerInstance } from '~/services/sync/syncService';
 
 export default function Home() {
   return (

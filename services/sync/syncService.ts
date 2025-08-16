@@ -10,7 +10,7 @@ import { SupabaseFormRepo } from './implementations/forms/SupabaseFormRepo';
 
 const localPinRepo = new DrizzlePinRepo(); // only create this once
 const remotePinRepo = new SupabasePinRepo();
-const localFormRepo = new DrizzleFormRepo(); // only create this once
+export const localFormRepo = new DrizzleFormRepo(); // only create this once
 const remoteFormRepo = new SupabaseFormRepo();
 
 const pinSyncHandler = PinSyncHandler.getInstance(

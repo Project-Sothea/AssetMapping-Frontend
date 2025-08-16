@@ -1,4 +1,9 @@
-import { convertKeysToCamel, convertKeysToSnake } from '~/utils/dataShapes';
+import {
+  convertKeysToCamel,
+  convertKeysToSnake,
+  parseArrayFields,
+  stringifyArrayFields,
+} from '~/utils/dataShapes';
 
 export class SyncStrategy<
   LocalType extends {
@@ -69,31 +74,4 @@ export class SyncStrategy<
 
     return { toLocal, toRemote };
   }
-}
-
-function stringifyArrayFields(value: any): typeof value {
-  const result = { ...value };
-  for (const key in result) {
-    if (Array.isArray(result[key])) {
-      result[key] = JSON.stringify(result[key]);
-    }
-  }
-  return result;
-}
-
-function parseArrayFields(value: any): typeof value {
-  const result = { ...value };
-  for (const key in result) {
-    if (typeof result[key] === 'string') {
-      try {
-        const parsed = JSON.parse(result[key]);
-        if (Array.isArray(parsed)) {
-          result[key] = parsed;
-        }
-      } catch {
-        // Not a JSON array string, leave as is
-      }
-    }
-  }
-  return result;
 }

@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
 import { PinManager } from '~/services/PinManager';
 import { DrizzlePinRepo } from '~/services/sync/implementations/pins/DrizzlePinRepo';
-import { pinSyncManager } from '~/services/sync/syncManagerInstance';
+import { syncManagerInstance } from '~/services/sync/syncService';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 const pinManager = new PinManager(new DrizzlePinRepo());
@@ -47,7 +47,7 @@ export default function Map() {
     console.log('creating new pin in db...');
     try {
       await pinManager.createLocally(PinformData);
-      await pinSyncManager.syncNow();
+      await syncManagerInstance.syncNow();
       Alert.alert(`Pin Created!`);
     } catch (error) {
       console.error('Error uploading images or creating pin:', error);
@@ -68,7 +68,7 @@ export default function Map() {
 
     try {
       await pinManager.updateLocally(PinformData);
-      await pinSyncManager.syncNow();
+      await syncManagerInstance.syncNow();
 
       Alert.alert(`Pin Updated!`);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function Map() {
 
     try {
       await pinManager.deleteLocally(pin);
-      await pinSyncManager.syncNow();
+      await syncManagerInstance.syncNow();
 
       Alert.alert(`Pin Deleted!`);
     } catch (error) {

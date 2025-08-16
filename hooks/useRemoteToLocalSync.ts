@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { pinSyncManager } from '~/services/sync/syncManagerInstance';
+import { syncManagerInstance } from '~/services/sync/syncService';
 
 export const useRemoteToLocalSync = () => {
   useEffect(() => {
     console.log('begin Interval');
     const interval = setInterval(
       () => {
-        pinSyncManager.syncNow();
+        syncManagerInstance.syncNow();
       },
       5 * 60 * 1000
     );

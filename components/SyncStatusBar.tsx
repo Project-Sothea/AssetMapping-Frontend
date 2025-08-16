@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { syncManagerInstance } from '~/services/sync/syncManagerInstance';
+import { syncManagerInstance } from '~/services/sync/syncService';
 import { formatTimestamp } from '~/utils/getCurrentTimeStamp';
 
 export const SyncStatusBar = () => {

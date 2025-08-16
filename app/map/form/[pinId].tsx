@@ -1,20 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
-import { useCreateForm, useFetchForms, useSoftDeleteForm, useUpdateForm } from '~/hooks/Forms';
+import { useFetchLocalForms } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
 import { FormDetailsModal } from '~/components/FormDetailsModal';
+import { localFormRepo } from '~/services/sync/syncService';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
-  const { data: forms, error, isLoading } = useFetchForms(pinId);
-
+  const { data: forms } = useFetchLocalForms(pinId);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-
-  const { mutate: createForm } = useCreateForm();
-  const { mutate: updateForm } = useUpdateForm();
-  const { mutate: softDeleteForm } = useSoftDeleteForm();
 
   const handleModalClose = () => {
     setSelectedForm(null);
@@ -22,33 +18,33 @@ export default function FormScreen() {
     console.log('closed form');
   };
 
-  const handleEdit = (form: FormType) => {
+  const handleFormEdit = (form: FormType) => {
     console.log('village', form.village);
     setModalVisible(true);
     setSelectedForm(form);
   };
 
-  const handleDelete = (formId: string) => {
+  const handleFormDelete = (formId: string) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this forms?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => softDeleteForm(formId), //TODO: handled by some hook or FormManager Class?
+        onPress: () => localFormRepo.delete(formId),
       },
     ]);
   };
 
-  const handleSubmit = (values: any) => {
+  const handleFormSubmit = (values: any) => {
     console.log('submitting');
-    const snakeCaseValues = toSnakeCase(values);
 
     if (selectedForm) {
-      updateForm({ id: selectedForm.id, values: snakeCaseValues });
+      localFormRepo.update(values);
+      // updateForm({ id: selectedForm.id, values: snakeCaseValues });
       setSelectedForm(null);
       Alert.alert('Form Updated!');
     } else {
-      createForm({ ...snakeCaseValues, pin_id: pinId } as Partial<FormType>);
+      localFormRepo.create(values);
       Alert.alert('Form Created!');
     }
 
@@ -59,16 +55,14 @@ export default function FormScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
 
-      {isLoading && <Text>Loading forms...</Text>}
-      {error && <Text>Error fetching forms.</Text>}
-      {forms?.length === 0 && !isLoading && <Text>No forms submitted yet.</Text>}
+      {forms?.length === 0 && <Text>No forms submitted yet.</Text>}
 
       {forms?.map((form) => (
         <View key={form.id} style={styles.formCard}>
           <Text>Submitted on: {new Date(form.createdAt).toLocaleString()}</Text>
-          <Button title="View" onPress={() => handleEdit(form)} />
+          <Button title="View" onPress={() => handleFormEdit(form)} />
           <View style={styles.spacer} />
-          <Button color="red" title="Delete" onPress={() => handleDelete(form.id)} />
+          <Button color="red" title="Delete" onPress={() => handleFormDelete(form.id)} />
         </View>
       ))}
 
@@ -87,7 +81,7 @@ export default function FormScreen() {
         pinId={pinId}
         selectedForm={selectedForm}
         onClose={handleModalClose}
-        onSubmit={handleSubmit}
+        onSubmit={handleFormSubmit}
       />
     </ScrollView>
   );
@@ -121,12 +115,3 @@ const styles = StyleSheet.create({
     height: 20,
   },
 });
-
-const toSnakeCase = (obj: Record<string, any>) => {
-  const newObj: Record<string, any> = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-    newObj[snakeKey] = obj[key];
-  }
-  return newObj;
-};

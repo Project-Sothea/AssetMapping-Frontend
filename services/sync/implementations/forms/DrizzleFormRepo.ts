@@ -1,6 +1,7 @@
 import { Form, forms } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
 import { LocalRepository } from '../LocalRepository';
+import { stringifyArrayFields } from '~/utils/dataShapes';
 
 export class DrizzleFormRepo extends LocalRepository<Form, typeof forms> {
   constructor() {
@@ -12,6 +13,6 @@ export class DrizzleFormRepo extends LocalRepository<Form, typeof forms> {
   }
 
   transformBeforeInsert(item: Form): Form {
-    return item; // no special handling needed
+    return stringifyArrayFields(item); // no special handling needed
   }
 }

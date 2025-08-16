@@ -1,5 +1,6 @@
 import { inArray, eq } from 'drizzle-orm';
 import { buildUpsertSet, buildSoftDeleteSet } from '~/services/drizzleDb';
+import { v4 as uuidv4 } from 'uuid';
 
 export abstract class LocalRepository<T extends { id: string }, Table extends Record<string, any>> {
   constructor(
@@ -69,7 +70,20 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
   }
 
   async create(item: T): Promise<void> {
-    await this.db.insert(this.table).values(this.transformBeforeInsert(item));
+    const now = new Date().toISOString();
+    const localCreate = {
+      ...this.transformBeforeInsert(item),
+      id: uuidv4(),
+      status: 'dirty',
+      deletedAt: null,
+      createdAt: now,
+      updatedAt: now,
+      lastSyncedAt: null,
+      lastFailedSyncAt: null,
+      failureReason: null,
+    };
+    console.log('db insert', localCreate);
+    await this.db.insert(this.table).values(localCreate);
   }
 
   async update(item: T): Promise<void> {
@@ -85,9 +99,21 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
 
   async upsert(item: T): Promise<void> {
     const now = new Date().toISOString();
+    const localCreate = {
+      ...this.transformBeforeInsert(item),
+      id: uuidv4(),
+      status: 'dirty',
+      deletedAt: null,
+      createdAt: now,
+      updatedAt: now,
+      lastSyncedAt: null,
+      lastFailedSyncAt: null,
+      failureReason: null,
+    };
+
     await this.db
       .insert(this.table)
-      .values(this.transformBeforeInsert(item))
+      .values(localCreate)
       .onConflictDoUpdate({
         target: (this.table as any).id,
         set: {

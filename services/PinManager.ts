@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { EntityManager } from './EntityManager';
 import { DrizzlePinRepo } from './sync/implementations/pins/DrizzlePinRepo';
 import { getCurrentTimeStamp } from '~/utils/getCurrentTimeStamp';
-import { pinSyncManager } from './sync/syncManagerInstance';
+import { syncManagerInstance } from './sync/syncService';
 
 export class PinManager implements EntityManager<PinFormValues, PinFormValues, Pin> {
   constructor(private readonly localRepo: DrizzlePinRepo) {}
@@ -39,7 +39,7 @@ export class PinManager implements EntityManager<PinFormValues, PinFormValues, P
     const { success: publicURIs } = await ImageManager.saveToRemote(pinId, localURIs);
     console.log('success', publicURIs);
 
-    await pinSyncManager.setlocalImagesField([
+    await syncManagerInstance.setlocalImagesField([
       { id: pinId, fields: { images: JSON.stringify(publicURIs) } },
     ]);
   }
