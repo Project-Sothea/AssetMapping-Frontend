@@ -1,9 +1,9 @@
 import { supabase } from '~/services/supabase';
-import { ReForm } from '~/utils/globalTypes';
+import { RePin } from '~/utils/globalTypes';
 
 export const fetchAll = async () => {
   try {
-    const { data, error } = await supabase.from('forms').select('*');
+    const { data, error } = await supabase.from('pins').select('*');
     if (error) {
       console.error('supabase error:', error.message);
       return [];
@@ -15,9 +15,9 @@ export const fetchAll = async () => {
   }
 };
 
-export const upsertAll = async (forms: ReForm[]) => {
+export const upsertAll = async (pins: RePin[]) => {
   try {
-    const { error } = await supabase.from('forms').upsert(forms, { onConflict: 'id' });
+    const { error } = await supabase.from('pins').upsert(pins, { onConflict: 'id' });
 
     if (error) throw error;
   } catch (e) {

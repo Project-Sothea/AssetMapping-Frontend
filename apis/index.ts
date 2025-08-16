@@ -1,4 +1,4 @@
-export * as callPin from './pin';
+export * as callPin from './Pins';
 
 export * as callImages from './images';
 
