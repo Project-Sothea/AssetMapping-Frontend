@@ -17,11 +17,17 @@ export const fetchAll = async () => {
 
 export const upsertAll = async (forms: ReForm[]) => {
   try {
-    const { error } = await supabase.from('forms').upsert(forms, { onConflict: 'id' });
+    // Strip out local-only fields before upserting
+    const formsToUpsert = forms.map(
+      ({ failure_reason, status, last_synced_at, last_failed_sync_at, ...rest }) => rest
+    );
+    console.log(formsToUpsert);
+
+    const { error } = await supabase.from('forms').upsert(formsToUpsert, { onConflict: 'id' });
 
     if (error) throw error;
   } catch (e) {
-    console.error('Failed to upsert pins:', e);
-    throw new Error('error in upserting to remote DB');
+    console.error('Failed to upsert forms:', e);
+    throw new Error('Error in upserting to remote DB');
   }
 };

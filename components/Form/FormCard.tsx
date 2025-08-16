@@ -18,7 +18,9 @@ export const FormCard = ({ form, onEdit, onDelete }: FormCardProps) => {
     <View style={[styles.card, { borderLeftColor: borderColor }]}>
       <Text style={styles.villageText}>{form.village}</Text>
       <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
-
+      {form.updatedAt && (
+        <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
+      )}
       <View style={styles.buttonsRow}>
         <Button title="View" color="#3498db" onPress={() => onEdit(form)} />
         <View style={{ width: 10 }} />
@@ -50,10 +52,11 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 14,
     color: '#7f8c8d',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   buttonsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
+    marginTop: 8,
   },
 });

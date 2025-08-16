@@ -23,7 +23,7 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ visible, onClose, title, ch
         <View style={styles.modalBackground}>
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={styles.modalContainer}>
-              <ScrollView keyboardShouldPersistTaps="handled">
+              <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
                 {title && <Text style={styles.modalTitle}>{title}</Text>}
                 {children}
 
@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     padding: 20,
     borderRadius: 12,
+    flex: 1,
   },
   modalTitle: {
     fontWeight: 'bold',
