@@ -1,6 +1,13 @@
 import { BaseSyncHandler } from './handlers/BaseSyncHandler';
+type StatusListener = (displayStatus: DisplayStatus) => void;
+type DisplayStatus = {
+  text: string;
+  color: string;
+};
 
 export class SyncManager {
+  private listeners: StatusListener[] = [];
+
   private static instance: SyncManager | null = null;
 
   private isSyncing = false; // handle deduplication
@@ -52,12 +59,18 @@ export class SyncManager {
       console.error('SyncManager: syncNow()', e);
       this.setSyncFailure(e);
     } finally {
-      this.isSyncing = false;
+      this.setSyncEnd();
     }
   }
 
   private setSyncStart() {
     this.isSyncing = true;
+    this.notifyListeners();
+  }
+
+  private setSyncEnd() {
+    this.isSyncing = false;
+    this.notifyListeners();
   }
 
   private setSyncSuccess() {
@@ -73,25 +86,41 @@ export class SyncManager {
     this.isSyncing = false;
   }
 
-  public getSyncStatus(): { state: string; at: string } {
+  public subscribe(listener: StatusListener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  private notifyListeners() {
+    const status = this.getDisplayStatus();
+    this.listeners.forEach((l) => l(status));
+  }
+
+  public getDisplayStatus(): DisplayStatus {
     if (this.isSyncing) {
-      return { state: 'Syncing', at: 'n.a.' };
+      return { text: 'Syncing...', color: '#3498db' };
     }
 
-    // If last sync failed is more recent than last successful sync
     if (
       this.lastSyncFailedAt &&
-      (!this.lastSyncedAt || this.lastSyncFailedAt > this.lastSyncedAt)
+      (!this.lastSyncedAt || this.lastSyncFailedAt >= this.lastSyncedAt)
     ) {
-      return { state: 'Local', at: this.lastSyncFailedAt.toISOString() };
+      return {
+        text: ` Sync (failed ${this.lastSyncFailedAt.toLocaleTimeString()})`,
+        color: '#f39c12',
+      };
     }
 
-    // If last successful sync is more recent or exists without failure
     if (this.lastSyncedAt) {
-      return { state: 'Remote', at: this.lastSyncedAt.toISOString() };
+      return {
+        text: `Sync (last ${this.lastSyncedAt.toLocaleTimeString()})`,
+        color: '#2ecc71',
+      };
     }
 
-    return { state: 'Unsynced', at: 'n.a.' };
+    return { text: 'Unsynced', color: '#e74c3c' };
   }
 }
 
