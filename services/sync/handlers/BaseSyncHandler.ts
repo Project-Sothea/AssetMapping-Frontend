@@ -38,18 +38,36 @@ export abstract class BaseSyncHandler<
 
     console.log('Upserting local items:', localUpserts.length);
     console.log('Upserting remote items:', remoteUpserts.length);
-    console.log('localUpserts:', localUpserts);
 
     await Promise.all([
       this.localRepo.upsertAll(localUpserts),
       this.remoteRepo.upsertAll(remoteUpserts),
     ]);
 
-    // await this.postSync(localUpserts, remoteUpserts);
-    await Promise.all([
-      this.localRepo.markAsSynced(localUpserts), //items coming from remote
-      this.localRepo.markAsSynced(toRemote), //items sent to remote
-    ]);
+    await this.postSync(localUpserts, remoteUpserts);
+    try {
+      await Promise.all([
+        (async () => {
+          try {
+            await this.localRepo.markAsSynced(localUpserts); // items coming from remote
+          } catch (err) {
+            console.error('markAsSynced failed for localUpserts:', localUpserts, err);
+            throw err;
+          }
+        })(),
+        (async () => {
+          try {
+            await this.localRepo.markAsSynced(toRemote); // items sent to remote
+          } catch (err) {
+            console.error('markAsSynced failed for toRemote:', toRemote, err);
+            throw err;
+          }
+        })(),
+      ]);
+    } catch (err) {
+      console.error('Error during markAsSynced step:', err);
+      throw err;
+    }
   }
 
   /**

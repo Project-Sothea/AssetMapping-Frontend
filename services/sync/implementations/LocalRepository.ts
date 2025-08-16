@@ -24,17 +24,21 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
     if (!items || items.length === 0) return;
     const now = new Date().toISOString();
 
-    await this.db
-      .insert(this.table)
-      .values(items.map((i) => this.transformBeforeInsert(i)))
-      .onConflictDoUpdate({
-        target: (this.table as any).id,
-        set: buildUpsertSet<Table>(this.table, this.excludeUpsert, {
-          updatedAt: now,
-          status: 'synced',
-          lastSyncedAt: now,
-        } as Partial<Record<keyof Table, any>>),
-      });
+    try {
+      await this.db
+        .insert(this.table)
+        .values(items.map((i) => this.transformBeforeInsert(i)))
+        .onConflictDoUpdate({
+          target: (this.table as any).id,
+          set: buildUpsertSet<Table>(this.table, this.excludeUpsert, {
+            updatedAt: now,
+            status: 'synced',
+            lastSyncedAt: now,
+          } as Partial<Record<keyof Table, any>>),
+        });
+    } catch (e) {
+      console.error('Local Repo UpsertAll Error', e);
+    }
   }
 
   async markAsSynced(items: T[]): Promise<void> {
@@ -42,10 +46,6 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
     if (ids.length === 0) return;
     const now = new Date().toISOString();
 
-    console.log(
-      'items to sync',
-      items.map((items) => items.id)
-    );
     await this.db
       .update(this.table)
       .set({

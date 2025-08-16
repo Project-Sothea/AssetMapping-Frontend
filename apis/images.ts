@@ -32,7 +32,6 @@ export const deleteImage = async (publicUrl: string): Promise<boolean> => {
     console.log('baseUrl', baseUrl);
     // Strip base URL to get path: pins/<pinId>/<filename>
     const path = publicUrl.replace(baseUrl, '').replace(/^\/+/, '');
-    console.log('path', path);
 
     const { error } = await supabase.storage.from('pins').remove([path]);
 
@@ -48,7 +47,7 @@ export const deleteImage = async (publicUrl: string): Promise<boolean> => {
   }
 };
 
-export async function listFiles(folderPath: string): Promise<string[]> {
+export async function listFilesInBucket(folderPath: string): Promise<string[]> {
   // folderPath should be like `${pinId}/`
   const { data, error } = await supabase.storage
     .from('pins') // your bucket name
@@ -59,7 +58,11 @@ export async function listFiles(folderPath: string): Promise<string[]> {
     });
 
   if (error) {
-    console.error('Failed to list files:', error);
+    console.warn('Failed to list files or folder does not exist:', error);
+    return [];
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
     return [];
   }
 

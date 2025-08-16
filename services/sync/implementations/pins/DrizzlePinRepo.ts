@@ -17,7 +17,7 @@ export class DrizzlePinRepo extends LocalRepository<Pin, typeof pins> {
   transformBeforeInsert(item: Pin): Pin {
     return {
       ...item,
-      images: typeof item.images === 'string' ? JSON.parse(item.images) : item.images,
+      images: Array.isArray(item.images) ? JSON.stringify(item.images) : (item.images ?? '[]'), // fallback to empty array
     };
   }
 }

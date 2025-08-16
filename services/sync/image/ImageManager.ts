@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { callImages } from '~/apis';
 import { v4 as uuidv4 } from 'uuid';
+import { Pin, RePin } from '~/utils/globalTypes';
 
 export async function getPickedImage() {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -295,30 +296,6 @@ export async function deleteAllImagesLocally(pinId: string): Promise<{
   return result;
 }
 
-export async function deleteAllImagesRemotely(pinId: string) {
-  // get all filenames in the pin folder
-  const filenames = await callImages.listFiles(`${pinId}/`);
-
-  const deleteResults = await Promise.allSettled(
-    filenames.map((filename) => callImages.deleteImage(`${pinId}/${filename}`))
-  );
-
-  const deleted = deleteResults
-    .map((res, idx) => ({ res, idx }))
-    .filter(({ res }) => res.status === 'fulfilled')
-    .map(({ idx }) => `${pinId}/${filenames[idx]}`);
-
-  const failedDelete = deleteResults
-    .map((res, idx) => ({ res, idx }))
-    .filter(({ res }) => res.status === 'rejected')
-    .map(({ res, idx }) => ({
-      uri: `${pinId}/${filenames[idx]}`,
-      error: (res as PromiseRejectedResult).reason,
-    }));
-
-  return { deleted, failedDelete };
-}
-
 function extractFilenameFromRemoteUri(uri: string): string {
   return uri.split('/').pop()!;
 }
@@ -343,4 +320,220 @@ function extractFilenameFromLocalUri(localUri: string): string | null {
 
 function generateNewFileName(): string {
   return `${uuidv4()}.jpg`;
+}
+
+//REMOTE
+
+async function deleteInRemote(pinId: string, files: string[]) {
+  if (!files || files.length === 0) return;
+  const deleteResults = await Promise.allSettled(
+    files.map((filename) => callImages.deleteImage(`${pinId}/${filename}`))
+  );
+
+  const deleted = deleteResults
+    .map((res, idx) => ({ res, idx }))
+    .filter(({ res }) => res.status === 'fulfilled')
+    .map(({ idx }) => `${pinId}/${files[idx]}`);
+
+  const failedDelete = deleteResults
+    .map((res, idx) => ({ res, idx }))
+    .filter(({ res }) => res.status === 'rejected')
+    .map(({ res, idx }) => ({
+      uri: `${pinId}/${files[idx]}`,
+      error: (res as PromiseRejectedResult).reason,
+    }));
+
+  return { deleted, failedDelete };
+}
+
+export async function uploadToRemote(
+  pinId: string,
+  uris: string[]
+): Promise<{
+  images: string[]; // URLs in remote bucket
+  fail: { uri: string; error: unknown }[];
+  localImages: string[]; // original local URIs
+}> {
+  const images: string[] = [];
+  const fail: { uri: string; error: unknown }[] = [];
+  const localImages: string[] = [];
+
+  if (!uris?.length) {
+    return { images, fail, localImages };
+  }
+
+  const uploadTasks = uris.map((uri) => {
+    const remotePath = `${pinId}/${extractFilenameFromLocalUri(uri)}`;
+    return callImages.uploadToRemote(uri, remotePath);
+  });
+
+  const results = await Promise.allSettled(uploadTasks);
+
+  results.forEach((result, index) => {
+    const uri = uris[index];
+    if (result.status === 'fulfilled') {
+      images.push(result.value); // remote URL
+      localImages.push(uri); // keep original local path
+    } else {
+      fail.push({ uri, error: result.reason });
+      console.warn(`Failed to upload image: ${uri}`, result.reason);
+    }
+  });
+
+  return { images, fail, localImages };
+}
+
+//LOCAL
+
+async function listLocalImages(pinId: string): Promise<string[]> {
+  const folderPath = `${FileSystem.documentDirectory}pins/${pinId}/`;
+
+  try {
+    // Check if folder exists
+    const info = await FileSystem.getInfoAsync(folderPath);
+    if (!info.exists) return []; // folder does not exist
+
+    // Read all files in the folder
+    const files = await FileSystem.readDirectoryAsync(folderPath);
+
+    // Prepend full path to each file
+    return files.map((file) => `${folderPath}${file}`);
+  } catch (err) {
+    console.warn('Failed to list local images for pin', pinId, err);
+    return [];
+  }
+}
+
+async function deleteInLocal(
+  pinId: string,
+  files: string[]
+): Promise<{
+  success: string[];
+  fail: { uri: string; error: any }[];
+}> {
+  const result = {
+    success: [] as string[],
+    fail: [] as { uri: string; error: any }[],
+  };
+  if (!files || files.length === 0) return result;
+
+  const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
+
+  try {
+    await Promise.all(
+      files.map(async (filename) => {
+        const uri = `${directory}${filename}`;
+        try {
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+          result.success.push(uri);
+        } catch (err) {
+          console.warn('Failed to delete file:', uri, err);
+          result.fail.push({ uri, error: err });
+        }
+      })
+    );
+
+    // Attempt to delete the directory itself after cleaning
+    try {
+      await FileSystem.deleteAsync(directory, { idempotent: true });
+    } catch (dirErr) {
+      console.warn('Failed to delete directory:', directory, dirErr);
+    }
+  } catch (err) {
+    console.warn('Failed to read directory (may not exist):', directory, err);
+    // Not throwing because directory might not exist (which is fine)
+  }
+
+  return result;
+}
+
+async function downloadToLocal(
+  pinId: string,
+  images: string[]
+): Promise<{ localImages: string[]; images: string[]; fail: string[] }> {
+  const localImages: string[] = [];
+  const fail: string[] = [];
+
+  if (!images?.length) return { localImages, images, fail };
+
+  const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
+
+  try {
+    await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
+  } catch (err) {
+    console.warn('Failed to create directory:', err);
+  }
+
+  for (const img of images) {
+    const filename = generateNewFileName();
+    const localUri = `${directory}${filename}`;
+
+    try {
+      if (img.startsWith('file://')) {
+        await FileSystem.copyAsync({ from: img, to: localUri });
+      } else if (img.startsWith('http://') || img.startsWith('https://')) {
+        const downloadRes = await FileSystem.downloadAsync(img, localUri);
+        if (downloadRes.status !== 200) {
+          throw new Error(`Failed to download image: HTTP status ${downloadRes.status}`);
+        }
+      } else {
+        throw new Error('Unsupported image source: ' + img);
+      }
+
+      localImages.push(localUri);
+    } catch (err) {
+      console.warn(`Failed to save image ${img}:`, err);
+      fail.push(img);
+    }
+  }
+
+  return { localImages, images, fail };
+}
+
+export async function handleUpsertsToLocal(
+  localUpserts: Pin[]
+): Promise<{ pinId: string; localImages: string[]; images: string[] }[]> {
+  if (!localUpserts || localUpserts.length === 0) return [];
+
+  const results: { pinId: string; localImages: string[]; images: string[] }[] = [];
+
+  for (const pin of localUpserts) {
+    const oldImages = await listLocalImages(pin.id);
+
+    const newUrisFromBucket: string[] =
+      typeof pin.images === 'string' && pin.images.trim() !== ''
+        ? JSON.parse(pin.images)
+        : Array.isArray(pin.images)
+          ? pin.images
+          : [];
+
+    await deleteInLocal(pin.id, oldImages);
+    const { localImages, images } = await downloadToLocal(pin.id, newUrisFromBucket);
+
+    results.push({ pinId: pin.id, localImages, images });
+  }
+
+  return results;
+}
+
+export async function handleUpsertsToRemote(remoteUpserts: RePin[]) {
+  if (!remoteUpserts || remoteUpserts.length === 0) return;
+
+  const results: { pinId: string; localImages: string[]; images: string[] }[] = [];
+
+  for (const pin of remoteUpserts) {
+    //came from the local source
+    const oldImages = await callImages.listFilesInBucket(`${pin.id}/`);
+    const newUris: string[] =
+      typeof pin.local_images === 'string' && pin.local_images.trim() !== ''
+        ? JSON.parse(pin.local_images)
+        : Array.isArray(pin.local_images)
+          ? pin.local_images
+          : [];
+
+    await deleteInRemote(pin.id, oldImages);
+    const { localImages, images } = await uploadToRemote(pin.id, newUris);
+    results.push({ pinId: pin.id, localImages, images });
+  }
+  return results;
 }
