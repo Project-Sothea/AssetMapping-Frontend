@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 import { EntityManager } from './EntityManager';
 import { DrizzlePinRepo } from './sync/implementations/pins/DrizzlePinRepo';
 import { getCurrentTimeStamp } from '~/utils/getCurrentTimeStamp';
-import { syncManagerInstance } from './sync/syncService';
 
 export class PinManager implements EntityManager<PinFormValues, PinFormValues, Pin> {
   constructor(private readonly localRepo: DrizzlePinRepo) {}
@@ -38,10 +37,6 @@ export class PinManager implements EntityManager<PinFormValues, PinFormValues, P
     // Upload to remote (Supabase)
     const { success: publicURIs } = await ImageManager.saveToRemote(pinId, localURIs);
     console.log('success', publicURIs);
-
-    await syncManagerInstance.setlocalImagesField([
-      { id: pinId, fields: { images: JSON.stringify(publicURIs) } },
-    ]);
   }
 
   // Update remote image URLs in local DB
@@ -85,8 +80,7 @@ export class PinManager implements EntityManager<PinFormValues, PinFormValues, P
     await ImageManager.deleteAllImagesLocally(pinId);
     await this.localRepo.delete(pinId); // this sets "deletedAt" to now()
 
-    const publicImages = pin.images ? JSON.parse(pin.images) : [];
-    await ImageManager.deleteAllImagesRemotely(pinId, publicImages);
+    await ImageManager.deleteAllImagesRemotely(pinId);
   }
 }
 

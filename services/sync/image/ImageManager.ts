@@ -295,15 +295,9 @@ export async function deleteAllImagesLocally(pinId: string): Promise<{
   return result;
 }
 
-export async function deleteAllImagesRemotely(
-  pinId: string,
-  existingRemoteUris: string[]
-): Promise<{
-  deleted: string[];
-  failedDelete: { uri: string; error: any }[];
-}> {
-  // Extract filenames from all existing remote URIs
-  const filenames = existingRemoteUris.map(extractFilenameFromRemoteUri);
+export async function deleteAllImagesRemotely(pinId: string) {
+  // get all filenames in the pin folder
+  const filenames = await callImages.listFiles(`${pinId}/`);
 
   const deleteResults = await Promise.allSettled(
     filenames.map((filename) => callImages.deleteImage(`${pinId}/${filename}`))

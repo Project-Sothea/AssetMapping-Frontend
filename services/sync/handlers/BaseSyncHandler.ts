@@ -5,7 +5,6 @@ import { SyncStrategy } from '../implementations/SyncStrategy';
 
 /**
  * Abstract base class that defines the sync lifecycle.
- * Specialized handlers extend this and override hooks if needed.
  */
 export abstract class BaseSyncHandler<
   LocalType extends {
@@ -39,16 +38,17 @@ export abstract class BaseSyncHandler<
 
     console.log('Upserting local items:', localUpserts.length);
     console.log('Upserting remote items:', remoteUpserts.length);
+    console.log('localUpserts:', localUpserts);
+
     await Promise.all([
       this.localRepo.upsertAll(localUpserts),
       this.remoteRepo.upsertAll(remoteUpserts),
     ]);
 
-    await this.postSync(localUpserts, remoteUpserts);
-
+    // await this.postSync(localUpserts, remoteUpserts);
     await Promise.all([
-      this.localRepo.markAsSynced(localUpserts),
-      this.localRepo.markAsSynced(toRemote),
+      this.localRepo.markAsSynced(localUpserts), //items coming from remote
+      this.localRepo.markAsSynced(toRemote), //items sent to remote
     ]);
   }
 

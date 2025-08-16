@@ -8,7 +8,7 @@ import { FormSyncHandler } from './handlers/FormSyncHandler';
 import { DrizzleFormRepo } from './implementations/forms/DrizzleFormRepo';
 import { SupabaseFormRepo } from './implementations/forms/SupabaseFormRepo';
 
-const localPinRepo = new DrizzlePinRepo(); // only create this once
+export const localPinRepo = new DrizzlePinRepo(); // only create this once
 const remotePinRepo = new SupabasePinRepo();
 export const localFormRepo = new DrizzleFormRepo(); // only create this once
 const remoteFormRepo = new SupabaseFormRepo();

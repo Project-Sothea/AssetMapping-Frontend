@@ -47,3 +47,21 @@ export const deleteImage = async (publicUrl: string): Promise<boolean> => {
     return false;
   }
 };
+
+export async function listFiles(folderPath: string): Promise<string[]> {
+  // folderPath should be like `${pinId}/`
+  const { data, error } = await supabase.storage
+    .from('pins') // your bucket name
+    .list(folderPath, {
+      limit: 100, // adjust as needed
+      offset: 0,
+      sortBy: { column: 'name', order: 'asc' },
+    });
+
+  if (error) {
+    console.error('Failed to list files:', error);
+    return [];
+  }
+
+  return data.map((file) => file.name);
+}
