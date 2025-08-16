@@ -18,23 +18,25 @@ type ModalWrapperProps = {
 
 const ModalWrapper: React.FC<ModalWrapperProps> = ({ visible, onClose, title, children }) => {
   return (
-    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.modalBackground}>
-          <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={styles.modalContainer}>
-              <ScrollView keyboardShouldPersistTaps="handled" style={{ flex: 1 }}>
-                {title && <Text style={styles.modalTitle}>{title}</Text>}
-                {children}
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalBackground}>
+        {/* Outside area dismisses */}
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={StyleSheet.absoluteFillObject} />
+        </TouchableWithoutFeedback>
 
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </TouchableWithoutFeedback>
+        {/* Modal content (scrollable) */}
+        <View style={styles.modalContainer}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+            {title && <Text style={styles.modalTitle}>{title}</Text>}
+            {children}
+
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };

@@ -1,7 +1,6 @@
 import { supabase } from '~/services/supabase';
 
 export const uploadToRemote = async (uri: string, fileName: string): Promise<string> => {
-  console.log('tryin1');
   console.log('uri', uri);
   console.log('fileName', fileName);
   const response = await fetch(uri);

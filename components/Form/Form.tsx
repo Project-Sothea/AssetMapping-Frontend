@@ -26,7 +26,6 @@ type FormProps = {
 export default function Form({ onSubmit, pinId, initialData }: FormProps) {
   const mergedInitialValues = React.useMemo(() => {
     const normalizedInitialData = initialData ? parseArrayFields(snakeToCamel(initialData)) : {};
-    console.log('initialData:', normalizedInitialData);
     return {
       pinId: pinId,
       village: '',

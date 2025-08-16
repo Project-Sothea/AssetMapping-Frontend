@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import Checkbox from 'expo-checkbox';
+import { Checkbox } from 'expo-checkbox';
 
 type RadioOption = { label: string; value: string };
 
