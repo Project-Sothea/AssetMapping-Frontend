@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { pinSyncManager } from '~/services/sync/pinSyncManager';
+import { pinSyncManager } from '~/services/sync/syncManagerInstance';
 
 export const useRemoteToLocalSync = () => {
   useEffect(() => {

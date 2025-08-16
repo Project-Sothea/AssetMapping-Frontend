@@ -1,18 +1,18 @@
-import * as ImageManager from '~/services/ImageManager';
-import LocalRepository from './interfaces/LocalRepository';
+import * as ImageManager from '~/services/sync/image/ImageManager';
+import { LocalRepository } from '../implementations/LocalRepository';
 
-export class ImageSyncService<LocalType> {
+export class ImageSyncService<LocalType extends { id: string }, Table extends Record<string, any>> {
   //pushing any image changes to remote
 
-  constructor(private localRepo: LocalRepository<LocalType>) {}
-  async syncImageToRemote(item: LocalType): Promise<string[]> {
+  constructor(private localRepo: LocalRepository<LocalType, Table>) {}
+  async uploadToRemote(item: LocalType): Promise<string[]> {
     const localURIs = JSON.parse((item as any).localImages ?? '[]');
     const { uploaded } = await ImageManager.updateImagesRemotely((item as any).id, localURIs, []);
     return uploaded;
   }
 
   //no comparison logic, just directly uploads entire list of images
-  async syncRemoteImageToLocal(item: { id: string; images: string }): Promise<string[]> {
+  async uploadToLocal(item: { id: string; images: string | null }): Promise<string[]> {
     const id: string = item.id;
     const existing_item = await this.localRepo.get(id);
     console.log('ok', existing_item);
@@ -27,27 +27,27 @@ export class ImageSyncService<LocalType> {
     return success;
   }
 
-  async syncImagesToRemote(items: LocalType[]): Promise<void> {
+  async syncToRemote(items: LocalType[]): Promise<void> {
     const updates: { id: string; fields: Partial<LocalType> }[] = [];
 
     for (const item of items) {
-      const uploaded = await this.syncImageToRemote(item);
+      const uploadedImages = await this.uploadToRemote(item);
       updates.push({
         id: (item as any).id,
         fields: {
-          images: JSON.stringify(uploaded),
+          images: JSON.stringify(uploadedImages),
         } as any,
       });
     }
   }
 
-  async syncRemoteToLocal(
-    items: { id: string; images: string }[]
+  async syncToLocal(
+    items: { id: string; images: string | null }[]
   ): Promise<{ id: string; fields: Partial<LocalType> }[]> {
     const updates: { id: string; fields: Partial<LocalType> }[] = [];
 
     for (const item of items) {
-      const uploaded = await this.syncRemoteImageToLocal(item);
+      const uploaded = await this.uploadToLocal(item);
       updates.push({
         id: item.id,
         fields: {

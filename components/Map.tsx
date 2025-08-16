@@ -14,7 +14,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
 import { PinManager } from '~/services/PinManager';
 import { DrizzlePinRepo } from '~/services/sync/implementations/pins/DrizzlePinRepo';
-import { pinSyncManager } from '~/services/sync/pinSyncManager';
+import { pinSyncManager } from '~/services/sync/syncManagerInstance';
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 const pinManager = new PinManager(new DrizzlePinRepo());

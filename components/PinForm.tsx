@@ -10,7 +10,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import * as ImageManager from '~/services/ImageManager';
+import * as ImageManager from '~/services/sync/image/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({

@@ -1,7 +1,7 @@
 import SyncManager from '../SyncManager';
-import RemoteRepository from '../interfaces/RemoteRepository';
-import LocalRepository from '../interfaces/LocalRepository';
-import SyncStrategy from '../interfaces/SyncStrategy';
+import RemoteRepository from '../implementations/RemoteRepository';
+import LocalRepository from '../implementations/LocalRepository';
+import SyncStrategy from '../implementations/SyncStrategy';
 import { LocalType, RemoteType } from '~/utils/testUtils';
 
 describe('SyncManager', () => {

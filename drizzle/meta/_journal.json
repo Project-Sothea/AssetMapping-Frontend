@@ -71,6 +71,13 @@
       "when": 1755272766196,
       "tag": "0009_clammy_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1755277803523,
+      "tag": "0010_modern_ben_parker",
+      "breakpoints": true
     }
   ]
 }

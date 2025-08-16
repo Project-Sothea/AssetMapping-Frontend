@@ -1,5 +1,5 @@
 import { supabase } from '~/services/supabase';
-import { Form } from '~/utils/globalTypes';
+import { Form, ReForm } from '~/utils/globalTypes';
 
 export const getForms = async (pin_id: string) => {
   try {
@@ -105,5 +105,30 @@ export const softDeleteForm = async (id: string) => {
     }
   } catch (err) {
     console.error('Non-Supabase Error:', err);
+  }
+};
+
+export const fetchAll = async () => {
+  try {
+    const { data, error } = await supabase.from('forms').select('*');
+    if (error) {
+      console.error('supabase error:', error.message);
+      return [];
+    }
+    return data;
+  } catch (err) {
+    console.error('Non-Supabase Error:', err);
+    return [];
+  }
+};
+
+export const upsertAll = async (forms: ReForm[]) => {
+  try {
+    const { error } = await supabase.from('forms').upsert(forms, { onConflict: 'id' });
+
+    if (error) throw error;
+  } catch (e) {
+    console.error('Failed to upsert pins:', e);
+    throw new Error('error in upserting to remote DB');
   }
 };

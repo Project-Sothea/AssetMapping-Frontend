@@ -6,9 +6,7 @@ export const pins = sqliteTable('pins', {
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
   failureReason: text('failure_reason'),
   status: text('status'),
@@ -32,9 +30,7 @@ export const forms = sqliteTable('forms', {
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updated_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
   failureReason: text('failure_reason'),
   status: text('status'),

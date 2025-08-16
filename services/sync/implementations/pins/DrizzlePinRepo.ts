@@ -1,8 +1,8 @@
 import { Pin, pins } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
-import { DrizzleRepository } from '../../interfaces/DrizzleRepository';
+import { LocalRepository } from '../LocalRepository';
 
-export class DrizzlePinRepo extends DrizzleRepository<Pin, typeof pins> {
+export class DrizzlePinRepo extends LocalRepository<Pin, typeof pins> {
   constructor() {
     super(db, pins, ['id', 'createdAt']);
   }

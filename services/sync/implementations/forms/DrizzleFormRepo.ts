@@ -1,8 +1,8 @@
 import { Form, forms } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
-import { DrizzleRepository } from '../../interfaces/DrizzleRepository';
+import { LocalRepository } from '../LocalRepository';
 
-export class DrizzleFormRepo extends DrizzleRepository<Form, typeof forms> {
+export class DrizzleFormRepo extends LocalRepository<Form, typeof forms> {
   constructor() {
     super(db, forms, ['id', 'createdAt']);
   }

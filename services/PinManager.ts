@@ -1,12 +1,12 @@
 import { PinFormValues } from '~/components/PinForm';
-import * as ImageManager from '~/services/ImageManager';
+import * as ImageManager from '~/services/sync/image/ImageManager';
 import { db } from './drizzleDb';
 import { Pin, pins } from '~/db/schema';
 import { eq } from 'drizzle-orm';
 import { EntityManager } from './EntityManager';
 import { DrizzlePinRepo } from './sync/implementations/pins/DrizzlePinRepo';
 import { getCurrentTimeStamp } from '~/utils/getCurrentTimeStamp';
-import { pinSyncManager } from './sync/pinSyncManager';
+import { pinSyncManager } from './sync/syncManagerInstance';
 
 export class PinManager implements EntityManager<PinFormValues, PinFormValues, Pin> {
   constructor(private readonly localRepo: DrizzlePinRepo) {}

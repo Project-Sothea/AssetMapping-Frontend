@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -30,6 +30,7 @@ export type Database = {
           diarrhoea: string | null
           diarrhoea_action: string | null
           eat_clean_food: string | null
+          failure_reason: string | null
           hand_after_toilet: string | null
           hand_before_meal: string | null
           have_toothbrush: string | null
@@ -38,6 +39,8 @@ export type Database = {
           id: string
           know_doctor: string | null
           know_water_filters: string | null
+          last_failed_sync_at: string | null
+          last_synced_at: string | null
           long_term_conditions: string[] | null
           management_methods: string[] | null
           msk_action: string[] | null
@@ -54,6 +57,7 @@ export type Database = {
           own_transport: string | null
           pin_id: string | null
           poverty_card: string | null
+          status: string | null
           unsafe_water: string[] | null
           updated_at: string | null
           village: string | null
@@ -77,6 +81,7 @@ export type Database = {
           diarrhoea?: string | null
           diarrhoea_action?: string | null
           eat_clean_food?: string | null
+          failure_reason?: string | null
           hand_after_toilet?: string | null
           hand_before_meal?: string | null
           have_toothbrush?: string | null
@@ -85,6 +90,8 @@ export type Database = {
           id?: string
           know_doctor?: string | null
           know_water_filters?: string | null
+          last_failed_sync_at?: string | null
+          last_synced_at?: string | null
           long_term_conditions?: string[] | null
           management_methods?: string[] | null
           msk_action?: string[] | null
@@ -101,6 +108,7 @@ export type Database = {
           own_transport?: string | null
           pin_id?: string | null
           poverty_card?: string | null
+          status?: string | null
           unsafe_water?: string[] | null
           updated_at?: string | null
           village?: string | null
@@ -124,6 +132,7 @@ export type Database = {
           diarrhoea?: string | null
           diarrhoea_action?: string | null
           eat_clean_food?: string | null
+          failure_reason?: string | null
           hand_after_toilet?: string | null
           hand_before_meal?: string | null
           have_toothbrush?: string | null
@@ -132,6 +141,8 @@ export type Database = {
           id?: string
           know_doctor?: string | null
           know_water_filters?: string | null
+          last_failed_sync_at?: string | null
+          last_synced_at?: string | null
           long_term_conditions?: string[] | null
           management_methods?: string[] | null
           msk_action?: string[] | null
@@ -148,6 +159,7 @@ export type Database = {
           own_transport?: string | null
           pin_id?: string | null
           poverty_card?: string | null
+          status?: string | null
           unsafe_water?: string[] | null
           updated_at?: string | null
           village?: string | null
@@ -172,13 +184,18 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           description: string | null
+          failure_reason: string | null
           id: string
           images: string[] | null
+          last_failed_sync_at: string | null
+          last_synced_at: string | null
           lat: number | null
           lng: number | null
+          local_images: string | null
           name: string | null
           postal_code: string | null
           state_province: string | null
+          status: string | null
           type: string | null
           updated_at: string | null
         }
@@ -187,13 +204,18 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string | null
+          failure_reason?: string | null
           id?: string
           images?: string[] | null
+          last_failed_sync_at?: string | null
+          last_synced_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_images?: string | null
           name?: string | null
           postal_code?: string | null
           state_province?: string | null
+          status?: string | null
           type?: string | null
           updated_at?: string | null
         }
@@ -202,13 +224,18 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string | null
+          failure_reason?: string | null
           id?: string
           images?: string[] | null
+          last_failed_sync_at?: string | null
+          last_synced_at?: string | null
           lat?: number | null
           lng?: number | null
+          local_images?: string | null
           name?: string | null
           postal_code?: string | null
           state_province?: string | null
+          status?: string | null
           type?: string | null
           updated_at?: string | null
         }

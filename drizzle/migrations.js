@@ -11,6 +11,7 @@ import m0006 from './0006_bright_nitro.sql';
 import m0007 from './0007_chief_vulcan.sql';
 import m0008 from './0008_dark_sabra.sql';
 import m0009 from './0009_clammy_mole_man.sql';
+import m0010 from './0010_modern_ben_parker.sql';
 
   export default {
     journal,
@@ -24,7 +25,8 @@ m0005,
 m0006,
 m0007,
 m0008,
-m0009
+m0009,
+m0010
     }
   }
   

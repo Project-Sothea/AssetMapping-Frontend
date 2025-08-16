@@ -1,18 +1,17 @@
-// components/SyncStatusHeader.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { pinSyncManager } from '~/services/sync/pinSyncManager';
+import { syncManagerInstance } from '~/services/sync/syncManagerInstance';
 import { formatTimestamp } from '~/utils/getCurrentTimeStamp';
 
 export const SyncStatusBar = () => {
   const TIMER = 5 * 60 * 1000;
 
-  const [syncStatus, setSyncStatus] = useState(pinSyncManager.getSyncStatus());
+  const [syncStatus, setSyncStatus] = useState(syncManagerInstance.getSyncStatus());
 
   useEffect(() => {
     const interval = setInterval(() => {
       console.log('sync status', syncStatus);
-      const latestStatus = pinSyncManager.getSyncStatus();
+      const latestStatus = syncManagerInstance.getSyncStatus();
       setSyncStatus(latestStatus);
     }, TIMER);
 

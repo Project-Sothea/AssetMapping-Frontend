@@ -1,10 +1,7 @@
 import { inArray, eq } from 'drizzle-orm';
 import { buildUpsertSet, buildSoftDeleteSet } from '~/services/drizzleDb';
 
-export abstract class DrizzleRepository<
-  T extends { id: string },
-  Table extends Record<string, any>,
-> {
+export abstract class LocalRepository<T extends { id: string }, Table extends Record<string, any>> {
   constructor(
     protected readonly db: any,
     protected readonly table: Table,
