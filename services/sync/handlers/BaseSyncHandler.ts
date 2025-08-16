@@ -27,15 +27,18 @@ export abstract class BaseSyncHandler<
    * Main sync flow: fetch → resolve → convert → upsert → hooks → mark synced
    */
   async execute(): Promise<void> {
+    console.log('executing handler');
     const [localItems, remoteItems] = await Promise.all([
       this.localRepo.fetchAll(),
       this.remoteRepo.fetchAll(),
     ]);
-
     const { toLocal, toRemote } = this.strategy.resolve(localItems, remoteItems);
 
     const localUpserts = this.strategy.convertToLocal(toLocal);
     const remoteUpserts = this.strategy.convertToRemote(toRemote);
+
+    console.log('Upserting local items:', localUpserts.length);
+    console.log('Upserting remote items:', remoteUpserts.length);
 
     await Promise.all([
       this.localRepo.upsertAll(localUpserts),

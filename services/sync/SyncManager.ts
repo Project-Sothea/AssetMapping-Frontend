@@ -1,4 +1,4 @@
-import { BaseSyncHandler } from './handlers/SyncHandler';
+import { BaseSyncHandler } from './handlers/BaseSyncHandler';
 
 export class SyncManager {
   private static instance: SyncManager | null = null;
