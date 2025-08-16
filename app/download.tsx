@@ -4,7 +4,7 @@ import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
 import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
 import Spacer from '~/components/customUI/Spacer';
-import { CreatePackForm } from '~/components/CreatePackForm';
+import { CreatePackForm } from '~/components/OfflinePacks/CreatePackForm';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();

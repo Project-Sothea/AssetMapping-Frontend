@@ -1,6 +1,6 @@
 import { Pin } from '~/db/schema';
-import ModalWrapper from './ModalWrapper';
 import PinDetails from './PinDetails';
+import ModalWrapper from '../customUI/ModalWrapper';
 import { PinFormValues } from './PinForm';
 
 type PinDetailsModalProps = {

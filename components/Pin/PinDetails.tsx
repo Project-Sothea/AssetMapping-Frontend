@@ -1,10 +1,10 @@
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Button } from './Button';
+import { Button } from '../customUI/Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pin } from '~/db/schema';
 import PinDetailsDisplay from './PinDetailsDisplay';
-import Spacer from './customUI/Spacer';
+import Spacer from '../customUI/Spacer';
 import { PinForm, PinFormValues } from './PinForm';
 import { MaterialIcons } from '@expo/vector-icons';
 

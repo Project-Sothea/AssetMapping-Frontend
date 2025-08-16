@@ -2,12 +2,12 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { Button } from './Button';
-import Spacer from './customUI/Spacer';
+import { Button } from '../customUI/Button';
+import Spacer from '../customUI/Spacer';
 import { Form as FormType } from '~/utils/globalTypes';
-import GeneralSection from './Form/GeneralSection';
-import WaterSection from './Form/WaterSection';
-import HealthSection from './Form/HealthSection';
+import GeneralSection from '../Form/GeneralSection';
+import WaterSection from '../Form/WaterSection';
+import HealthSection from '../Form/HealthSection';
 import { parseArrayFields } from '~/utils/dataShapes';
 
 const validationSchema = Yup.object().shape({

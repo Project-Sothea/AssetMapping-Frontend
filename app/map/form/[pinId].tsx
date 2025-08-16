@@ -3,9 +3,9 @@ import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native'
 import { useState } from 'react';
 import { useFetchLocalForms } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
-import { FormDetailsModal } from '~/components/FormDetailsModal';
 import { localFormRepo } from '~/services/sync/syncService';
 import { FormCard } from '~/components/Form/FormCard';
+import { FormDetailsModal } from '~/components/Form/FormDetailsModal';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();

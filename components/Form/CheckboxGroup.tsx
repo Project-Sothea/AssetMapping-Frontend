@@ -1,5 +1,5 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import Checkbox from 'expo-checkbox';
+import { Checkbox } from 'expo-checkbox';
 
 interface CheckboxGroupProps {
   name: string;

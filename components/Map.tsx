@@ -5,9 +5,9 @@ import { View, Alert } from 'react-native';
 import { useState } from 'react';
 import { useFetchLocalPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
-import { PinFormModal } from './PinFormModal';
+import { PinFormModal } from './Pin/PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
-import { PinDetailsModal } from './PinDetailsModal';
+import { PinDetailsModal } from './Pin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
 import { localPinRepo } from '~/services/sync/syncService';
@@ -155,7 +155,7 @@ export default function Map() {
               id="pin-icons"
               style={{
                 iconImage: 'pin',
-                iconSize: 0.05,
+                iconSize: 0.075,
               }}
             />
             <Images images={{ pin }} />

@@ -8,21 +8,17 @@ export const uploadToRemote = async (uri: string, fileName: string): Promise<str
   const blob = await response.blob();
 
   const arrayBuffer = await new Response(blob).arrayBuffer();
-  console.log('arrayBuffer', arrayBuffer.byteLength);
 
   const { data, error } = await supabase.storage
     .from('pins')
     .upload(fileName, arrayBuffer, { contentType: blob.type || 'image/jpeg', upsert: true });
 
-  console.log('trying2');
   if (error) {
     console.error('supabase error:', error.message);
     throw new Error(`supabase error:, ${error.message}`);
   }
   const publicUrl = supabase.storage.from('pins').getPublicUrl(data.path).data.publicUrl;
-  console.log('done2');
 
-  console.log('uploadToRemote:', publicUrl);
   return publicUrl;
 };
 

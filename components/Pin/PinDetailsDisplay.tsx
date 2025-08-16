@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
-import { Button } from './Button';
 import { Pin } from '~/db/schema';
 
 type PinDetailsProps = {

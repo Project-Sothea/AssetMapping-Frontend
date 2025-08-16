@@ -1,5 +1,5 @@
 import { Form, Pin, ReForm, RePin } from '~/utils/globalTypes';
-import SyncManager from './SyncManager';
+import { SyncManager } from './SyncManager';
 import { DrizzlePinRepo } from './implementations/pins/DrizzlePinRepo';
 import { SupabasePinRepo } from './implementations/pins/SupabasePinRepo';
 import { SyncStrategy } from './implementations/SyncStrategy';
