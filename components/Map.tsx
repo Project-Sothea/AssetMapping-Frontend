@@ -1,7 +1,7 @@
 import 'react-native-get-random-values';
 import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
-import { View, Alert } from 'react-native';
+import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { useFetchLocalPins } from '~/hooks/Pins';
 import pin from '~/assets/pin.png';
@@ -12,11 +12,13 @@ import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
 import { localPinRepo } from '~/services/sync/syncService';
 import * as ImageManager from '~/services/sync/image/ImageManager';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
 export default function Map() {
   const { data: pins } = useFetchLocalPins();
+  const [mapKey, setMapKey] = useState(0);
 
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
@@ -24,6 +26,10 @@ export default function Map() {
   const [detailsVisible, setDetailsVisible] = useState(false);
 
   const screenIsFocused = useIsFocused();
+
+  const refreshMap = () => {
+    setMapKey((k) => k + 1); // force remount
+  };
 
   const handleDropPin = async (e: any) => {
     const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
@@ -137,6 +143,7 @@ export default function Map() {
   return (
     <View style={{ flex: 1 }}>
       <MapView
+        key={mapKey}
         style={{ flex: 1 }}
         styleURL={MAP_STYLE_URL}
         compassEnabled
@@ -162,7 +169,6 @@ export default function Map() {
           </ShapeSource>
         )}
       </MapView>
-
       {selectedPin && screenIsFocused && (
         <PinDetailsModal
           visible={detailsVisible}
@@ -187,6 +193,28 @@ export default function Map() {
           coords={{ lng: droppedCoords[0], lat: droppedCoords[1] }}
         />
       )}
+      <TouchableOpacity style={styles.refreshButton} onPress={refreshMap}>
+        <MaterialIcons name="refresh" color="black" size={30} style={styles.refreshText} />
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  refreshButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    padding: 10,
+    elevation: 3, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+  },
+  refreshText: {
+    fontSize: 18,
+  },
+});

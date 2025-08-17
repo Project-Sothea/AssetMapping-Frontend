@@ -97,6 +97,7 @@ export abstract class LocalRepository<
       .set({
         ...this.transformBeforeInsert(item),
         updatedAt: now,
+        status: 'dirty',
       })
       .where(eq((this.table as any).id, item.id));
   }

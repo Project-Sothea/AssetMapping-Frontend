@@ -15,7 +15,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   };
 
   // Dynamic accent color based on synced status
-  const accentColor = pin.status ? '#10B981' : '#4F46E5'; // green if synced, purple if not
+  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, purple if not
 
   return (
     <View style={styles.card}>

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
 
@@ -9,22 +9,35 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const imageURIs: string[] = pin.localImages ? JSON.parse(pin.localImages) : [];
+  const imageURIs: string[] = useMemo(() => {
+    try {
+      return pin.localImages ? JSON.parse(pin.localImages) : [];
+    } catch {
+      return [];
+    }
+  }, [pin.localImages]);
 
   const openImage = (index: number) => {
     setActiveIndex(index);
     setModalVisible(true);
   };
 
+  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, red if not
+
   return (
-    <View>
-      <Text style={styles.title}>{pin.name}</Text>
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{pin.name}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: accentColor }]}>
+          <Text style={styles.statusText}>{pin.status === 'synced' ? 'Synced' : 'Unsynced'}</Text>
+        </View>
+      </View>
 
       {imageURIs.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          snapToInterval={130} // image width 120 + marginRight 10
+          snapToInterval={140} // image width 130 + marginRight 10
           decelerationRate="fast"
           contentContainerStyle={{ paddingHorizontal: 8 }}
           style={styles.imageScroll}>
@@ -41,24 +54,11 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
 
       <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
 
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Address: </Text>
-        <Text>{pin.address || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>State/Province: </Text>
-        <Text>{pin.stateProvince || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Postal Code: </Text>
-        <Text>{pin.postalCode || 'N/A'}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Type: </Text>
-        <Text>{pin.type}</Text>
+      <View style={styles.infoCard}>
+        <InfoRow label="Address" value={pin.address} />
+        <InfoRow label="State/Province" value={pin.stateProvince} />
+        <InfoRow label="Postal Code" value={pin.postalCode} />
+        <InfoRow label="Type" value={pin.type} />
       </View>
 
       {/* Swipeable fullscreen image modal */}
@@ -67,21 +67,57 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
           visible={modalVisible}
           images={imageURIs}
           initialIndex={activeIndex}
-          onClose={() => {
-            setModalVisible(false);
-            console.log('closing modal');
-          }}
+          onClose={() => setModalVisible(false)}
         />
       )}
     </View>
   );
 }
 
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.label}>{label}: </Text>
+      <Text>{value || 'N/A'}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
+  container: { paddingBottom: 16 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  title: { fontSize: 24, fontWeight: 'bold', flex: 1, marginRight: 8 },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
   imageScroll: { marginBottom: 12 },
-  image: { width: 120, height: 120, marginRight: 10, borderRadius: 8 },
+  image: {
+    width: 130,
+    height: 130,
+    marginRight: 10,
+    borderRadius: 10,
+    backgroundColor: '#f3f3f3',
+  },
   description: { fontSize: 16, marginBottom: 12 },
+  infoCard: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#fafafa',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
   infoRow: { flexDirection: 'row', marginBottom: 8 },
-  label: { fontWeight: 'bold' },
+  label: { fontWeight: 'bold', marginRight: 4 },
 });
