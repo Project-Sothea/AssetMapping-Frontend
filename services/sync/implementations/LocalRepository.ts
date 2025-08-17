@@ -1,8 +1,11 @@
-import { inArray, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { buildUpsertSet, buildSoftDeleteSet } from '~/services/drizzleDb';
 import { v4 as uuidv4 } from 'uuid';
 
-export abstract class LocalRepository<T extends { id: string }, Table extends Record<string, any>> {
+export abstract class LocalRepository<
+  T extends { id: string; updatedAt: string | null },
+  Table extends Record<string, any>,
+> {
   constructor(
     protected readonly db: any,
     protected readonly table: Table,
@@ -22,7 +25,6 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
 
   async upsertAll(items: T[]): Promise<void> {
     if (!items || items.length === 0) return;
-    const now = new Date().toISOString();
 
     try {
       await this.db
@@ -30,11 +32,7 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
         .values(items.map((i) => this.transformBeforeInsert(i)))
         .onConflictDoUpdate({
           target: (this.table as any).id,
-          set: buildUpsertSet<Table>(this.table, this.excludeUpsert, {
-            updatedAt: now,
-            status: 'synced',
-            lastSyncedAt: now,
-          } as Partial<Record<keyof Table, any>>),
+          set: buildUpsertSet<Table>(this.table, this.excludeUpsert),
         });
     } catch (e) {
       console.error('Local Repo UpsertAll Error', e);
@@ -46,16 +44,18 @@ export abstract class LocalRepository<T extends { id: string }, Table extends Re
     if (ids.length === 0) return;
     const now = new Date().toISOString();
 
-    await this.db
-      .update(this.table)
-      .set({
-        lastSyncedAt: now,
-        updatedAt: now,
-        status: 'synced',
-        lastFailedSyncAt: null,
-        failureReason: null,
-      })
-      .where(inArray((this.table as any).id, ids));
+    for (const item of items) {
+      await this.db
+        .update(this.table)
+        .set({
+          lastSyncedAt: now,
+          updatedAt: item.updatedAt,
+          status: 'synced',
+          lastFailedSyncAt: null,
+          failureReason: null,
+        })
+        .where(eq((this.table as any).id, item.id));
+    }
   }
 
   async fetchAll(): Promise<T[]> {

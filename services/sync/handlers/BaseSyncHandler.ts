@@ -27,46 +27,25 @@ export abstract class BaseSyncHandler<
    */
   async execute(): Promise<void> {
     console.log('executing handler');
-    const [localItems, remoteItems] = await Promise.all([
-      this.localRepo.fetchAll(),
-      this.remoteRepo.fetchAll(),
-    ]);
-    const { toLocal, toRemote } = this.strategy.resolve(localItems, remoteItems);
-
-    const localUpserts = this.strategy.convertToLocal(toLocal);
-    const remoteUpserts = this.strategy.convertToRemote(toRemote);
-
-    console.log('Upserting local items:', localUpserts.length);
-    console.log('Upserting remote items:', remoteUpserts.length);
-
-    await Promise.all([
-      this.localRepo.upsertAll(localUpserts),
-      this.remoteRepo.upsertAll(remoteUpserts),
-    ]);
-
-    await this.postSync(localUpserts, remoteUpserts);
     try {
-      await Promise.all([
-        (async () => {
-          try {
-            await this.localRepo.markAsSynced(localUpserts); // items coming from remote
-          } catch (err) {
-            console.error('markAsSynced failed for localUpserts:', localUpserts, err);
-            throw err;
-          }
-        })(),
-        (async () => {
-          try {
-            await this.localRepo.markAsSynced(toRemote); // items sent to remote
-          } catch (err) {
-            console.error('markAsSynced failed for toRemote:', toRemote, err);
-            throw err;
-          }
-        })(),
+      const [localItems, remoteItems] = await Promise.all([
+        this.localRepo.fetchAll(),
+        this.remoteRepo.fetchAll(),
       ]);
+      const { toLocal, toRemote } = this.strategy.resolve(localItems, remoteItems);
+
+      const localUpserts = this.strategy.convertToLocal(toLocal);
+      const remoteUpserts = this.strategy.convertToRemote(toRemote);
+
+      await Promise.all([
+        this.localRepo.upsertAll(localUpserts),
+        this.remoteRepo.upsertAll(remoteUpserts),
+      ]);
+
+      await this.postSync(localUpserts, remoteUpserts);
+      await Promise.all([this.localRepo.markAsSynced([...localUpserts, ...toRemote])]);
     } catch (err) {
       console.error('Error during markAsSynced step:', err);
-      throw err;
     }
   }
 

@@ -19,10 +19,11 @@ export const upsertAll = async (pins: RePin[]) => {
   try {
     // Strip out local-only fields before upserting
     const pinsToUpsert = pins.map(
-      ({ last_synced_at, last_failed_sync_at, status, failure_reason, local_images, ...rest }) =>
-        rest
+      ({ last_synced_at, last_failed_sync_at, status, failure_reason, local_images, ...rest }) => ({
+        ...rest,
+        updated_at: rest.updated_at ?? new Date().toISOString(),
+      })
     );
-    console.log(pinsToUpsert);
 
     const { error } = await supabase.from('pins').upsert(pinsToUpsert, { onConflict: 'id' });
 
