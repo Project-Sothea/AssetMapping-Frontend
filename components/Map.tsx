@@ -1,5 +1,13 @@
 import 'react-native-get-random-values';
-import { Camera, Images, LocationPuck, MapView, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
+import {
+  Camera,
+  CircleLayer,
+  Images,
+  LocationPuck,
+  MapView,
+  ShapeSource,
+  SymbolLayer,
+} from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
@@ -157,12 +165,36 @@ export default function Map() {
             id="pins"
             shape={convertPinsToPointCollection(pins)}
             onPress={handleOpenPin}
-            cluster={false}>
+            cluster>
+            <SymbolLayer
+              id="pointCount"
+              style={{
+                textField: ['get', 'point_count'],
+                textSize: 50,
+                textColor: 'white',
+                textPitchAlignment: 'map',
+              }}
+            />
+            <CircleLayer
+              id="clusters"
+              belowLayerID="pointCount"
+              filter={['has', 'point_count']}
+              style={{
+                circlePitchAlignment: 'map',
+                circleColor: 'red',
+                circleRadius: 60,
+                circleOpacity: 0.6,
+                circleStrokeWidth: 2,
+                circleStrokeColor: 'white',
+              }}
+            />
             <SymbolLayer
               id="pin-icons"
+              filter={['!', ['has', 'point_count']]}
               style={{
                 iconImage: 'pin',
                 iconSize: 0.075,
+                iconAllowOverlap: true,
               }}
             />
             <Images images={{ pin }} />
