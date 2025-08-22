@@ -1,6 +1,5 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import QueryProvider from '~/providers/QueryProvider';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect, useState } from 'react';
@@ -12,20 +11,12 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '~/drizzle/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { AppSyncLayer } from '~/components/AppSyncLayer';
-import { SyncStatusBar } from '~/components/SyncStatusBar';
 
 export const DATABASE_NAME = 'local.db';
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
 export const db = drizzle(expoDB, { schema: { pins } });
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
-}
-
-export default function Layout() {
+export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'loading' | 'error' | 'done'>(
     'idle'
@@ -64,33 +55,18 @@ export default function Layout() {
           <QueryProvider>
             <SafeAreaProvider>
               <AppSyncLayer />
-              <Tabs
-                screenOptions={{
-                  headerTitle: () => <SyncStatusBar />,
-                  headerTitleAlign: 'center',
-                }}>
-                <Tabs.Screen
-                  name="index"
-                  options={{
-                    // Remove the default title because it's replaced by SyncStatusHeader
-                    tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="home" color={color} />,
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="form/[pinId]"
+                  options={({ route }) => {
+                    const { pinName } = route.params as { pinName?: string };
+                    return {
+                      title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
+                    };
                   }}
                 />
-                <Tabs.Screen
-                  name="map"
-                  options={{
-                    headerShown: false, // keeping this as you had it
-                    tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="map" color={color} />,
-                  }}
-                />
-                <Tabs.Screen
-                  name="download"
-                  options={{
-                    // Remove the title here as well
-                    tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="book" color={color} />,
-                  }}
-                />
-              </Tabs>
+              </Stack>
             </SafeAreaProvider>
           </QueryProvider>
         </SQLiteProvider>

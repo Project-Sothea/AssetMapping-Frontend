@@ -11,7 +11,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   const router = useRouter();
 
   const handleViewForms = () => {
-    router.push({ pathname: '/map/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
+    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
   };
 
   // Dynamic accent color based on synced status

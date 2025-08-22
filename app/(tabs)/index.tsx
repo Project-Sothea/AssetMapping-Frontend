@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Stack } from 'expo-router';
-import { SearchBar } from '../components/SearchBar';
+import { SearchBar } from '../../components/SearchBar';
 import { useFetchLocalPins } from '~/hooks/Pins';
 
 export default function Home() {
