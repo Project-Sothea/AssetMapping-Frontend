@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "AssetMapApp",
-    "slug": "AssetMapApp",
+    "name": "Sothea Assets",
+    "slug": "sothea-assets",
     "version": "1.0.0",
-    "scheme": "AssetMapApp",
+    "scheme": "sotheaassets",
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -24,7 +24,9 @@
           "locationWhenInUsePermission": "Show current location on map."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-web-browser",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -38,19 +40,30 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.AssetMapApp"
+      "bundleIdentifier": "com.anonymous.AssetMapApp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.AssetMapApp"
+      "package": "com.anonymous.AssetMapApp",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3e539786-199b-4155-a9f6-bdbbe1603eb7"
+      }
     }
   }
 }
