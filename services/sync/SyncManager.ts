@@ -115,7 +115,7 @@ export class SyncManager {
 
     if (this.lastSyncedAt) {
       return {
-        text: `Sync (last ${this.lastSyncedAt.toLocaleTimeString()})`,
+        text: `Synced (last ${this.lastSyncedAt.toLocaleTimeString()})`,
         color: '#2ecc71',
       };
     }
