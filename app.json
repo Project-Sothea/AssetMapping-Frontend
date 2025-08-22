@@ -26,7 +26,14 @@
       ],
       "expo-sqlite",
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -45,7 +52,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.AssetMapApp",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app needs access to your camera",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library"
       }
     },
     "android": {
