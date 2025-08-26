@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { buildUpsertSet, buildSoftDeleteSet } from '~/services/drizzleDb';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -148,10 +148,12 @@ export abstract class LocalRepository<
 
   async updateFieldsBatch(updates: { id: string; fields: Partial<T> }[]): Promise<void> {
     for (const update of updates) {
-      await this.db
+      const updated = await this.db
         .update(this.table)
         .set(update.fields)
-        .where(eq((this.table as any).id, update.id));
+        .where(eq((this.table as any).id, update.id))
+        .returning();
+      console.log('updatefieldsbatch:', updated);
     }
   }
 }

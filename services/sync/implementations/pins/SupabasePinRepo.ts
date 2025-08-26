@@ -17,4 +17,9 @@ export class SupabasePinRepo implements RemoteRepository<RePin> {
     }
     return;
   }
+
+  async updateFieldsBatch(updates: Partial<RePin>[]): Promise<void> {
+    await callPin.updateFieldsBatch(updates);
+    return;
+  }
 }

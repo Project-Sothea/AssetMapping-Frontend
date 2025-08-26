@@ -13,4 +13,9 @@ export class SupabaseFormRepo implements RemoteRepository<ReForm> {
     await callForm.upsertAll(forms);
     return;
   }
+
+  async updateFieldsBatch(updates: Partial<ReForm>[]): Promise<void> {
+    await callForm.updateFieldsBatch(updates);
+    return;
+  }
 }

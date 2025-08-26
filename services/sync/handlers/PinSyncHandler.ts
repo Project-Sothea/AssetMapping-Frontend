@@ -50,17 +50,31 @@ export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
       await this.localRepo.updateFieldsBatch(updates); //updating local status
     }
 
-    const remoteResults = await ImageManager.handleUpsertsToRemote(remoteUpserts);
-    if (remoteResults && remoteResults.length > 0) {
-      const updates = remoteResults.map(({ pinId, localImages, images }) => ({
+    console.log('1');
+    //uploads the image to remote
+    const remoteImageFields = await ImageManager.handleUpsertsToRemote(remoteUpserts);
+    console.log('2');
+    console.log('3');
+    if (remoteImageFields && remoteImageFields.length > 0) {
+      console.log('5');
+
+      const localFieldUpdates = remoteImageFields.map(({ pinId, localImages, images }) => ({
         id: pinId,
         fields: {
           localImages: JSON.stringify(localImages),
           images: JSON.stringify(images),
         },
       }));
-      await this.localRepo.updateFieldsBatch(updates); //updating local status
+
+      const remoteFieldUpdates = remoteImageFields.map((update) => ({
+        id: update.pinId,
+        images: update.images,
+      }));
+      await this.localRepo.updateFieldsBatch(localFieldUpdates); //updating local image fields
+      await this.remoteRepo.updateFieldsBatch(remoteFieldUpdates); //updating remote image fields
+      console.log('6');
     }
+    console.log('4');
 
     console.log('pin image sync complete.');
   }
