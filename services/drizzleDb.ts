@@ -19,22 +19,30 @@ export function useRunMigrations() {
 }
 
 //custom functions
-export function buildUpsertSet<T extends Record<string, any>>(
-  table: T,
-  exclude: (keyof T)[],
-  systemOverrides: Partial<Record<keyof T, any>> = {}
-) {
-  const cols = Object.keys(table).filter((col) => !exclude.includes(col as keyof T));
+export function buildUpsertSet<Table extends Record<string, any>>(
+  table: Table,
+  excludedCols: (keyof Table)[] = []
+): Record<keyof Table, SQL> {
+  const columns = Object.keys(table) as (keyof Table)[];
+  const set = columns
+    .filter((col) => !excludedCols.includes(col))
+    .reduce(
+      (acc, col) => {
+        const columnName = (table[col] as any).name;
+        acc[col] = sql.raw(`excluded.${columnName}`);
+        return acc;
+      },
+      {} as Record<keyof Table, SQL>
+    );
 
-  const set: Record<string, any> = {};
-  for (const col of cols) {
-    set[col] = (table as any)[col];
-  }
+  return set;
 
-  return {
-    ...set,
-    ...systemOverrides,
-  };
+  // for (const key in table) {
+  //     //if excludedCols, then dont add to set
+  //     if (!excludedCols.includes(key)) {
+  //       set[key as keyof Table] = sql.raw(`excluded.${colName}`);
+  //     }
+  // }
 }
 
 export function buildSoftDeleteSet<T extends Record<string, any>>(

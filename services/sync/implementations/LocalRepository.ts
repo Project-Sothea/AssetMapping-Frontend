@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { buildUpsertSet, buildSoftDeleteSet } from '~/services/drizzleDb';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,16 +24,20 @@ export abstract class LocalRepository<
   }
 
   async upsertAll(items: T[]): Promise<void> {
+    console.log('nothing to upsert');
     if (!items || items.length === 0) return;
-
+    console.log('upsertAll to local:');
+    console.log(items);
     try {
-      await this.db
+      const [updatedRow] = await this.db
         .insert(this.table)
         .values(items.map((i) => this.transformBeforeInsert(i)))
         .onConflictDoUpdate({
           target: (this.table as any).id,
-          set: buildUpsertSet<Table>(this.table, this.excludeUpsert),
-        });
+          set: buildUpsertSet(this.table, this.excludeUpsert),
+        })
+        .returning();
+      console.log(updatedRow);
     } catch (e) {
       console.error('Local Repo UpsertAll Error', e);
     }

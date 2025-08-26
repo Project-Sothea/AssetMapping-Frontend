@@ -42,7 +42,10 @@ export abstract class BaseSyncHandler<
         this.remoteRepo.upsertAll(remoteUpserts),
       ]);
 
+      console.log('postsync start');
       await this.postSync(localUpserts, remoteUpserts);
+      console.log('postsync end');
+
       await Promise.all([this.localRepo.markAsSynced([...localUpserts, ...toRemote])]);
     } catch (err) {
       console.error('Error during markAsSynced step:', err);
