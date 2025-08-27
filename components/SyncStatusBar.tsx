@@ -71,12 +71,12 @@ export const SyncStatusBar = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  buttonWrapper: { position: 'relative', alignItems: 'center' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' }, // idk if shld remove flex:1... ugh
+  buttonWrapper: { position: 'relative', alignItems: 'center', alignSelf: 'center'},
   button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    paddingVertical: 6, // reduced paddings so wldnt look so fat
+    paddingHorizontal: 14,
+    borderRadius: 8,
     borderWidth: 2,
     backgroundColor: 'white',
     elevation: 3,
@@ -85,17 +85,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
-  statusText: { fontSize: 16, fontWeight: '600' },
+  statusText: { fontSize: 14, fontWeight: '600' },
   popup: {
     position: 'absolute',
     top: '100%', // just below the button
     marginTop: 8, // spacing
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    width: 150,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    width: 140,
     alignItems: 'center',
     elevation: 5,
   },
-  popupText: { color: 'white', fontWeight: '600', fontSize: 14 },
+  popupText: { color: 'white', fontWeight: '600', fontSize: 13 },
 });
