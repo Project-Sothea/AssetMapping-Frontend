@@ -33,6 +33,20 @@ const validationSchema = Yup.object({
     .min(-90, 'Latitude must be ≥ -90')
     .max(90, 'Latitude must be ≤ 90')
     .required('Required'),
+})
+.test('bounds-order', '', (values, ctx) => {
+  if (!values) return false;
+  const { minLat, maxLat, minLng, maxLng } = values;
+
+  // Check bottom-left vs top-right
+  if (minLat >= maxLat || minLng >= maxLng) {
+    return ctx.createError({
+      path: 'minLat', // attach error to minLat field
+      message: 'Bottom left must be less than top right',
+    });
+  }
+
+  return true;
 });
 
 export const CreatePackForm = ({ onSubmit, progress }: Props) => {
@@ -51,8 +65,8 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
       validationSchema={validationSchema}
       onSubmit={(values) => {
         const bounds: [Position, Position] = [
-          [Number(values.maxLng), Number(values.maxLat)],
-          [Number(values.minLng), Number(values.minLat)],
+          [Number(values.minLng), Number(values.minLat)], // bottom left, SW
+          [Number(values.maxLng), Number(values.maxLat)], // top right, NE
         ];
         const pack: UseCreatePackProps = {
           name: values.name,

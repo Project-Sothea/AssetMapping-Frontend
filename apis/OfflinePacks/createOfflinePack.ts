@@ -7,21 +7,22 @@ export const CreateOfflinePack = async (
   setProgress: (progress: number) => void,
   setName: (name: string) => void
 ) => {
-  console.log(options);
+  console.log('Creating pack with options:', options);
   try {
+    // Create the offline pack
     await offlineManager.createPack(options, (pack, status) => {
-      console.log('pack: ', pack);
-      console.log('status: ', status);
-      setProgress(status.percentage);
-      setName(status.name);
+      console.log('Pack created:', pack.metadata);
+      console.log('Initial status:', status);
+
+      // update progress + name
+      if (status.percentage != null) {
+        setProgress(status.percentage);
+      }
+      setName(pack.metadata?.name ?? options.name);
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Offline pack error:', err);
-    Alert.alert('CreatePack Error', 'Pack already Created');
+    Alert.alert('CreatePack Error', err.message ?? 'Pack already Created or invalid bounds');
   }
 };
 
-/*
-Errors:
-1.  ERROR  [Error: Offline pack with name Sre O Primary School already exists.]
-*/
