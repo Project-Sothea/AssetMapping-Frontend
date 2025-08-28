@@ -63,7 +63,7 @@ export default function RootLayout() {
                     const { pinName } = route.params as { pinName?: string };
                     return {
                       title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
-                      headerBackTitle: 'back',
+                      headerBackTitle: ' ',
                       headerBackTitleVisible: false,
                     };
                   }}
