@@ -13,7 +13,7 @@ export default function HealthSection({
     <View>
       <Text style={styles.heading}>Health</Text>
 
-      <Text>Do you have any long-term conditions?</Text>
+      <Text style={styles.question}>Do you have any long-term conditions?</Text>
       <CheckboxGroup
         name="longTermConditions"
         options={[
@@ -33,7 +33,7 @@ export default function HealthSection({
         onOtherChange={handleChange('otherCondition')}
       />
 
-      <Text>If yes, please specify.</Text>
+      <Text style={styles.question}>If yes, please specify.</Text>
       <TextInput
         style={styles.input}
         value={values.conditionDetails}
@@ -41,7 +41,7 @@ export default function HealthSection({
         multiline
       />
 
-      <Text>How do you manage your condition?</Text>
+      <Text style={styles.question}>How do you manage your condition?</Text>
       <CheckboxGroup
         name="managementMethods"
         options={[
@@ -58,7 +58,7 @@ export default function HealthSection({
         onOtherChange={handleChange('otherManagement')}
       />
 
-      <Text>What do you do when you are sick and Project Sothea is not around to help?</Text>
+      <Text style={styles.question}>What do you do when you are sick and Project Sothea is not around to help?</Text>
       <CheckboxGroup
         name="whatDoWhenSick"
         options={[
@@ -74,7 +74,7 @@ export default function HealthSection({
         onOtherChange={handleChange('otherSickAction')}
       />
 
-      <Text>Do you know where to find a doctor if you are not feeling well?</Text>
+      <Text style={styles.question}>Do you know where to find a doctor if you are not feeling well?</Text>
       <RadioGroup
         name="knowDoctor"
         options={[
@@ -86,7 +86,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Do you have own means of transport to visit a clinic when you are unwell?</Text>
+      <Text style={styles.question}>Do you have own means of transport to visit a clinic when you are unwell?</Text>
       <RadioGroup
         name="ownTransport"
         options={[
@@ -97,7 +97,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Where do you go to buy your medicine?</Text>
+      <Text style={styles.question}>Where do you go to buy your medicine?</Text>
       <CheckboxGroup
         name="whereBuyMedicine"
         options={['Pharmacy', "I don't know where to go", "I don't wish to buy medicine", 'Other']}
@@ -108,7 +108,7 @@ export default function HealthSection({
         onOtherChange={handleChange('otherBuyMedicine')}
       />
 
-      <Text>Do you know what the poverty card scheme is about?</Text>
+      <Text style={styles.question}>Do you know what the poverty card scheme is about?</Text>
       <RadioGroup
         name="povertyCard"
         options={[
@@ -120,7 +120,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Do you brush your teeth?</Text>
+      <Text style={styles.question}>Do you brush your teeth?</Text>
       <CheckboxGroup
         name="brushTeeth"
         options={['Yes twice a day', 'Yes once a day', 'No', 'Other']}
@@ -131,7 +131,7 @@ export default function HealthSection({
         onOtherChange={handleChange('otherBrushTeeth')}
       />
 
-      <Text>Do you have a toothbrush? If so, where did you get it from?</Text>
+      <Text style={styles.question}>Do you have a toothbrush? If so, where did you get it from?</Text>
       <TextInput
         style={styles.input}
         placeholder="Your answer"
@@ -139,7 +139,8 @@ export default function HealthSection({
         onChangeText={handleChange('haveToothbrush')}
       />
 
-      <Text>What is diarrhoea?</Text>
+      <Text style={styles.subheading}>Diarrhoea</Text>
+      <Text style={styles.question}>What is diarrhoea?</Text>
       <CheckboxGroup
         name="diarrhoea"
         options={[
@@ -154,7 +155,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What should I do if I have diarrhoea?</Text>
+      <Text style={styles.question}>What should I do if I have diarrhoea?</Text>
       <CheckboxGroup
         name="diarrhoeaAction"
         options={[
@@ -169,7 +170,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>How does a common cold look like?</Text>
+      <Text style={styles.subheading}>Common Cold</Text>
+      <Text style={styles.question}>How does a common cold look like?</Text>
       <CheckboxGroup
         name="coldLookLike"
         options={[
@@ -184,7 +186,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>If I have a common cold, what should I do?</Text>
+      <Text style={styles.question}>If I have a common cold, what should I do?</Text>
       <CheckboxGroup
         name="coldAction"
         options={[
@@ -199,7 +201,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What is a musculoskeletal related injury?</Text>
+      <Text style={styles.subheading}>MSK</Text>
+      <Text style={styles.question}>What is a musculoskeletal related injury?</Text>
       <CheckboxGroup
         name="mskInjury"
         options={[
@@ -214,7 +217,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>How should I approach my musculoskeletal injury?</Text>
+      <Text style={styles.question}>How should I approach my musculoskeletal injury?</Text>
       <CheckboxGroup
         name="mskAction"
         options={[
@@ -229,7 +232,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What is hypertension?</Text>
+      <Text style={styles.subheading}>Hypertension</Text>
+      <Text style={styles.question}>What is hypertension?</Text>
       <CheckboxGroup
         name="hypertension"
         options={[
@@ -244,7 +248,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What should I do if I have been diagnosed with hypertension?</Text>
+      <Text style={styles.question}>What should I do if I have been diagnosed with hypertension?</Text>
       <CheckboxGroup
         name="hypertensionAction"
         options={[
@@ -259,7 +263,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What is high cholesterol?</Text>
+      <Text style={styles.subheading}>Cholesterol</Text>
+      <Text style={styles.question}>What is high cholesterol?</Text>
       <CheckboxGroup
         name="cholesterol"
         options={[
@@ -274,7 +279,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What should I do if I have been diagnosed with high cholesterol?</Text>
+      <Text style={styles.question}>What should I do if I have been diagnosed with high cholesterol?</Text>
       <CheckboxGroup
         name="cholesterolAction"
         options={[
@@ -288,7 +293,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What is diabetes?</Text>
+      <Text style={styles.subheading}>Diabetes</Text>
+      <Text style={styles.question}>What is diabetes?</Text>
       <CheckboxGroup
         name="diabetes"
         options={[
@@ -303,7 +309,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What should I do if I have been diagnosed with diabetes?</Text>
+      <Text style={styles.question}>What should I do if I have been diagnosed with diabetes?</Text>
       <CheckboxGroup
         name="diabetesAction"
         options={[
@@ -317,7 +323,8 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Do you wash your hands before meals?</Text>
+      <Text style={styles.subheading}>Hygiene & Others</Text>
+      <Text style={styles.question}>Do you wash your hands before meals?</Text>
       <CheckboxGroup
         name="handBeforeMeal"
         options={['Yes', 'No']}
@@ -325,7 +332,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Do you wash your hands after using the toilet?</Text>
+      <Text style={styles.question}>Do you wash your hands after using the toilet?</Text>
       <CheckboxGroup
         name="handAfterToilet"
         options={['Yes', 'No']}
@@ -333,7 +340,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>Eating well-cooked and clean food is important in maintaining my health.</Text>
+      <Text style={styles.question}>Eating well-cooked and clean food is important in maintaining my health.</Text>
       <CheckboxGroup
         name="eatCleanFood"
         options={['Agree', 'Disagree']}
@@ -341,7 +348,7 @@ export default function HealthSection({
         setFieldValue={setFieldValue}
       />
 
-      <Text>What else would you like to learn?</Text>
+      <Text style={styles.question}>What else would you like to learn?</Text>
       <TextInput
         style={styles.input}
         placeholder="Your answer"
@@ -359,6 +366,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginVertical: 12,
   },
+  subheading: {
+    fontWeight: '600',
+    fontSize: 17,
+    marginTop: 14,
+    marginBottom: 6,
+    color: '#444'
+  },
+  question: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginVertical: 6,
+    color: "#333"
+   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',

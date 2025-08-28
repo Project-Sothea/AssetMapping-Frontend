@@ -43,8 +43,9 @@ export default function CheckboxGroup({
           <Checkbox
             value={(values[name] || []).includes(opt)}
             onValueChange={() => handleCheckbox(opt)}
+            style={styles.checkbox}
           />
-          <Text>{opt}</Text>
+          <Text style={styles.label}>{opt}</Text>
         </View>
       ))}
       {otherFieldName && values[name]?.includes('Other') && (
@@ -64,7 +65,16 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
+  },
+  checkbox: {
+    marginRight: 10,
+    width: 18,
+    height: 18,
+  },
+  label: {
+    fontSize: 16,
+    color: '#333',
   },
   input: {
     borderWidth: 1,
