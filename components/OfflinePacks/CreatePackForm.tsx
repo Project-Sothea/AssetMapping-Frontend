@@ -65,8 +65,8 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
       validationSchema={validationSchema}
       onSubmit={(values) => {
         const bounds: [Position, Position] = [
-          [Number(values.minLng), Number(values.minLat)], // bottom left, SW
-          [Number(values.maxLng), Number(values.maxLat)], // top right, NE
+          [Number(values.maxLng), Number(values.maxLat)], //top right (NE)
+          [Number(values.minLng), Number(values.minLat)], //bottom left (SW)
         ];
         const pack: UseCreatePackProps = {
           name: values.name,
