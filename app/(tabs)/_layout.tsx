@@ -13,7 +13,7 @@ export default function Layout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,  // completely hide the header "(tabs)""
+        headerShown: false, // completely hide the header "(tabs)""
       }}>
       <Tabs.Screen
         name="index"
