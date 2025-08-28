@@ -13,13 +13,14 @@ export default function Layout() {
   return (
     <Tabs
       screenOptions={{
-        headerTitle: () => <SyncStatusBar />,
-        headerTitleAlign: 'center',
+        headerShown: false,  // completely hide the header "(tabs)""
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          // Remove the default title because it's replaced by SyncStatusHeader
+          headerShown: true,
+          headerTitle: () => <SyncStatusBar />,
+          headerTitleAlign: 'center',
           tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="home" color={color} />,
         }}
       />
