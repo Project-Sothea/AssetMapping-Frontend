@@ -62,7 +62,6 @@ export default function FormScreen() {
       </View>
 
       <View style={styles.newFormSection}>
-        <Text style={styles.subheading}>Create New Form</Text>
         <Button
           title="Create New Form"
           color="#3498db"
