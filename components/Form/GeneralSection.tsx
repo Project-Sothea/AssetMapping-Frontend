@@ -13,7 +13,7 @@ export default function GeneralSection({
     <View>
       <Text style={styles.heading}>General</Text>
 
-      <Text>Which village are you from?*</Text>
+      <Text style={styles.question}>Which village are you from?*</Text>
       <RadioGroup
         name="village"
         options={[
@@ -26,7 +26,7 @@ export default function GeneralSection({
         touched={touched.village}
       />
 
-      <Text>What is your village identifier number?*</Text>
+      <Text style={styles.question}>What is your village identifier number?*</Text>
       <TextInput
         style={styles.input}
         onChangeText={handleChange('villageId')}
@@ -38,7 +38,7 @@ export default function GeneralSection({
         <Text style={styles.error}>{errors.villageId}</Text>
       )}
 
-      <Text>Are you physically able to attend our health screening in December?</Text>
+      <Text style={styles.question}>Are you physically able to attend our health screening in December?</Text>
       <RadioGroup
         name="canAttend"
         options={[
@@ -59,6 +59,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginVertical: 12,
   },
+  question: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginVertical: 6,
+    color: "#333"
+   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',

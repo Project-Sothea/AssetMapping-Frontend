@@ -7,7 +7,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
     <View>
       <Text style={styles.heading}>Water</Text>
 
-      <Text>Where do you get your water from?</Text>
+      <Text style={styles.question}>Where do you get your water from?</Text>
       <CheckboxGroup
         name="waterSources"
         options={['River', 'Pond', 'Well', 'Tap', 'Other']}
@@ -18,7 +18,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
         onOtherChange={handleChange('otherWaterSource')}
       />
 
-      <Text>Which water sources are unsafe? (select all that apply)</Text>
+      <Text style={styles.question}>Which water sources are unsafe? (select all that apply)</Text>
       <CheckboxGroup
         name="unsafeWater"
         options={['River', 'Pond', 'Well', 'Tap', "Don't know"]}
@@ -26,7 +26,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
         setFieldValue={setFieldValue}
       />
 
-      <Text>Do you know what water filters are used for?</Text>
+      <Text style={styles.question}>Do you know what water filters are used for?</Text>
       <RadioGroup
         name="knowWaterFilters"
         options={[
@@ -37,7 +37,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
         setFieldValue={setFieldValue}
       />
 
-      <Text>If you do not use water filters, why not?</Text>
+      <Text style={styles.question}>If you do not use water filters, why not?</Text>
       <CheckboxGroup
         name="notUsingWaterFilter"
         options={['Expensive', 'Don’t know how to use', 'Don’t have access', 'Other']}
@@ -57,4 +57,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginVertical: 12,
   },
+  question: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginVertical: 6,
+    color: "#333"
+   },
+
 });
