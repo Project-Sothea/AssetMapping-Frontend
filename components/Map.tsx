@@ -197,6 +197,27 @@ export default function Map() {
                 iconAllowOverlap: true,
               }}
             />
+            <SymbolLayer
+              id="pin-labels"
+              filter={['!',['has', 'point_count']]}
+              style={{
+                textField: ['get','name'],
+                textSize: 12,
+                textColor: '#111',
+                textHaloColor: '#fff',
+                textHaloWidth: 1.2,
+                textAnchor: 'bottom',
+                textOffset: [0, -1.6],
+                textAllowOverlap: false,
+                textOpacity: [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  12, 0,
+                  13, 1,
+                ],
+              }}
+            />
             <Images images={{ pin }} />
           </ShapeSource>
         )}
