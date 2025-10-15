@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
 
 type RadioOption = { label: string; value: string };
@@ -10,6 +10,9 @@ interface RadioGroupProps {
   setFieldValue: (field: string, value: any) => void;
   errors?: string;
   touched?: boolean;
+  otherFieldName?: string;
+  otherValue?: string;
+  onOtherChange?: (text: string) => void;
 }
 
 export default function RadioGroup({
@@ -19,6 +22,9 @@ export default function RadioGroup({
   setFieldValue,
   errors,
   touched,
+  otherFieldName,
+  otherValue,
+  onOtherChange,
 }: RadioGroupProps) {
   return (
     <View>
@@ -30,6 +36,14 @@ export default function RadioGroup({
             style={styles.checkbox}
           />
           <Text style={styles.label}>{opt.label}</Text>
+          {opt.value === 'other' && values[name] === 'other' && otherFieldName && (
+            <TextInput 
+              style={styles.otherInput}
+              placeholder='Please specify'
+              value={otherValue}
+              onChangeText={onOtherChange}
+            />
+          )}
         </View>
       ))}
       {errors && touched && <Text style={styles.error}>{errors}</Text>}
@@ -51,6 +65,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: '#333',
+  },
+  otherInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    marginVertical: 6,
+    borderRadius: 4,
+    minHeight: 40,
   },
   error: {
     color: 'red',

@@ -121,9 +121,14 @@ export default function HealthSection({
       />
 
       <Text style={styles.question}>Do you brush your teeth?</Text>
-      <CheckboxGroup
+      <RadioGroup
         name="brushTeeth"
-        options={['Yes twice a day', 'Yes once a day', 'No', 'Other']}
+        options={[
+          { label: 'Yes, twice a day', value: 'yesTwiceADay' },
+          { label: 'Yes, once a day', value: 'yesOnceADay' },
+          { label: 'No', value: 'no' },
+          { label: 'Other', value: 'other' },
+        ]}
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherBrushTeeth"
@@ -325,25 +330,34 @@ export default function HealthSection({
 
       <Text style={styles.subheading}>Hygiene & Others</Text>
       <Text style={styles.question}>Do you wash your hands before meals?</Text>
-      <CheckboxGroup
+      <RadioGroup
         name="handBeforeMeal"
-        options={['Yes', 'No']}
+        options={[
+          { label: 'Yes', value: 'yes' },
+          { label: 'No', value: 'no' },
+        ]}
         values={values}
         setFieldValue={setFieldValue}
       />
 
       <Text style={styles.question}>Do you wash your hands after using the toilet?</Text>
-      <CheckboxGroup
+      <RadioGroup
         name="handAfterToilet"
-        options={['Yes', 'No']}
+        options={[
+          { label: 'Yes', value: 'yes' },
+          { label: 'No', value: 'no' },
+        ]}
         values={values}
         setFieldValue={setFieldValue}
       />
 
       <Text style={styles.question}>Eating well-cooked and clean food is important in maintaining my health.</Text>
-      <CheckboxGroup
+      <RadioGroup
         name="eatCleanFood"
-        options={['Agree', 'Disagree']}
+        options={[
+          { label: 'Agree', value: 'agree' },
+          { label: 'Disagree', value: 'disagree' },
+        ]}
         values={values}
         setFieldValue={setFieldValue}
       />
