@@ -15,17 +15,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
+  cityVillage: Yup.string(),
   address: Yup.string(),
-  stateProvince: Yup.string(),
-  postalCode: Yup.string(),
   description: Yup.string(),
 });
 
 export type PinFormValues = {
   name: string | null;
+  cityVillage: string | null;
   address: string | null;
-  stateProvince: string | null;
-  postalCode: string | null;
   description: string | null;
   type: string | null;
   localImages: string[]; // array of images with uri
@@ -59,9 +57,8 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
         <View style={styles.container}>
           {[
             { name: 'name', label: 'Name', required: true },
+            { name: 'cityVillage', label: 'City/Village' },
             { name: 'address', label: 'Address' },
-            { name: 'stateProvince', label: 'State/ Province' },
-            { name: 'postalCode', label: 'Postal Code' },
             { name: 'description', label: 'Description' },
           ].map(({ name, label, required }) => (
             <View key={name}>

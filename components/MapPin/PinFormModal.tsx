@@ -13,9 +13,8 @@ type PinFormModalWrapperProps = {
 export const PinFormModal = ({ visible, onClose, onSubmit, coords }: PinFormModalWrapperProps) => {
   const initialValues: PinFormValues = {
     name: '',
+    cityVillage: '',
     address: '',
-    stateProvince: '',
-    postalCode: '',
     description: '',
     type: 'normal',
     localImages: [],
