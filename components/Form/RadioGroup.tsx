@@ -37,9 +37,9 @@ export default function RadioGroup({
           />
           <Text style={styles.label}>{opt.label}</Text>
           {opt.value === 'other' && values[name] === 'other' && otherFieldName && (
-            <TextInput 
+            <TextInput
               style={styles.otherInput}
-              placeholder='Please specify'
+              placeholder="Please specify"
               value={otherValue}
               onChangeText={onOtherChange}
             />
@@ -59,8 +59,9 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     marginRight: 10,
-    width: 18,   // smaller box
-    height: 18,  // smaller box
+    width: 18, // smaller box
+    height: 18, // smaller box
+    borderRadius: 11, // make it circular
   },
   label: {
     fontSize: 16,
@@ -79,4 +80,3 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 });
-

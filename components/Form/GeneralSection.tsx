@@ -10,7 +10,7 @@ export default function GeneralSection({
   touched,
 }: any) {
   return (
-    <View>
+    <View style={{ gap: 12 }}>
       <Text style={styles.heading}>General</Text>
 
       <Text style={styles.question}>Which village are you from?*</Text>
@@ -38,7 +38,9 @@ export default function GeneralSection({
         <Text style={styles.error}>{errors.villageId}</Text>
       )}
 
-      <Text style={styles.question}>Are you physically able to attend our health screening in December?</Text>
+      <Text style={styles.question}>
+        Are you physically able to attend our health screening in December?
+      </Text>
       <RadioGroup
         name="canAttend"
         options={[
@@ -61,10 +63,10 @@ const styles = StyleSheet.create({
   },
   question: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
     marginVertical: 6,
-    color: "#333"
-   },
+    color: '#333',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',

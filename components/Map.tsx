@@ -199,9 +199,9 @@ export default function Map() {
             />
             <SymbolLayer
               id="pin-labels"
-              filter={['!',['has', 'point_count']]}
+              filter={['!', ['has', 'point_count']]}
               style={{
-                textField: ['get','name'],
+                textField: ['get', 'name'],
                 textSize: 12,
                 textColor: '#111',
                 textHaloColor: '#fff',
@@ -209,13 +209,7 @@ export default function Map() {
                 textAnchor: 'bottom',
                 textOffset: [0, -1.6],
                 textAllowOverlap: false,
-                textOpacity: [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  12, 0,
-                  13, 1,
-                ],
+                textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1],
               }}
             />
             <Images images={{ pin }} />

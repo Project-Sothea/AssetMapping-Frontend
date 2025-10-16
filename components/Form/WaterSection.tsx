@@ -4,7 +4,7 @@ import RadioGroup from './RadioGroup';
 
 export default function WaterSection({ values, setFieldValue, handleChange }: any) {
   return (
-    <View>
+    <View style={{ gap: 12 }}>
       <Text style={styles.heading}>Water</Text>
 
       <Text style={styles.question}>Where do you get your water from?</Text>
@@ -59,9 +59,8 @@ const styles = StyleSheet.create({
   },
   question: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
     marginVertical: 6,
-    color: "#333"
-   },
-
+    color: '#333',
+  },
 });
