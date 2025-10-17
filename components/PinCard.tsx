@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Pin } from '~/utils/globalTypes';
+import { Pin } from '~/db/schema';
 
 type PinCardProps = {
   pin: Pin;
@@ -15,7 +15,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   };
 
   // Dynamic accent color based on synced status
-  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, purple if not
+  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   return (
     <View style={styles.card}>

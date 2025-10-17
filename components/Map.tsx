@@ -62,6 +62,10 @@ export default function Map() {
       const dbValues = {
         ...rest,
         city_village: cityVillage,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'dirty', // Mark as dirty to trigger sync
+        lastSyncedAt: null,
       };
 
       if (values.localImages) {
@@ -102,6 +106,9 @@ export default function Map() {
       const dbValues = {
         ...rest,
         city_village: cityVillage,
+        updatedAt: new Date().toISOString(),
+        status: 'dirty', // Mark as dirty to trigger sync
+        lastSyncedAt: null,
       };
 
       if (values.localImages) {
@@ -163,9 +170,15 @@ export default function Map() {
   const handleOpenPin = async (e: any) => {
     const pressedFeature = e.features?.[0];
     if (pressedFeature) {
-      const pinProps = pressedFeature.properties;
-      setDetailsVisible(true);
-      setSelectedPin(pinProps);
+      const pinId = pressedFeature.properties?.id;
+      if (!pinId) return;
+
+      // Fetch fresh pin data from database instead of using stale GeoJSON properties
+      const freshPin = await getLocalPinRepo().get(pinId);
+      if (freshPin) {
+        setSelectedPin(freshPin);
+        setDetailsVisible(true);
+      }
     }
   };
 
