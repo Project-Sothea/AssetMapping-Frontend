@@ -21,7 +21,7 @@ export class FormService {
       const formId = values.id || uuidv4();
 
       // Transform form data to database schema
-      const dbValues = FormTransformers.formToDb(values);
+      const dbValues = FormTransformers.formValuesToDb(values);
 
       // Prepare complete form object with sync metadata
       const formData: Partial<Form> = {
@@ -55,7 +55,7 @@ export class FormService {
   async updateForm(id: string, values: FormValues): Promise<Result<Form>> {
     try {
       // Transform form data to database schema
-      const dbValues = FormTransformers.formToDb(values);
+      const dbValues = FormTransformers.formValuesToDb(values);
 
       // Prepare update object with sync metadata
       const updateData: Partial<Form> = {

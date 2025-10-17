@@ -28,7 +28,7 @@ export class FormTransformers {
    * Convert form values to database schema
    * Arrays need to be stringified for SQLite
    */
-  static formToDb(formValues: FormValues): Partial<Form> {
+  static formValuesToDb(formValues: FormValues): Partial<Form> {
     // Array fields are already stringified by Formik/Form component
     return formValues as Partial<Form>;
   }
@@ -37,7 +37,7 @@ export class FormTransformers {
    * Convert database values to form values
    * Parse array fields from JSON strings
    */
-  static dbToForm(form: Form): FormValues {
+  static dbToFormValues(form: Form): FormValues {
     return parseArrayFields(form) as FormValues;
   }
 

@@ -18,7 +18,7 @@ export class PinService {
   async createPin(values: PinFormValues): Promise<Result<Pin>> {
     try {
       // Transform form data to database schema
-      const dbValues = PinTransformers.formToDb(values);
+      const dbValues = PinTransformers.pinToDb(values);
 
       // Prepare complete pin object with sync metadata
       const pinData: Partial<Pin> = {
@@ -69,7 +69,7 @@ export class PinService {
   async updatePin(id: string, values: PinFormValues): Promise<Result<Pin>> {
     try {
       // Transform form data to database schema
-      const dbValues = PinTransformers.formToDb(values);
+      const dbValues = PinTransformers.pinToDb(values);
 
       // Prepare update object with sync metadata
       const updateData: Partial<Pin> = {

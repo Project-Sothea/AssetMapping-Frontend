@@ -22,10 +22,10 @@ export interface PinFormValues {
  */
 export class PinTransformers {
   /**
-   * Convert form values (camelCase) to database schema (snake_case)
+   * Convert pin form values (camelCase) to database schema (snake_case)
    */
-  static formToDb(formValues: PinFormValues): Partial<Pin> {
-    const { cityVillage, localImages, ...rest } = formValues;
+  static pinToDb(pin: PinFormValues): Partial<Pin> {
+    const { cityVillage, localImages, ...rest } = pin;
     return {
       ...rest,
       city_village: cityVillage,
@@ -34,9 +34,9 @@ export class PinTransformers {
   }
 
   /**
-   * Convert database values (snake_case) to form values (camelCase)
+   * Convert database pin (snake_case) to form pin values (camelCase)
    */
-  static dbToForm(pin: Pin): PinFormValues {
+  static dbToPin(pin: Pin): PinFormValues {
     return {
       id: pin.id,
       lat: pin.lat,
