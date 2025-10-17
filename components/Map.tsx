@@ -54,9 +54,7 @@ export default function Map() {
       return;
     }
 
-    console.log('creating new pin in db...');
     try {
-      console.log('processing images...');
       // Convert cityVillage to city_village for database
       const { cityVillage, ...rest } = values;
       const dbValues = {
@@ -73,7 +71,6 @@ export default function Map() {
           values.id,
           values.localImages
         );
-        console.log('createLocally: localURIs', localURIs);
         await getLocalPinRepo().create({
           ...dbValues,
           localImages: JSON.stringify(localURIs),
@@ -97,10 +94,8 @@ export default function Map() {
       Alert.alert('Error updating pin');
       return;
     }
-    console.log('updating pin in db...');
 
     try {
-      console.log('processing images...');
       // Convert cityVillage to city_village for database
       const { cityVillage, ...rest } = values;
       const dbValues = {
@@ -129,7 +124,6 @@ export default function Map() {
           values.localImages,
           currLocalImages
         );
-        console.log('createLocally: localURIs', localURIs);
         await getLocalPinRepo().update({
           ...dbValues,
           localImages: JSON.stringify(localURIs),
@@ -153,7 +147,6 @@ export default function Map() {
       Alert.alert('Error deleting pin');
       return;
     }
-    console.log('deleting pin in db...');
 
     try {
       await getLocalPinRepo().delete(pin.id);
@@ -259,7 +252,6 @@ export default function Map() {
           onClose={() => {
             setSelectedPin(null);
             setDetailsVisible(false);
-            console.log('closed pin');
           }}
           onUpdate={handlePinUpdate}
           onDelete={handleDeletePin}

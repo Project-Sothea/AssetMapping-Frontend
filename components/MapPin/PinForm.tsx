@@ -58,24 +58,10 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
     <Formik<PinFormValues>
       initialValues={initialValues}
       validationSchema={PinFormSchema}
-      onSubmit={(values) => {
-        console.log('PinForm submitting with values:', values);
-        onSubmit(values);
-      }}
+      onSubmit={onSubmit}
       validateOnChange={false}
       validateOnBlur={false}>
-      {({
-        handleChange,
-        handleBlur,
-        handleSubmit,
-        values,
-        errors,
-        touched,
-        setFieldValue,
-        isValid,
-      }) => {
-        console.log('Formik errors:', errors);
-        console.log('Formik isValid:', isValid);
+      {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => {
         return (
           <View style={styles.container}>
             {[
@@ -148,7 +134,6 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
 
                 <TouchableOpacity
                   onPress={() => {
-                    console.log('Save button pressed');
                     handleSubmit();
                   }}
                   style={styles.saveButton}>

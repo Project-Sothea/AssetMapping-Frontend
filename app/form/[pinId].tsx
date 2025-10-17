@@ -18,9 +18,15 @@ export default function FormScreen() {
     setModalVisible(false);
   };
 
-  const handleFormEdit = (form: FormType) => {
-    setModalVisible(true);
-    setSelectedForm(form);
+  const handleFormEdit = async (form: FormType) => {
+    // Fetch fresh form data from database to ensure we have latest values
+    const freshForm = await getLocalFormRepo().get(form.id);
+    if (freshForm) {
+      setSelectedForm(freshForm);
+      setModalVisible(true);
+    } else {
+      Alert.alert('Error', 'Could not load form data');
+    }
   };
 
   const handleFormDelete = (formId: string) => {
@@ -34,17 +40,39 @@ export default function FormScreen() {
     ]);
   };
 
-  const handleFormSubmit = (values: any) => {
-    if (selectedForm) {
-      getLocalFormRepo().update(values);
-      Alert.alert('Form Updated!');
-      setSelectedForm(null);
-    } else {
-      getLocalFormRepo().create(values);
-      Alert.alert('Form Created!');
-    }
+  const handleFormSubmit = async (values: any) => {
+    const now = new Date().toISOString();
 
-    setModalVisible(false);
+    try {
+      if (selectedForm) {
+        // Update existing form
+        const updateData = {
+          ...values,
+          updatedAt: now,
+          status: 'dirty',
+          lastSyncedAt: null,
+        };
+        await getLocalFormRepo().update(updateData);
+        Alert.alert('Form Updated!');
+      } else {
+        // Create new form
+        const createData = {
+          ...values,
+          createdAt: now,
+          updatedAt: now,
+          status: 'dirty',
+          lastSyncedAt: null,
+        };
+        await getLocalFormRepo().create(createData);
+        Alert.alert('Form Created!');
+      }
+    } catch (error) {
+      console.error('Error saving form:', error);
+      Alert.alert('Error', 'Failed to save form');
+    } finally {
+      setSelectedForm(null);
+      setModalVisible(false);
+    }
   };
 
   return (

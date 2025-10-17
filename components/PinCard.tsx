@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
+import { useFetchLocalForms } from '~/hooks/Forms';
 
 type PinCardProps = {
   pin: Pin;
@@ -9,6 +10,7 @@ type PinCardProps = {
 
 export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   const router = useRouter();
+  const { data: forms = [] } = useFetchLocalForms(pin.id);
 
   const handleViewForms = () => {
     router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
@@ -17,18 +19,48 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   // Dynamic accent color based on synced status
   const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
+  // Parse local images
+  const imageURIs: string[] = useMemo(() => {
+    try {
+      return pin.localImages && pin.localImages !== '' ? JSON.parse(pin.localImages) : [];
+    } catch {
+      return [];
+    }
+  }, [pin.localImages]);
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={handleViewForms} activeOpacity={0.7}>
       <View style={[styles.accent, { backgroundColor: accentColor }]} />
       <View style={styles.content}>
-        <Text style={styles.name}>{pin.name}</Text>
+        <View style={styles.header}>
+          <Text style={styles.name}>{pin.name}</Text>
+          <View
+            style={[
+              styles.formCountBadge,
+              { backgroundColor: forms.length === 0 ? '#E5E7EB' : '#4F46E5' },
+            ]}>
+            <Text
+              style={[styles.formCountText, { color: forms.length === 0 ? '#9CA3AF' : '#fff' }]}>
+              {forms.length}
+            </Text>
+          </View>
+        </View>
         {pin.description && <Text style={styles.description}>{pin.description}</Text>}
 
-        <TouchableOpacity style={styles.button} onPress={handleViewForms}>
-          <Text style={styles.buttonText}>View</Text>
-        </TouchableOpacity>
+        {/* Display images if any */}
+        {imageURIs.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imageScroll}
+            contentContainerStyle={styles.imageScrollContent}>
+            {imageURIs.map((uri, index) => (
+              <Image key={index} source={{ uri }} style={styles.thumbnail} />
+            ))}
+          </ScrollView>
+        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -54,11 +86,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
   name: {
     fontWeight: '700',
     fontSize: 18,
     color: '#111827',
-    marginBottom: 6,
+    flex: 1,
+  },
+  formCountBadge: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    marginLeft: 8,
+  },
+  formCountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   description: {
     fontSize: 14,
@@ -66,16 +119,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
-  button: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#4F46E5',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  imageScroll: {
+    marginBottom: 12,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
+  imageScrollContent: {
+    paddingRight: 8,
+  },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#f3f3f3',
   },
 });

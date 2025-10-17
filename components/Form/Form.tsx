@@ -11,8 +11,10 @@ import HealthSection from '../Form/HealthSection';
 import { parseArrayFields } from '~/utils/dataShapes';
 
 const validationSchema = Yup.object().shape({
-  village: Yup.string().required('Required'),
-  villageId: Yup.string().required('Required'),
+  village: Yup.string().nullable().required('Required'),
+  villageId: Yup.string().nullable().required('Required'),
+  pinId: Yup.string().nullable(),
+  id: Yup.string().nullable(),
   // add more validations as needed
 });
 

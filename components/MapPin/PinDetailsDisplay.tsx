@@ -9,7 +9,6 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  console.log('imageURIs: ', pin.localImages);
   const imageURIs: string[] = useMemo(() => {
     try {
       return pin.localImages ? JSON.parse(pin.localImages) : [];

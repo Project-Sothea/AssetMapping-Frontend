@@ -18,7 +18,6 @@ export const PinDetailsModal = ({
   onUpdate,
   onDelete,
 }: PinDetailsModalProps) => {
-  console.log('selectedPin: ', pin);
   return (
     <ModalWrapper title={'Pin Details'} visible={visible} onClose={onClose}>
       <PinDetails pin={pin} onUpdate={onUpdate} onDelete={onDelete} />

@@ -23,7 +23,6 @@ export const ImageModal: React.FC<ImageModalProps> = ({
   onClose,
 }) => {
   const { width, height } = Dimensions.get('window');
-  console.log('ImageModal images: ');
 
   if (!images || images.length === 0) return null;
 

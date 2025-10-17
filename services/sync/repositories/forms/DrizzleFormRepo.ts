@@ -17,6 +17,15 @@ export class DrizzleFormRepo extends LocalRepository<Form, typeof forms> {
     return stringifyArrayFields(item); // no special handling needed
   }
 
+  async update(item: Partial<Form> & { id: string }): Promise<void> {
+    const { id, ...rest } = item as any;
+    const transformed = this.transformBeforeInsert(rest as Form);
+    await this.db
+      .update(forms)
+      .set(transformed as any)
+      .where(eq(forms.id, id));
+  }
+
   async markAsSynced(items: (Partial<Form> & { id: string })[]): Promise<void> {
     if (!items || items.length === 0) return;
 
