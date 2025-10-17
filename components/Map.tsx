@@ -202,14 +202,16 @@ export default function Map() {
               filter={['!', ['has', 'point_count']]}
               style={{
                 textField: ['get', 'name'],
-                textSize: 12,
+                textFont: ['Open Sans Bold'],
+                textSize: 14,
                 textColor: '#111',
                 textHaloColor: '#fff',
-                textHaloWidth: 1.2,
+                textHaloWidth: 1.6,
+                textHaloBlur: 0.5,
                 textAnchor: 'bottom',
-                textOffset: [0, -1.6],
+                textOffset: [0, -2.5], // shift higher above pin
                 textAllowOverlap: false,
-                textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1],
+                textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1]
               }}
             />
             <Images images={{ pin }} />
