@@ -17,8 +17,7 @@ export const pins = sqliteTable('pins', {
   type: text('type'),
   name: text('name'),
   address: text('address'),
-  stateProvince: text('state_province'),
-  postalCode: text('postal_code'),
+  city_village: text('city/village'),
   description: text('description'),
   images: text('images'), // stored as JSON string: JSON.stringify(imagesArray)
   localImages: text('local_images'),

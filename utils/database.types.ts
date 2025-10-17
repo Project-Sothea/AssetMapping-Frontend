@@ -181,6 +181,7 @@ export type Database = {
       pins: {
         Row: {
           address: string | null
+          city_village: string | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -193,14 +194,13 @@ export type Database = {
           lng: number | null
           local_images: string | null
           name: string | null
-          postal_code: string | null
-          state_province: string | null
           status: string | null
           type: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          city_village?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -213,14 +213,13 @@ export type Database = {
           lng?: number | null
           local_images?: string | null
           name?: string | null
-          postal_code?: string | null
-          state_province?: string | null
           status?: string | null
           type?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          city_village?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -233,8 +232,6 @@ export type Database = {
           lng?: number | null
           local_images?: string | null
           name?: string | null
-          postal_code?: string | null
-          state_province?: string | null
           status?: string | null
           type?: string | null
           updated_at?: string | null
