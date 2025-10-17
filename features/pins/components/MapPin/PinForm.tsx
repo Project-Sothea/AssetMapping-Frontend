@@ -98,17 +98,21 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                 showsHorizontalScrollIndicator={false}
                 style={{ marginBottom: 8 }}>
                 {values.localImages &&
+                  values.localImages.length > 0 &&
                   values.localImages.map((image, idx) => (
-                    <View key={idx} style={{ position: 'relative', marginRight: 8 }}>
+                    <View
+                      key={`image-${idx}-${image.substring(0, 10)}`}
+                      style={{ position: 'relative', marginRight: 8 }}>
                       <Image
-                        key={idx}
                         source={{ uri: image }}
                         style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
                       />
                       <Pressable
                         onPress={() => {
                           const newImages = values.localImages.filter((_, i) => i !== idx);
-                          setFieldValue('localImages', newImages);
+                          // Always set to array, even if empty
+                          setFieldValue('localImages', newImages.length > 0 ? newImages : []);
+                          console.log('Removed image, remaining:', newImages.length);
                         }}
                         style={{
                           position: 'absolute',

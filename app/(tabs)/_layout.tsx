@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { SyncStatusBar } from '~/components/SyncStatusBar';
+import { SyncStatusBar } from '~/features/sync/components/SyncStatusBar';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];

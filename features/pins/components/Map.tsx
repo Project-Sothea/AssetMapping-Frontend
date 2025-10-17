@@ -11,16 +11,16 @@ import {
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
-import { useFetchLocalPins } from '~/hooks/Pins';
+import { useFetchLocalPins } from '~/features/pins/hooks/usePins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './MapPin/PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
-import { getLocalPinRepo } from '~/services/sync/syncService';
-import * as ImageManager from '~/services/sync/logic/images/ImageManager';
+import { getPinService } from '~/services/serviceFactory';
 import { MaterialIcons } from '@expo/vector-icons';
+import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -28,7 +28,7 @@ export default function Map() {
   const { data: pins } = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
 
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
+  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -54,38 +54,15 @@ export default function Map() {
       return;
     }
 
-    try {
-      // Convert cityVillage to city_village for database
-      const { cityVillage, ...rest } = values;
-      const dbValues = {
-        ...rest,
-        city_village: cityVillage,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        status: 'dirty', // Mark as dirty to trigger sync
-        lastSyncedAt: null,
-      };
+    const pinService = getPinService();
+    const result = await pinService.createPin(values);
 
-      if (values.localImages) {
-        const { success: localURIs } = await ImageManager.saveToFileSystem(
-          values.id,
-          values.localImages
-        );
-        await getLocalPinRepo().create({
-          ...dbValues,
-          localImages: JSON.stringify(localURIs),
-          images: null,
-        });
-      } else {
-        await getLocalPinRepo().create(dbValues);
-      }
-      Alert.alert(`Pin Created!`);
-    } catch (error) {
-      console.error('Error uploading images or creating pin:', error);
-      Alert.alert('Upload failed', 'Please try again.');
-    } finally {
+    if (result.success) {
+      Alert.alert('Pin Created!');
       setModalVisible(false);
       setDroppedCoords(null);
+    } else {
+      ErrorHandler.showAlert(result.error, 'Failed to create pin');
     }
   };
 
@@ -95,50 +72,15 @@ export default function Map() {
       return;
     }
 
-    try {
-      // Convert cityVillage to city_village for database
-      const { cityVillage, ...rest } = values;
-      const dbValues = {
-        ...rest,
-        city_village: cityVillage,
-        updatedAt: new Date().toISOString(),
-        status: 'dirty', // Mark as dirty to trigger sync
-        lastSyncedAt: null,
-      };
+    const pinService = getPinService();
+    const result = await pinService.updatePin(values.id, values);
 
-      if (values.localImages) {
-        const currPin = await getLocalPinRepo().get(values.id);
-        let currLocalImages: string[] = [];
-        try {
-          currLocalImages =
-            currPin?.localImages && currPin.localImages !== ''
-              ? JSON.parse(currPin.localImages)
-              : [];
-        } catch (error) {
-          console.error('Error parsing currPin.localImages:', error);
-          currLocalImages = [];
-        }
-
-        const { success: localURIs } = await ImageManager.updateImagesLocally(
-          values.id,
-          values.localImages,
-          currLocalImages
-        );
-        await getLocalPinRepo().update({
-          ...dbValues,
-          localImages: JSON.stringify(localURIs),
-          images: null,
-        });
-      } else {
-        await getLocalPinRepo().update(dbValues);
-      }
-      Alert.alert(`Pin Updated!`);
-    } catch (error) {
-      console.error('Error updating images or creating pin:', error);
-      Alert.alert('Save failed', 'Please try again.');
-    } finally {
+    if (result.success) {
+      Alert.alert('Pin Updated!');
       setDetailsVisible(false);
       setDroppedCoords(null);
+    } else {
+      ErrorHandler.showAlert(result.error, 'Failed to update pin');
     }
   };
 
@@ -148,15 +90,15 @@ export default function Map() {
       return;
     }
 
-    try {
-      await getLocalPinRepo().delete(pin.id);
-      Alert.alert(`Pin Deleted!`);
-    } catch (error) {
-      console.error('Error deleting pin:', error);
-      Alert.alert('Delete failed', 'Please try again.');
-    } finally {
+    const pinService = getPinService();
+    const result = await pinService.deletePin(pin.id);
+
+    if (result.success) {
+      Alert.alert('Pin Deleted!');
       setDetailsVisible(false);
       setDroppedCoords(null);
+    } else {
+      ErrorHandler.showAlert(result.error, 'Failed to delete pin');
     }
   };
 
@@ -166,12 +108,9 @@ export default function Map() {
       const pinId = pressedFeature.properties?.id;
       if (!pinId) return;
 
-      // Fetch fresh pin data from database instead of using stale GeoJSON properties
-      const freshPin = await getLocalPinRepo().get(pinId);
-      if (freshPin) {
-        setSelectedPin(freshPin);
-        setDetailsVisible(true);
-      }
+      // Store pin ID - the modal will use live query to fetch and auto-update
+      setSelectedPinId(pinId);
+      setDetailsVisible(true);
     }
   };
 
@@ -245,12 +184,12 @@ export default function Map() {
           </ShapeSource>
         )}
       </MapView>
-      {selectedPin && screenIsFocused && (
+      {selectedPinId && screenIsFocused && (
         <PinDetailsModal
           visible={detailsVisible}
-          pin={selectedPin}
+          pinId={selectedPinId}
           onClose={() => {
-            setSelectedPin(null);
+            setSelectedPinId(null);
             setDetailsVisible(false);
           }}
           onUpdate={handlePinUpdate}

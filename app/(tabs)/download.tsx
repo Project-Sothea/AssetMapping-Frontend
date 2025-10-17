@@ -1,10 +1,10 @@
 import { Text, View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
+import { ScreenWrapper } from '~/shared/components/ui/ScreenWrapper';
 import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
 import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
-import Spacer from '~/components/customUI/Spacer';
-import { CreatePackForm } from '~/components/OfflinePacks/CreatePackForm';
+import Spacer from '~/shared/components/ui/Spacer';
+import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePackForm';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();

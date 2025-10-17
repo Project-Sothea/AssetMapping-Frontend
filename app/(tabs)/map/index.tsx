@@ -1,5 +1,5 @@
-import Map from '~/components/Map';
-import { ScreenWrapper } from '~/components/customUI/ScreenWrapper';
+import Map from '~/features/pins/components/Map';
+import { ScreenWrapper } from '~/shared/components/ui/ScreenWrapper';
 
 export default function Home() {
   return (

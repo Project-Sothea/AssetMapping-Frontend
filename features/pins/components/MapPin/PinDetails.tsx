@@ -1,10 +1,10 @@
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { Button } from '../customUI/Button';
+import { Button } from '~/shared/components/ui/Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pin } from '~/db/schema';
 import PinDetailsDisplay from './PinDetailsDisplay';
-import Spacer from '../customUI/Spacer';
+import Spacer from '~/shared/components/ui/Spacer';
 import { PinForm, PinFormValues } from './PinForm';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -16,13 +16,16 @@ type PinDetailsProps = {
 
 //helper
 const intoPinFormValues = (pin: Pin): PinFormValues => {
-  let parsedLocalImages = null;
+  let parsedLocalImages: string[] = [];
   try {
-    parsedLocalImages =
-      pin.localImages && pin.localImages !== '' ? JSON.parse(pin.localImages) : null;
+    if (pin.localImages && pin.localImages !== '') {
+      const parsed = JSON.parse(pin.localImages);
+      // Ensure it's always an array
+      parsedLocalImages = Array.isArray(parsed) ? parsed : [];
+    }
   } catch (error) {
     console.error('Error parsing localImages:', error);
-    parsedLocalImages = null;
+    parsedLocalImages = [];
   }
 
   return {

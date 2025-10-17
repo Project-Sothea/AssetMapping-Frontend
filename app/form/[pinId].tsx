@@ -1,11 +1,12 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
-import { useFetchLocalForms } from '~/hooks/Forms';
+import { useFetchLocalForms } from '~/features/forms/hooks/useForms';
 import { Form as FormType } from '~/utils/globalTypes';
-import { getLocalFormRepo } from '~/services/sync/syncService';
-import { FormCard } from '~/components/Form/FormCard';
-import { FormDetailsModal } from '~/components/Form/FormDetailsModal';
+import { getFormService } from '~/services/serviceFactory';
+import { FormCard } from '~/features/forms/components/Form/FormCard';
+import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
+import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
@@ -19,13 +20,15 @@ export default function FormScreen() {
   };
 
   const handleFormEdit = async (form: FormType) => {
-    // Fetch fresh form data from database to ensure we have latest values
-    const freshForm = await getLocalFormRepo().get(form.id);
-    if (freshForm) {
-      setSelectedForm(freshForm);
+    // Fetch fresh form data from database using service
+    const formService = getFormService();
+    const result = await formService.getForm(form.id);
+
+    if (result.success) {
+      setSelectedForm(result.data);
       setModalVisible(true);
     } else {
-      Alert.alert('Error', 'Could not load form data');
+      ErrorHandler.showAlert(result.error, 'Failed to load form');
     }
   };
 
@@ -35,43 +38,43 @@ export default function FormScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => getLocalFormRepo().delete(formId),
+        onPress: async () => {
+          const formService = getFormService();
+          const result = await formService.deleteForm(formId);
+
+          if (!result.success) {
+            ErrorHandler.showAlert(result.error, 'Failed to delete form');
+          }
+        },
       },
     ]);
   };
 
   const handleFormSubmit = async (values: any) => {
-    const now = new Date().toISOString();
+    const formService = getFormService();
 
-    try {
-      if (selectedForm) {
-        // Update existing form
-        const updateData = {
-          ...values,
-          updatedAt: now,
-          status: 'dirty',
-          lastSyncedAt: null,
-        };
-        await getLocalFormRepo().update(updateData);
+    if (selectedForm) {
+      // Update existing form
+      const result = await formService.updateForm(selectedForm.id, values);
+
+      if (result.success) {
         Alert.alert('Form Updated!');
+        setSelectedForm(null);
+        setModalVisible(false);
       } else {
-        // Create new form
-        const createData = {
-          ...values,
-          createdAt: now,
-          updatedAt: now,
-          status: 'dirty',
-          lastSyncedAt: null,
-        };
-        await getLocalFormRepo().create(createData);
-        Alert.alert('Form Created!');
+        ErrorHandler.showAlert(result.error, 'Failed to update form');
       }
-    } catch (error) {
-      console.error('Error saving form:', error);
-      Alert.alert('Error', 'Failed to save form');
-    } finally {
-      setSelectedForm(null);
-      setModalVisible(false);
+    } else {
+      // Create new form
+      const result = await formService.createForm(values);
+
+      if (result.success) {
+        Alert.alert('Form Created!');
+        setSelectedForm(null);
+        setModalVisible(false);
+      } else {
+        ErrorHandler.showAlert(result.error, 'Failed to create form');
+      }
     }
   };
 

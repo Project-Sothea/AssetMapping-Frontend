@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TextInput, FlatList, StyleSheet } from 'react-native';
 import { Pin } from '~/db/schema';
-import { PinCard } from './PinCard';
+import { PinCard } from '~/features/pins/components/PinCard';
 
 type SearchBarProps = {
   query: string;

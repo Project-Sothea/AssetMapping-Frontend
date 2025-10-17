@@ -1,5 +1,5 @@
 import { ScrollView } from 'react-native';
-import ModalWrapper from '../customUI/ModalWrapper';
+import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import { PinForm, PinFormValues } from './PinForm';
 import { v4 as uuidv4 } from 'uuid';
 

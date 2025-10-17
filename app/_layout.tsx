@@ -10,7 +10,7 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '~/drizzle/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { AppSyncLayer } from '~/components/AppSyncLayer';
+import { AppSyncLayer } from '~/features/sync/components/AppSyncLayer';
 import { initializeDefaultSync } from '~/services/sync/syncService';
 
 export const DATABASE_NAME = 'local.db';

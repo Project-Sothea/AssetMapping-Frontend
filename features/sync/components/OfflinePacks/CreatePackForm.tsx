@@ -4,8 +4,8 @@ import * as Yup from 'yup';
 import { UseCreatePackProps } from '~/utils/globalTypes';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
-import Spacer from '../customUI/Spacer';
-import { IdempotentButton } from '../customUI/IdempotentButton';
+import Spacer from '~/shared/components/ui/Spacer';
+import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
 
 interface Props {
   onSubmit: (pack: UseCreatePackProps) => void;

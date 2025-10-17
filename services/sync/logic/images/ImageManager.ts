@@ -329,8 +329,12 @@ async function downloadToLocal(
   const localImages: string[] = [];
   const fail: string[] = [];
 
-  if (!images?.length) return { localImages, images, fail };
+  if (!images?.length) {
+    console.log(`downloadToLocal: No images to download for pin ${pinId}`);
+    return { localImages, images, fail };
+  }
 
+  console.log(`downloadToLocal: Downloading ${images.length} images for pin ${pinId}`);
   const directory = `${FileSystem.documentDirectory}pins/${pinId}/`;
 
   try {
@@ -345,23 +349,29 @@ async function downloadToLocal(
 
     try {
       if (img.startsWith('file://')) {
+        console.log(`Copying local file: ${img}`);
         await FileSystem.copyAsync({ from: img, to: localUri });
       } else if (img.startsWith('http://') || img.startsWith('https://')) {
+        console.log(`Downloading remote image: ${img}`);
         const downloadRes = await FileSystem.downloadAsync(img, localUri);
         if (downloadRes.status !== 200) {
           throw new Error(`Failed to download image: HTTP status ${downloadRes.status}`);
         }
+        console.log(`Downloaded to: ${localUri}`);
       } else {
         throw new Error('Unsupported image source: ' + img);
       }
 
-      localImages.push(ensureFileUri(localUri));
+      const fileUri = ensureFileUri(localUri);
+      localImages.push(fileUri);
+      console.log(`Successfully saved image as: ${fileUri}`);
     } catch (err) {
       console.warn(`Failed to save image ${img}:`, err);
       fail.push(img);
     }
   }
 
+  console.log(`downloadToLocal complete: ${localImages.length} success, ${fail.length} failed`);
   return { localImages, images, fail };
 }
 

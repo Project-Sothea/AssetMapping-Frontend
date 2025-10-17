@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { SyncStatusBar } from '~/components/SyncStatusBar';
+import { SyncStatusBar } from '~/features/sync/components/SyncStatusBar';
 
 export default function mapLayout() {
   return (

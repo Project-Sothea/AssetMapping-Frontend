@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
-import { useFetchLocalForms } from '~/hooks/Forms';
+import { useFetchLocalForms } from '~/features/forms/hooks/useForms';
 
 type PinCardProps = {
   pin: Pin;

@@ -32,6 +32,15 @@ export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
 
     const localResults: ImageUpsertLocalResult[] =
       await this.imageManager.handleUpsertsToLocal(localUpserts);
+
+    console.log('handleUpsertsToLocal results:', localResults.length);
+    localResults.forEach((res) => {
+      console.log(`Pin ${res.pinId}:`, {
+        localImages: res.localImages?.slice(0, 2),
+        images: res.images?.slice(0, 2),
+      });
+    });
+
     if (localResults.length > 0) {
       const updates = localResults.map((res: ImageUpsertLocalResult) => ({
         id: res.pinId,
@@ -41,7 +50,9 @@ export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
         },
       }));
 
+      console.log('Updating local DB with downloaded images...');
       await this.localRepo.updateFieldsBatch(updates);
+      console.log('Local DB updated with image paths');
     }
 
     const remoteImageFields: ImageUpsertRemoteResult[] =

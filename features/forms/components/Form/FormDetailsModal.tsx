@@ -1,4 +1,4 @@
-import ModalWrapper from '../customUI/ModalWrapper';
+import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import Form from './Form';
 import { Form as FormType } from '~/utils/globalTypes';
 
