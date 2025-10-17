@@ -28,30 +28,43 @@ export default function RadioGroup({
 }: RadioGroupProps) {
   return (
     <View>
-      {options.map((opt) => (
-        <View key={opt.value} style={styles.checkboxContainer}>
-          <Checkbox
-            value={values[name] === opt.value}
-            onValueChange={() => setFieldValue(name, opt.value)}
-            style={styles.checkbox}
-          />
-          <Text style={styles.label}>{opt.label}</Text>
-          {opt.value === 'other' && values[name] === 'other' && otherFieldName && (
+    {options.map((opt) => {
+      const isSelected = values[name] === opt.value;
+      const showOther = opt.value === 'other' && isSelected && otherFieldName;
+
+      return (
+        <View key={opt.value} style={styles.optionBlock}>
+          <View style={styles.checkboxContainer}>
+            <Checkbox
+              value={isSelected}
+              onValueChange={() => setFieldValue(name, opt.value)}
+              style={styles.checkbox}
+            />
+            <Text style={styles.label}>{opt.label}</Text>
+          </View>
+
+          {showOther && (
             <TextInput
-              style={styles.otherInput}
+              style={styles.otherInput}   // same style as your input
               placeholder="Please specify"
               value={otherValue}
               onChangeText={onOtherChange}
+              autoFocus
+              returnKeyType="done"
             />
           )}
         </View>
-      ))}
-      {errors && touched && <Text style={styles.error}>{errors}</Text>}
-    </View>
+      );
+    })}
+    {errors && touched && <Text style={styles.error}>{errors}</Text>}
+  </View>
   );
 }
 
 const styles = StyleSheet.create({
+  optionBlock: {
+    marginBottom: 12,
+  },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -74,6 +87,8 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     borderRadius: 4,
     minHeight: 40,
+    width: '100%',
+    backgroundColor: '#fff'
   },
   error: {
     color: 'red',
