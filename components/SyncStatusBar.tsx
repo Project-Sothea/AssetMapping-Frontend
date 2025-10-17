@@ -1,15 +1,30 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { syncManagerInstance } from '~/services/sync/syncService';
+import { getSyncManager } from '~/services/sync/syncService';
+import { formatSyncDisplay, SyncRawState } from '~/services/sync/utils/formatSyncStatus';
 
 export const SyncStatusBar = () => {
-  const [status, setStatus] = useState(syncManagerInstance.getDisplayStatus());
+  let initialStatus = { text: 'Unsynced', color: '#e74c3c' };
+  try {
+    const state = getSyncManager().getState();
+    initialStatus = formatSyncDisplay(state);
+  } catch {
+    // not initialized yet, will wait for subscribe if initialized later
+  }
+  const [status, setStatus] = useState(initialStatus);
   const [popup, setPopup] = useState<{ message: string; color: string } | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const unsubscribe = syncManagerInstance.subscribe(setStatus);
-    return () => unsubscribe();
+    try {
+      const unsubscribe = getSyncManager().subscribe((state: SyncRawState) => {
+        setStatus(formatSyncDisplay(state));
+      });
+      return () => unsubscribe();
+    } catch {
+      // not initialized; nothing to cleanup
+      return () => {};
+    }
   }, []);
 
   const showPopup = (message: string, color: string) => {
@@ -33,7 +48,7 @@ export const SyncStatusBar = () => {
 
   const handlePress = async () => {
     try {
-      await syncManagerInstance.syncNow();
+      await getSyncManager().syncNow();
       showPopup('Sync successful!', 'green');
     } catch (err) {
       console.error('Manual sync failed:', err);
@@ -72,7 +87,7 @@ export const SyncStatusBar = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' }, // idk if shld remove flex:1... ugh
-  buttonWrapper: { position: 'relative', alignItems: 'center', alignSelf: 'center'},
+  buttonWrapper: { position: 'relative', alignItems: 'center', alignSelf: 'center' },
   button: {
     paddingVertical: 6, // reduced paddings so wldnt look so fat
     paddingHorizontal: 14,

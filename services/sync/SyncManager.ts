@@ -1,9 +1,6 @@
-import { BaseSyncHandler } from './handlers/BaseSyncHandler';
-type StatusListener = (displayStatus: DisplayStatus) => void;
-type DisplayStatus = {
-  text: string;
-  color: string;
-};
+import { BaseSyncHandler } from './logic/BaseSyncHandler';
+import { formatSyncDisplay, SyncRawState, DisplayStatus } from './utils/formatSyncStatus';
+type StatusListener = (state: SyncRawState) => void;
 
 export class SyncManager {
   private listeners: StatusListener[] = [];
@@ -94,33 +91,23 @@ export class SyncManager {
   }
 
   private notifyListeners() {
-    const status = this.getDisplayStatus();
-    this.listeners.forEach((l) => l(status));
+    const state = this.getState();
+    // copy to avoid mutation during iteration
+    const listeners = [...this.listeners];
+    listeners.forEach((l) => l(state));
+  }
+
+  public getState(): SyncRawState {
+    return {
+      isSyncing: this.isSyncing,
+      lastSyncedAt: this.lastSyncedAt,
+      lastSyncFailedAt: this.lastSyncFailedAt,
+      lastSyncFailure: this.lastSyncFailure,
+    };
   }
 
   public getDisplayStatus(): DisplayStatus {
-    if (this.isSyncing) {
-      return { text: 'Syncing...', color: '#3498db' };
-    }
-
-    if (
-      this.lastSyncFailedAt &&
-      (!this.lastSyncedAt || this.lastSyncFailedAt >= this.lastSyncedAt)
-    ) {
-      return {
-        text: ` Sync (failed ${this.lastSyncFailedAt.toLocaleTimeString()})`,
-        color: '#f39c12',
-      };
-    }
-
-    if (this.lastSyncedAt) {
-      return {
-        text: `Synced (last ${this.lastSyncedAt.toLocaleTimeString()})`,
-        color: '#2ecc71',
-      };
-    }
-
-    return { text: 'Unsynced', color: '#e74c3c' };
+    return formatSyncDisplay(this.getState());
   }
 }
 

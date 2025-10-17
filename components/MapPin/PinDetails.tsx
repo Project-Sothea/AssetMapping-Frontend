@@ -16,14 +16,23 @@ type PinDetailsProps = {
 
 //helper
 const intoPinFormValues = (pin: Pin): PinFormValues => {
+  let parsedLocalImages = null;
+  try {
+    parsedLocalImages =
+      pin.localImages && pin.localImages !== '' ? JSON.parse(pin.localImages) : null;
+  } catch (error) {
+    console.error('Error parsing localImages:', error);
+    parsedLocalImages = null;
+  }
+
   return {
     id: pin.id,
     name: pin.name,
-    cityVillage: pin.cityVillage,
+    cityVillage: (pin as any).city_village,
     address: pin.address,
     description: pin.description,
     type: pin.type,
-    localImages: pin.localImages ? JSON.parse(pin.localImages) : null,
+    localImages: parsedLocalImages,
     lat: pin.lat,
     lng: pin.lng,
   };

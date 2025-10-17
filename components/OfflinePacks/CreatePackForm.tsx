@@ -33,8 +33,7 @@ const validationSchema = Yup.object({
     .min(-90, 'Latitude must be ≥ -90')
     .max(90, 'Latitude must be ≤ 90')
     .required('Required'),
-})
-.test('bounds-order', '', (values, ctx) => {
+}).test('bounds-order', '', (values, ctx) => {
   if (!values) return false;
   const { minLat, maxLat, minLng, maxLng } = values;
 

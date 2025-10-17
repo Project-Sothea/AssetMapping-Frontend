@@ -1,6 +1,6 @@
 import { ReForm } from '~/utils/globalTypes';
-import RemoteRepository from '../RemoteRepository';
-import { callForm } from '~/apis'; // similar to callPin, your API module for forms
+import { RemoteRepository } from '../RemoteRepository';
+import { callForm } from '~/apis';
 
 export class SupabaseFormRepo implements RemoteRepository<ReForm> {
   async fetchAll(): Promise<ReForm[]> {

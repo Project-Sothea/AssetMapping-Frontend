@@ -1,5 +1,5 @@
 import { RePin } from '~/utils/globalTypes';
-import RemoteRepository from '../RemoteRepository';
+import { RemoteRepository } from '../RemoteRepository';
 import { callPin } from '~/apis';
 
 export class SupabasePinRepo implements RemoteRepository<RePin> {

@@ -28,36 +28,36 @@ export default function RadioGroup({
 }: RadioGroupProps) {
   return (
     <View>
-    {options.map((opt) => {
-      const isSelected = values[name] === opt.value;
-      const showOther = opt.value === 'other' && isSelected && otherFieldName;
+      {options.map((opt) => {
+        const isSelected = values[name] === opt.value;
+        const showOther = opt.value === 'other' && isSelected && otherFieldName;
 
-      return (
-        <View key={opt.value} style={styles.optionBlock}>
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              value={isSelected}
-              onValueChange={() => setFieldValue(name, opt.value)}
-              style={styles.checkbox}
-            />
-            <Text style={styles.label}>{opt.label}</Text>
+        return (
+          <View key={opt.value} style={styles.optionBlock}>
+            <View style={styles.checkboxContainer}>
+              <Checkbox
+                value={isSelected}
+                onValueChange={() => setFieldValue(name, opt.value)}
+                style={styles.checkbox}
+              />
+              <Text style={styles.label}>{opt.label}</Text>
+            </View>
+
+            {showOther && (
+              <TextInput
+                style={styles.otherInput} // same style as your input
+                placeholder="Please specify"
+                value={otherValue}
+                onChangeText={onOtherChange}
+                autoFocus
+                returnKeyType="done"
+              />
+            )}
           </View>
-
-          {showOther && (
-            <TextInput
-              style={styles.otherInput}   // same style as your input
-              placeholder="Please specify"
-              value={otherValue}
-              onChangeText={onOtherChange}
-              autoFocus
-              returnKeyType="done"
-            />
-          )}
-        </View>
-      );
-    })}
-    {errors && touched && <Text style={styles.error}>{errors}</Text>}
-  </View>
+        );
+      })}
+      {errors && touched && <Text style={styles.error}>{errors}</Text>}
+    </View>
   );
 }
 
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     minHeight: 40,
     width: '100%',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   },
   error: {
     color: 'red',

@@ -20,7 +20,7 @@ export const upsertAll = async (forms: ReForm[]) => {
     // Strip out local-only fields before upserting
     const formsToUpsert = forms.map(
       ({ failure_reason, status, last_synced_at, last_failed_sync_at, ...rest }) => ({
-        rest,
+        ...rest,
         updated_at: rest.updated_at ?? new Date().toISOString(),
       })
     );
@@ -40,7 +40,7 @@ export const updateFieldsBatch = async (forms: Partial<ReForm>[]) => {
     // Strip out local-only fields before upserting
     const formsToUpsert = forms.map(
       ({ failure_reason, status, last_synced_at, last_failed_sync_at, ...rest }) => ({
-        rest,
+        ...rest,
         updated_at: rest.updated_at ?? new Date().toISOString(),
       })
     );

@@ -1,12 +1,16 @@
 import { useEffect } from 'react';
-import { syncManagerInstance } from '~/services/sync/syncService';
+import { getSyncManager } from '~/services/sync/syncService';
 
 export const useRemoteToLocalSync = () => {
   useEffect(() => {
     console.log('begin Interval');
     const interval = setInterval(
       () => {
-        syncManagerInstance.syncNow();
+        try {
+          getSyncManager().syncNow();
+        } catch (err) {
+          console.warn('Sync not initialized; skipping automatic sync', err);
+        }
       },
       5 * 60 * 1000
     );

@@ -9,6 +9,7 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  console.log('imageURIs: ', pin.localImages);
   const imageURIs: string[] = useMemo(() => {
     try {
       return pin.localImages ? JSON.parse(pin.localImages) : [];
@@ -55,7 +56,7 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
 
       <View style={styles.infoCard}>
-        <InfoRow label="City/Village" value={pin.cityVillage} />
+        <InfoRow label="City/Village" value={pin.city_village} />
         <InfoRow label="Address" value={pin.address} />
         <InfoRow label="Type" value={pin.type} />
       </View>

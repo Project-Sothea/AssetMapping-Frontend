@@ -1,7 +1,7 @@
 // SyncHandler.ts
-import { LocalRepository } from '../implementations/LocalRepository';
-import RemoteRepository from '../implementations/RemoteRepository';
-import { SyncStrategy } from '../implementations/SyncStrategy';
+import { LocalRepository } from '../repositories/LocalRepository';
+import { RemoteRepository } from '../repositories/RemoteRepository';
+import { SyncStrategy } from './syncing/SyncStrategy';
 
 /**
  * Abstract base class that defines the sync lifecycle.
@@ -27,29 +27,27 @@ export abstract class BaseSyncHandler<
    */
   async execute(): Promise<void> {
     console.log('executing handler');
-    try {
-      const [localItems, remoteItems] = await Promise.all([
-        this.localRepo.fetchAll(),
-        this.remoteRepo.fetchAll(),
-      ]);
-      const { toLocal, toRemote } = this.strategy.resolve(localItems, remoteItems);
+    const [localItems, remoteItems] = await Promise.all([
+      this.localRepo.fetchAll(),
+      this.remoteRepo.fetchAll(),
+    ]);
+    const { toLocal, toRemote } = this.strategy.resolve(localItems, remoteItems);
 
-      const localUpserts = this.strategy.convertToLocal(toLocal);
-      const remoteUpserts = this.strategy.convertToRemote(toRemote);
+    const localUpserts = this.strategy.convertToLocal(toLocal);
+    const remoteUpserts = this.strategy.convertToRemote(toRemote);
 
-      await Promise.all([
-        this.localRepo.upsertAll(localUpserts),
-        this.remoteRepo.upsertAll(remoteUpserts),
-      ]);
+    // perform core upserts
+    await Promise.all([
+      this.localRepo.upsertAll(localUpserts),
+      this.remoteRepo.upsertAll(remoteUpserts),
+    ]);
 
-      console.log('postsync start');
-      await this.postSync(localUpserts, remoteUpserts);
-      console.log('postsync end');
+    console.log('postsync start');
+    await this.postSync(localUpserts, remoteUpserts);
+    console.log('postsync end');
 
-      await Promise.all([this.localRepo.markAsSynced([...localUpserts, ...toRemote])]);
-    } catch (err) {
-      console.error('Error during markAsSynced step:', err);
-    }
+    // mark items as synced; allow errors to bubble so orchestrator can observe failures
+    await Promise.all([this.localRepo.markAsSynced([...localUpserts, ...toRemote])]);
   }
 
   /**

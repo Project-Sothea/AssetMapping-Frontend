@@ -18,8 +18,8 @@ import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollectio
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
-import { localPinRepo } from '~/services/sync/syncService';
-import * as ImageManager from '~/services/sync/image/ImageManager';
+import { getLocalPinRepo } from '~/services/sync/syncService';
+import * as ImageManager from '~/services/sync/logic/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
@@ -57,19 +57,26 @@ export default function Map() {
     console.log('creating new pin in db...');
     try {
       console.log('processing images...');
+      // Convert cityVillage to city_village for database
+      const { cityVillage, ...rest } = values;
+      const dbValues = {
+        ...rest,
+        city_village: cityVillage,
+      };
+
       if (values.localImages) {
         const { success: localURIs } = await ImageManager.saveToFileSystem(
           values.id,
           values.localImages
         );
         console.log('createLocally: localURIs', localURIs);
-        await localPinRepo.create({
-          ...values,
+        await getLocalPinRepo().create({
+          ...dbValues,
           localImages: JSON.stringify(localURIs),
           images: null,
         });
       } else {
-        await localPinRepo.create(values);
+        await getLocalPinRepo().create(dbValues);
       }
       Alert.alert(`Pin Created!`);
     } catch (error) {
@@ -90,11 +97,25 @@ export default function Map() {
 
     try {
       console.log('processing images...');
+      // Convert cityVillage to city_village for database
+      const { cityVillage, ...rest } = values;
+      const dbValues = {
+        ...rest,
+        city_village: cityVillage,
+      };
+
       if (values.localImages) {
-        const currPin = await localPinRepo.get(values.id);
-        const currLocalImages: string[] = currPin.localImages
-          ? JSON.parse(currPin.localImages)
-          : [];
+        const currPin = await getLocalPinRepo().get(values.id);
+        let currLocalImages: string[] = [];
+        try {
+          currLocalImages =
+            currPin?.localImages && currPin.localImages !== ''
+              ? JSON.parse(currPin.localImages)
+              : [];
+        } catch (error) {
+          console.error('Error parsing currPin.localImages:', error);
+          currLocalImages = [];
+        }
 
         const { success: localURIs } = await ImageManager.updateImagesLocally(
           values.id,
@@ -102,13 +123,13 @@ export default function Map() {
           currLocalImages
         );
         console.log('createLocally: localURIs', localURIs);
-        await localPinRepo.update({
-          ...values,
+        await getLocalPinRepo().update({
+          ...dbValues,
           localImages: JSON.stringify(localURIs),
           images: null,
         });
       } else {
-        await localPinRepo.update(values);
+        await getLocalPinRepo().update(dbValues);
       }
       Alert.alert(`Pin Updated!`);
     } catch (error) {
@@ -128,7 +149,7 @@ export default function Map() {
     console.log('deleting pin in db...');
 
     try {
-      await localPinRepo.delete(pin.id);
+      await getLocalPinRepo().delete(pin.id);
       Alert.alert(`Pin Deleted!`);
     } catch (error) {
       console.error('Error deleting pin:', error);
@@ -211,7 +232,7 @@ export default function Map() {
                 textAnchor: 'bottom',
                 textOffset: [0, -2.5], // shift higher above pin
                 textAllowOverlap: false,
-                textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1]
+                textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1],
               }}
             />
             <Images images={{ pin }} />

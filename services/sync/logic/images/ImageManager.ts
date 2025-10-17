@@ -177,6 +177,24 @@ function generateNewFileName(): string {
   return `${uuidv4()}.jpg`;
 }
 
+function ensureFileUri(uri: string): string {
+  if (!uri) return uri;
+  // Already a file:// or content:// or http(s)://
+  if (
+    uri.startsWith('file://') ||
+    uri.startsWith('content://') ||
+    uri.startsWith('http://') ||
+    uri.startsWith('https://')
+  ) {
+    return uri;
+  }
+
+  // Absolute path without scheme (common on simulator): prefix file://
+  if (uri.startsWith('/')) return `file://${uri}`;
+
+  return uri;
+}
+
 //REMOTE
 
 async function deleteInRemote(pinId: string, files: string[]) {
@@ -218,8 +236,10 @@ export async function uploadToRemote(
   }
 
   const uploadTasks = uris.map((uri) => {
-    const remotePath = `${pinId}/${extractFilenameFromLocalUri(uri)}`;
-    return callImages.uploadToRemote(uri, remotePath);
+    const filename = extractFilenameFromLocalUri(uri) ?? generateNewFileName();
+    const remotePath = `${pinId}/${filename}`;
+    const localUri = ensureFileUri(uri);
+    return callImages.uploadToRemote(localUri, remotePath);
   });
 
   const results = await Promise.allSettled(uploadTasks);
@@ -228,7 +248,7 @@ export async function uploadToRemote(
     const uri = uris[index];
     if (result.status === 'fulfilled') {
       images.push(result.value); // remote URL
-      localImages.push(uri); // keep original local path
+      localImages.push(ensureFileUri(uri)); // keep normalized local path
     } else {
       fail.push({ uri, error: result.reason });
       console.warn(`Failed to upload image: ${uri}`, result.reason);
@@ -251,8 +271,8 @@ async function listLocalImages(pinId: string): Promise<string[]> {
     // Read all files in the folder
     const files = await FileSystem.readDirectoryAsync(folderPath);
 
-    // Prepend full path to each file
-    return files.map((file) => `${folderPath}${file}`);
+    // Prepend full path to each file and ensure file:// scheme
+    return files.map((file) => ensureFileUri(`${folderPath}${file}`));
   } catch (err) {
     console.warn('Failed to list local images for pin', pinId, err);
     return [];
@@ -282,7 +302,7 @@ async function deleteInLocal(
           await FileSystem.deleteAsync(uri, { idempotent: true });
           result.success.push(uri);
         } catch (err) {
-          console.warn('Failed to delete file:', uri, err);
+          console.warn('Failed to delete old image:', uri, err);
           result.fail.push({ uri, error: err });
         }
       })
@@ -335,7 +355,7 @@ async function downloadToLocal(
         throw new Error('Unsupported image source: ' + img);
       }
 
-      localImages.push(localUri);
+      localImages.push(ensureFileUri(localUri));
     } catch (err) {
       console.warn(`Failed to save image ${img}:`, err);
       fail.push(img);
@@ -393,3 +413,12 @@ export async function handleUpsertsToRemote(remoteUpserts: RePin[]) {
   }
   return results;
 }
+
+export default {
+  getPickedImage,
+  saveToFileSystem,
+  updateImagesLocally,
+  uploadToRemote,
+  handleUpsertsToLocal,
+  handleUpsertsToRemote,
+};

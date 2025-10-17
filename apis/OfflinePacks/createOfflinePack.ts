@@ -25,4 +25,3 @@ export const CreateOfflinePack = async (
     Alert.alert('CreatePack Error', err.message ?? 'Pack already Created or invalid bounds');
   }
 };
-

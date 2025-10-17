@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native'
 import { useState } from 'react';
 import { useFetchLocalForms } from '~/hooks/Forms';
 import { Form as FormType } from '~/utils/globalTypes';
-import { localFormRepo } from '~/services/sync/syncService';
+import { getLocalFormRepo } from '~/services/sync/syncService';
 import { FormCard } from '~/components/Form/FormCard';
 import { FormDetailsModal } from '~/components/Form/FormDetailsModal';
 
@@ -29,18 +29,18 @@ export default function FormScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => localFormRepo.delete(formId),
+        onPress: () => getLocalFormRepo().delete(formId),
       },
     ]);
   };
 
   const handleFormSubmit = (values: any) => {
     if (selectedForm) {
-      localFormRepo.update(values);
+      getLocalFormRepo().update(values);
       Alert.alert('Form Updated!');
       setSelectedForm(null);
     } else {
-      localFormRepo.create(values);
+      getLocalFormRepo().create(values);
       Alert.alert('Form Created!');
     }
 

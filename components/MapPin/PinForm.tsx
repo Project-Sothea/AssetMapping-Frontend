@@ -10,7 +10,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import * as ImageManager from '~/services/sync/image/ImageManager';
+import * as ImageManager from '~/services/sync/logic/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
@@ -26,7 +26,7 @@ export type PinFormValues = {
   address: string | null;
   description: string | null;
   type: string | null;
-  localImages: string[]; // array of images with uri
+  localImages: string[]; // array of images with uri (may be null)
   id: string;
   lat: number | null;
   lng: number | null;
@@ -38,11 +38,12 @@ type PinFormProps = {
 };
 
 export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
-  const appendNewImage = async (setFieldValue: any, images: string[]) => {
+  const appendNewImage = async (setFieldValue: any, images: string[] | null) => {
     const { data, error } = await ImageManager.getPickedImage();
-    if (!error) {
-      setFieldValue('localImages', [...images, data]);
-    } else {
+    const safeImages = Array.isArray(images) ? images : [];
+    if (!error && data) {
+      setFieldValue('localImages', [...safeImages, data]);
+    } else if (error) {
       console.warn(error.message);
     }
     return;
