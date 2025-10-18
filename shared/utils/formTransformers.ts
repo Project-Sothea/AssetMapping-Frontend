@@ -1,10 +1,9 @@
-import { Form } from '~/db/schema';
-import { ReForm } from '~/utils/globalTypes';
-import { convertKeysToCamel, convertKeysToSnake, parseArrayFields } from '~/utils/dataShapes';
+import { Form, ReForm } from '~/utils/globalTypes';
+import { parseArrayFields } from '~/db/utils';
 
 /**
  * Form values for form creation/editing (UI layer)
- * Using the same shape as Form but with parsed arrays
+ * Using the same shape as Form but with parsed arrays and without metadata fields
  */
 export type FormValues = Omit<
   Form,
@@ -22,6 +21,10 @@ export type FormValues = Omit<
 
 /**
  * Centralized transformations for Form data
+ *
+ * Migration Status:
+ * - PostgreSQL (remote): Uses camelCase (after migration)
+ * - SQLite (local): Uses snake_case (until migration applied)
  */
 export class FormTransformers {
   /**
@@ -42,17 +45,27 @@ export class FormTransformers {
   }
 
   /**
-   * Convert local Form to remote ReForm (snake_case)
+   * Convert local Form to remote ReForm.
+   * After schema unification, TypeScript types already use camelCase - just remove local-only fields.
    */
   static localToRemote(form: Form): ReForm {
-    return convertKeysToSnake(form) as ReForm;
+    const { failureReason, status, lastSyncedAt, lastFailedSyncAt, ...remoteForm } = form;
+    return remoteForm as ReForm;
   }
 
   /**
-   * Convert remote ReForm to local Form (camelCase)
+   * Convert remote ReForm to local Form.
+   * After schema unification, TypeScript types already use camelCase - just add local-only fields.
    */
   static remoteToLocal(reForm: ReForm): Form {
-    return convertKeysToCamel(reForm) as Form;
+    return {
+      ...reForm,
+      // Add local-only fields
+      failureReason: null,
+      status: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastFailedSyncAt: null,
+    } as Form;
   }
 
   /**

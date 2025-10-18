@@ -1,1 +1,0 @@
-ALTER TABLE `pins` RENAME COLUMN "location_name" TO "name";

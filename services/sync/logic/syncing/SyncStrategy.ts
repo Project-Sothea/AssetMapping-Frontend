@@ -1,9 +1,4 @@
-import {
-  convertKeysToCamel,
-  convertKeysToSnake,
-  parseArrayFields,
-  stringifyArrayFields,
-} from '~/utils/dataShapes';
+import { parseArrayFields, stringifyArrayFields } from '~/db/utils';
 
 // ==================== Type Definitions ====================
 
@@ -40,13 +35,13 @@ export class SyncStrategy<
     deletedAt: string | null;
     status: string | null;
   },
-  RemoteType extends { id: string; updated_at: string | null; deleted_at: string | null },
+  RemoteType extends { id: string; updatedAt: string | null; deletedAt: string | null },
 > {
   // ==================== Data Transformation ====================
 
   /**
    * Convert remote items to local format.
-   * Applies snake_case → camelCase transformation and stringifies arrays.
+   * After schema unification, both use camelCase, so just stringify arrays.
    */
   convertToLocal(remoteItems: RemoteType[]): LocalType[] {
     return remoteItems.map(this.transformRemoteToLocal);
@@ -54,7 +49,7 @@ export class SyncStrategy<
 
   /**
    * Convert local items to remote format.
-   * Applies camelCase → snake_case transformation and parses arrays.
+   * After schema unification, both use camelCase, so just parse arrays.
    */
   convertToRemote(localItems: LocalType[]): RemoteType[] {
     return localItems.map(this.transformLocalToRemote);
@@ -95,16 +90,24 @@ export class SyncStrategy<
 
   /**
    * Transform a single remote item to local format.
+   *
+   * After schema unification:
+   * - convertKeysToCamel is now a no-op (both databases use camelCase)
+   * - stringifyArrayFields still needed (arrays stored as JSON strings in both DBs)
    */
   private transformRemoteToLocal(remoteItem: RemoteType): LocalType {
-    return stringifyArrayFields(convertKeysToCamel(remoteItem));
+    return stringifyArrayFields(remoteItem) as LocalType;
   }
 
   /**
    * Transform a single local item to remote format.
+   *
+   * After schema unification:
+   * - convertKeysToSnake is now a no-op (both databases use camelCase)
+   * - parseArrayFields still needed (arrays stored as JSON strings in both DBs)
    */
   private transformLocalToRemote(localItem: LocalType): RemoteType {
-    return parseArrayFields(convertKeysToSnake(localItem));
+    return parseArrayFields(localItem) as RemoteType;
   }
 
   /**
@@ -254,23 +257,23 @@ export class SyncStrategy<
 
   /**
    * Get timestamp string from item (handles both local and remote formats).
+   * After schema unification, both use camelCase.
    */
   private getTimestampString(item: LocalType | RemoteType): string | null {
-    // Check if it's a local item (has deletedAt/updatedAt)
+    // Both local and remote now use camelCase (deletedAt/updatedAt)
     if ('deletedAt' in item) {
       return (item as LocalType).deletedAt ?? (item as LocalType).updatedAt;
     }
-    // It's a remote item (has deleted_at/updated_at)
-    return (item as RemoteType).deleted_at ?? (item as RemoteType).updated_at;
+    // Remote also uses camelCase after schema unification
+    return (item as RemoteType).deletedAt ?? (item as RemoteType).updatedAt;
   }
 
   /**
    * Check if an item is marked as deleted.
+   * After schema unification, both use camelCase.
    */
   private isDeleted(item: LocalType | RemoteType): boolean {
-    return 'deletedAt' in item
-      ? !!(item as LocalType).deletedAt
-      : !!(item as RemoteType).deleted_at;
+    return 'deletedAt' in item ? !!(item as LocalType).deletedAt : !!(item as RemoteType).deletedAt;
   }
 
   /**

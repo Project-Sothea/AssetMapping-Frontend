@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "18950906-ebff-4b58-8415-245afbc37589",
+  "id": "943cf3f0-09c8-4e01-84d1-2d32254d99be",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "forms": {
@@ -14,66 +14,38 @@
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "createdAt": {
+          "name": "createdAt",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "updated_at": {
-          "name": "updated_at",
+        "updatedAt": {
+          "name": "updatedAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "deleted_at": {
-          "name": "deleted_at",
+        "deletedAt": {
+          "name": "deletedAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "failure_reason": {
-          "name": "failure_reason",
+        "pinId": {
+          "name": "pinId",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_synced_at": {
-          "name": "last_synced_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_failed_sync_at": {
-          "name": "last_failed_sync_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pin_id": {
-          "name": "pin_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "village_id": {
-          "name": "village_id",
+        "villageId": {
+          "name": "villageId",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -86,15 +58,15 @@
           "notNull": false,
           "autoincrement": false
         },
-        "brush_teeth": {
-          "name": "brush_teeth",
+        "brushTeeth": {
+          "name": "brushTeeth",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "can_attend": {
-          "name": "can_attend",
+        "canAttend": {
+          "name": "canAttend",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -107,15 +79,15 @@
           "notNull": false,
           "autoincrement": false
         },
-        "cold_look_like": {
-          "name": "cold_look_like",
+        "coldLookLike": {
+          "name": "coldLookLike",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "condition_details": {
-          "name": "condition_details",
+        "conditionDetails": {
+          "name": "conditionDetails",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -135,36 +107,36 @@
           "notNull": false,
           "autoincrement": false
         },
-        "diarrhoea_action": {
-          "name": "diarrhoea_action",
+        "diarrhoeaAction": {
+          "name": "diarrhoeaAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "eat_clean_food": {
-          "name": "eat_clean_food",
+        "eatCleanFood": {
+          "name": "eatCleanFood",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "hand_after_toilet": {
-          "name": "hand_after_toilet",
+        "handAfterToilet": {
+          "name": "handAfterToilet",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "hand_before_meal": {
-          "name": "hand_before_meal",
+        "handBeforeMeal": {
+          "name": "handBeforeMeal",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "have_toothbrush": {
-          "name": "have_toothbrush",
+        "haveToothbrush": {
+          "name": "haveToothbrush",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -177,176 +149,204 @@
           "notNull": false,
           "autoincrement": false
         },
-        "know_doctor": {
-          "name": "know_doctor",
+        "knowDoctor": {
+          "name": "knowDoctor",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "know_water_filters": {
-          "name": "know_water_filters",
+        "knowWaterFilters": {
+          "name": "knowWaterFilters",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "msk_injury": {
-          "name": "msk_injury",
+        "mskInjury": {
+          "name": "mskInjury",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_brush_teeth": {
-          "name": "other_brush_teeth",
+        "otherBrushTeeth": {
+          "name": "otherBrushTeeth",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_buy_medicine": {
-          "name": "other_buy_medicine",
+        "otherBuyMedicine": {
+          "name": "otherBuyMedicine",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_condition": {
-          "name": "other_condition",
+        "otherCondition": {
+          "name": "otherCondition",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_learning": {
-          "name": "other_learning",
+        "otherLearning": {
+          "name": "otherLearning",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_management": {
-          "name": "other_management",
+        "otherManagement": {
+          "name": "otherManagement",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_sick_action": {
-          "name": "other_sick_action",
+        "otherSickAction": {
+          "name": "otherSickAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_water_filter_reason": {
-          "name": "other_water_filter_reason",
+        "otherWaterFilterReason": {
+          "name": "otherWaterFilterReason",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "other_water_source": {
-          "name": "other_water_source",
+        "otherWaterSource": {
+          "name": "otherWaterSource",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "own_transport": {
-          "name": "own_transport",
+        "ownTransport": {
+          "name": "ownTransport",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "poverty_card": {
-          "name": "poverty_card",
+        "povertyCard": {
+          "name": "povertyCard",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "where_buy_medicine": {
-          "name": "where_buy_medicine",
+        "whereBuyMedicine": {
+          "name": "whereBuyMedicine",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "cholesterol_action": {
-          "name": "cholesterol_action",
+        "cholesterolAction": {
+          "name": "cholesterolAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "cold_action": {
-          "name": "cold_action",
+        "coldAction": {
+          "name": "coldAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "diabetes_action": {
-          "name": "diabetes_action",
+        "diabetesAction": {
+          "name": "diabetesAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "hypertension_action": {
-          "name": "hypertension_action",
+        "hypertensionAction": {
+          "name": "hypertensionAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "long_term_conditions": {
-          "name": "long_term_conditions",
+        "longTermConditions": {
+          "name": "longTermConditions",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "management_methods": {
-          "name": "management_methods",
+        "managementMethods": {
+          "name": "managementMethods",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "msk_action": {
-          "name": "msk_action",
+        "mskAction": {
+          "name": "mskAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "not_using_water_filter": {
-          "name": "not_using_water_filter",
+        "notUsingWaterFilter": {
+          "name": "notUsingWaterFilter",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "unsafe_water": {
-          "name": "unsafe_water",
+        "unsafeWater": {
+          "name": "unsafeWater",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "water_sources": {
-          "name": "water_sources",
+        "waterSources": {
+          "name": "waterSources",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "what_do_when_sick": {
-          "name": "what_do_when_sick",
+        "whatDoWhenSick": {
+          "name": "whatDoWhenSick",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "failureReason": {
+          "name": "failureReason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lastSyncedAt": {
+          "name": "lastSyncedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lastFailedSyncAt": {
+          "name": "lastFailedSyncAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -369,52 +369,24 @@
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "createdAt": {
+          "name": "createdAt",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "updated_at": {
-          "name": "updated_at",
+        "updatedAt": {
+          "name": "updatedAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "failure_reason": {
-          "name": "failure_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_synced_at": {
-          "name": "last_synced_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_failed_sync_at": {
-          "name": "last_failed_sync_at",
+        "deletedAt": {
+          "name": "deletedAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -455,8 +427,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "city/village": {
-          "name": "city/village",
+        "cityVillage": {
+          "name": "cityVillage",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -469,15 +441,43 @@
           "notNull": false,
           "autoincrement": false
         },
-        "images": {
-          "name": "images",
+        "failureReason": {
+          "name": "failureReason",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "local_images": {
-          "name": "local_images",
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lastSyncedAt": {
+          "name": "lastSyncedAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lastFailedSyncAt": {
+          "name": "lastFailedSyncAt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "localImages": {
+          "name": "localImages",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "images": {
+          "name": "images",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -500,8 +500,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "createdAt": {
+          "name": "createdAt",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -515,22 +515,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entity_type": {
-          "name": "entity_type",
+        "entityType": {
+          "name": "entityType",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "entity_id": {
-          "name": "entity_id",
+        "entityId": {
+          "name": "entityId",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "idempotency_key": {
-          "name": "idempotency_key",
+        "idempotencyKey": {
+          "name": "idempotencyKey",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -558,44 +558,44 @@
           "autoincrement": false,
           "default": 0
         },
-        "max_attempts": {
-          "name": "max_attempts",
+        "maxAttempts": {
+          "name": "maxAttempts",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": 3
         },
-        "last_error": {
-          "name": "last_error",
+        "lastError": {
+          "name": "lastError",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "last_attempt_at": {
-          "name": "last_attempt_at",
+        "lastAttemptAt": {
+          "name": "lastAttemptAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "sequence_number": {
-          "name": "sequence_number",
+        "sequenceNumber": {
+          "name": "sequenceNumber",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
-        "depends_on": {
-          "name": "depends_on",
+        "dependsOn": {
+          "name": "dependsOn",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "device_id": {
-          "name": "device_id",
+        "deviceId": {
+          "name": "deviceId",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -603,10 +603,10 @@
         }
       },
       "indexes": {
-        "sync_queue_idempotency_key_unique": {
-          "name": "sync_queue_idempotency_key_unique",
+        "sync_queue_idempotencyKey_unique": {
+          "name": "sync_queue_idempotencyKey_unique",
           "columns": [
-            "idempotency_key"
+            "idempotencyKey"
           ],
           "isUnique": true
         }

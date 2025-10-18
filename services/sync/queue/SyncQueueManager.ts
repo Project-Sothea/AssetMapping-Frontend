@@ -17,8 +17,8 @@ import { eq, and, inArray, asc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
-import * as FormsAPI from '~/apis/Forms';
-import * as PinsAPI from '~/apis/Pins';
+import * as FormsAPI from './api/forms';
+import * as PinsAPI from './api/pins';
 import {
   QueueOperationInput,
   QueueOperation,

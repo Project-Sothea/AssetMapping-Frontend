@@ -8,7 +8,7 @@ import * as SQLite from 'expo-sqlite';
 import { pins } from '~/db/schema';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import migrations from '~/drizzle/migrations';
+import migrations from '../drizzle/sqlite/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { AppSyncLayer } from '~/features/sync/components/AppSyncLayer';
 import { initializeDefaultSync } from '~/services/sync/syncService';

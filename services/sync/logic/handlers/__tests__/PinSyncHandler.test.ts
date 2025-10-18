@@ -1,6 +1,6 @@
 /**
  * Focused tests for PinSyncHandler
- * 
+ *
  * Tests the core Pin-specific sync logic including image handling
  */
 
@@ -23,7 +23,6 @@ class MockLocalRepo implements Partial<LocalRepository<Pin, typeof pins>> {
 class MockRemoteRepo implements Partial<RemoteRepository<RePin>> {
   fetchAll = jest.fn().mockResolvedValue([]);
   upsertAll = jest.fn().mockResolvedValue(undefined);
-  updateFieldsBatch = jest.fn().mockResolvedValue(undefined);
 }
 
 class MockImageManager implements ImageManagerInterface {
@@ -144,6 +143,19 @@ describe('PinSyncHandler', () => {
     });
 
     it('should update both local and remote when images are uploaded', async () => {
+      // Mock local repo to return a pin that needs uploading
+      mockLocalRepo.fetchAll = jest.fn().mockResolvedValue([
+        {
+          id: '1',
+          updatedAt: '2025-01-02T00:00:00Z',
+          deletedAt: null,
+          status: 'dirty',
+          name: 'Test Pin',
+          localImages: '["file:///local/image1.jpg"]',
+          images: null,
+        } as Pin,
+      ]);
+
       mockImageManager.handleUpsertsToRemote = jest.fn().mockResolvedValue([
         {
           pinId: '1',
@@ -155,7 +167,7 @@ describe('PinSyncHandler', () => {
       await handler.execute();
 
       expect(mockLocalRepo.updateFieldsBatch).toHaveBeenCalled();
-      expect(mockRemoteRepo.updateFieldsBatch).toHaveBeenCalled();
+      expect(mockRemoteRepo.upsertAll).toHaveBeenCalled();
 
       const localUpdates = (mockLocalRepo.updateFieldsBatch as jest.Mock).mock.calls[0][0];
       expect(localUpdates[0]).toEqual({
@@ -166,10 +178,17 @@ describe('PinSyncHandler', () => {
         },
       });
 
-      const remoteUpdates = (mockRemoteRepo.updateFieldsBatch as jest.Mock).mock.calls[0][0];
+      // Check that upsertAll was called twice: once for the sync, once for image updates
+      expect((mockRemoteRepo.upsertAll as jest.Mock).mock.calls.length).toBeGreaterThan(1);
+
+      // The second call should be for image updates
+      const remoteUpdates = (mockRemoteRepo.upsertAll as jest.Mock).mock.calls[1][0];
+      expect(remoteUpdates).toBeDefined();
+      expect(Array.isArray(remoteUpdates)).toBe(true);
+      expect(remoteUpdates.length).toBeGreaterThan(0);
       expect(remoteUpdates[0]).toEqual({
         id: '1',
-        images: ['http://example.com/uploaded1.jpg'],
+        images: '["http://example.com/uploaded1.jpg"]',
       });
     });
 
@@ -220,9 +239,7 @@ describe('PinSyncHandler', () => {
         },
       ]);
 
-      mockLocalRepo.updateFieldsBatch = jest
-        .fn()
-        .mockRejectedValue(new Error('Update failed'));
+      mockLocalRepo.updateFieldsBatch = jest.fn().mockRejectedValue(new Error('Update failed'));
 
       await expect(handler.execute()).rejects.toThrow('Update failed');
     });

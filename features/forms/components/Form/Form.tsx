@@ -8,7 +8,7 @@ import { Form as FormType } from '~/utils/globalTypes';
 import GeneralSection from '../Form/GeneralSection';
 import WaterSection from '../Form/WaterSection';
 import HealthSection from '../Form/HealthSection';
-import { parseArrayFields } from '~/utils/dataShapes';
+import { parseArrayFields } from '~/db/utils';
 
 const validationSchema = Yup.object().shape({
   village: Yup.string().nullable().required('Required'),

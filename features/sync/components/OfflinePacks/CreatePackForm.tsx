@@ -1,7 +1,7 @@
 import { View, TextInput, StyleSheet, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { UseCreatePackProps } from '~/utils/globalTypes';
+import { UseCreatePackProps } from '~/hooks/OfflinePacks/types';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
 import Spacer from '~/shared/components/ui/Spacer';

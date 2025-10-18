@@ -6,6 +6,9 @@
  *
  * **SINGLE SOURCE OF TRUTH**: Change metadata once here, it applies to both databases automatically.
  *
+ * **UNIFIED FORMAT**: Uses camelCase column names and JSON strings for arrays
+ * in both databases - no conversion needed during sync!
+ *
  * ## How to Use:
  *
  * ### SQLite Example:
@@ -16,7 +19,7 @@
  * export const pins = sqliteTable('pins', {
  *   ...buildCommonPinFields(text, real),
  *   ...buildPinLocalFields(text),
- *   images: text('images'), // JSON string for arrays
+ *   images: text('images'), // JSON string
  * });
  * ```
  *
@@ -27,7 +30,7 @@
  *
  * export const pins = pgTable('pins', {
  *   ...buildCommonPinFields(text, doublePrecision, timestamp),
- *   images: text('images').array(), // Native array
+ *   images: text('images'), // JSON string (same format as SQLite!)
  * });
  * ```
  */
@@ -53,12 +56,12 @@ export function buildCommonPinFields(
     // Primary identifier
     id: textType('id').primaryKey(),
 
-    // Timestamps
-    createdAt: timestamp('created_at')
+    // Timestamps - using camelCase for unified format
+    createdAt: timestamp('createdAt')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
-    deletedAt: timestamp('deleted_at'), // Soft delete
+    updatedAt: timestamp('updatedAt').default(sql`CURRENT_TIMESTAMP`),
+    deletedAt: timestamp('deletedAt'), // Soft delete
 
     // Location
     lat: numericType('lat'),
@@ -68,7 +71,7 @@ export function buildCommonPinFields(
     type: textType('type'),
     name: textType('name'),
     address: textType('address'),
-    cityVillage: textType('city_village'),
+    cityVillage: textType('cityVillage'),
     description: textType('description'),
   };
 }
@@ -81,11 +84,11 @@ export function buildCommonPinFields(
  */
 export function buildPinLocalFields(textType: any) {
   return {
-    failureReason: textType('failure_reason'),
+    failureReason: textType('failureReason'),
     status: textType('status'),
-    lastSyncedAt: textType('last_synced_at'),
-    lastFailedSyncAt: textType('last_failed_sync_at'),
-    localImages: textType('local_images'), // Local file paths before upload
+    lastSyncedAt: textType('lastSyncedAt'),
+    lastFailedSyncAt: textType('lastFailedSyncAt'),
+    localImages: textType('localImages'), // Local file paths before upload
   };
 }
 
@@ -96,79 +99,76 @@ export function buildPinLocalFields(textType: any) {
  * @param timestampFn - optional timestamp function for pg
  * @returns Object with common form field definitions (non-array fields)
  */
-export function buildCommonFormFields(
-  textType: any,
-  timestampFn?: (col: string) => any
-) {
+export function buildCommonFormFields(textType: any, timestampFn?: (col: string) => any) {
   const timestamp = timestampFn || ((col: string) => textType(col));
 
   return {
     // Primary identifier
     id: textType('id').primaryKey(),
 
-    // Timestamps
-    createdAt: timestamp('created_at')
+    // Timestamps - camelCase for unified format
+    createdAt: timestamp('createdAt')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
-    deletedAt: timestamp('deleted_at'),
+    updatedAt: timestamp('updatedAt').default(sql`CURRENT_TIMESTAMP`),
+    deletedAt: timestamp('deletedAt'),
 
     // Relations
-    pinId: textType('pin_id'), // Foreign key
-    villageId: textType('village_id'),
+    pinId: textType('pinId'), // Foreign key
+    villageId: textType('villageId'),
     village: textType('village'),
 
-    // Health Assessment Fields (text fields)
-    brushTeeth: textType('brush_teeth'),
-    canAttend: textType('can_attend'),
+    // Health Assessment Fields (text fields) - camelCase
+    brushTeeth: textType('brushTeeth'),
+    canAttend: textType('canAttend'),
     cholesterol: textType('cholesterol'),
-    coldLookLike: textType('cold_look_like'),
-    conditionDetails: textType('condition_details'),
+    coldLookLike: textType('coldLookLike'),
+    conditionDetails: textType('conditionDetails'),
     diabetes: textType('diabetes'),
     diarrhoea: textType('diarrhoea'),
-    diarrhoeaAction: textType('diarrhoea_action'),
-    eatCleanFood: textType('eat_clean_food'),
-    handAfterToilet: textType('hand_after_toilet'),
-    handBeforeMeal: textType('hand_before_meal'),
-    haveToothbrush: textType('have_toothbrush'),
+    diarrhoeaAction: textType('diarrhoeaAction'),
+    eatCleanFood: textType('eatCleanFood'),
+    handAfterToilet: textType('handAfterToilet'),
+    handBeforeMeal: textType('handBeforeMeal'),
+    haveToothbrush: textType('haveToothbrush'),
     hypertension: textType('hypertension'),
-    knowDoctor: textType('know_doctor'),
-    knowWaterFilters: textType('know_water_filters'),
-    mskInjury: textType('msk_injury'),
-    otherBrushTeeth: textType('other_brush_teeth'),
-    otherBuyMedicine: textType('other_buy_medicine'),
-    otherCondition: textType('other_condition'),
-    otherLearning: textType('other_learning'),
-    otherManagement: textType('other_management'),
-    otherSickAction: textType('other_sick_action'),
-    otherWaterFilterReason: textType('other_water_filter_reason'),
-    otherWaterSource: textType('other_water_source'),
-    ownTransport: textType('own_transport'),
-    povertyCard: textType('poverty_card'),
-    whereBuyMedicine: textType('where_buy_medicine'),
+    knowDoctor: textType('knowDoctor'),
+    knowWaterFilters: textType('knowWaterFilters'),
+    mskInjury: textType('mskInjury'),
+    otherBrushTeeth: textType('otherBrushTeeth'),
+    otherBuyMedicine: textType('otherBuyMedicine'),
+    otherCondition: textType('otherCondition'),
+    otherLearning: textType('otherLearning'),
+    otherManagement: textType('otherManagement'),
+    otherSickAction: textType('otherSickAction'),
+    otherWaterFilterReason: textType('otherWaterFilterReason'),
+    otherWaterSource: textType('otherWaterSource'),
+    ownTransport: textType('ownTransport'),
+    povertyCard: textType('povertyCard'),
+    whereBuyMedicine: textType('whereBuyMedicine'),
   };
 }
 
 /**
  * Build Form array fields
- * SQLite stores as JSON text, PostgreSQL as native text[] arrays
+ * Arrays stored as JSON strings (TEXT) in both SQLite and PostgreSQL for unified format
  *
- * @param arrayFieldFn - For sqlite: text(), For pg: text().array()
- * @returns Object with array field definitions
+ * @param textType - text type from drizzle-orm
+ * @returns Object with array field definitions (all TEXT/JSON strings)
  */
-export function buildFormArrayFields(arrayFieldFn: (col: string) => any) {
+export function buildFormArrayFields(textType: any) {
   return {
-    cholesterolAction: arrayFieldFn('cholesterol_action'),
-    coldAction: arrayFieldFn('cold_action'),
-    diabetesAction: arrayFieldFn('diabetes_action'),
-    hypertensionAction: arrayFieldFn('hypertension_action'),
-    longTermConditions: arrayFieldFn('long_term_conditions'),
-    managementMethods: arrayFieldFn('management_methods'),
-    mskAction: arrayFieldFn('msk_action'),
-    notUsingWaterFilter: arrayFieldFn('not_using_water_filter'),
-    unsafeWater: arrayFieldFn('unsafe_water'),
-    waterSources: arrayFieldFn('water_sources'),
-    whatDoWhenSick: arrayFieldFn('what_do_when_sick'),
+    cholesterolAction: textType('cholesterolAction'),
+    coldAction: textType('coldAction'),
+    diabetesAction: textType('diabetesAction'),
+    hypertensionAction: textType('hypertensionAction'),
+    longTermConditions: textType('longTermConditions'),
+    managementMethods: textType('managementMethods'),
+    mskAction: textType('mskAction'),
+    notUsingWaterFilter: textType('notUsingWaterFilter'),
+    unsafeWater: textType('unsafeWater'),
+    waterSources: textType('waterSources'),
+    whatDoWhenSick: textType('whatDoWhenSick'),
   };
 }
 
@@ -180,10 +180,10 @@ export function buildFormArrayFields(arrayFieldFn: (col: string) => any) {
  */
 export function buildFormLocalFields(textType: any) {
   return {
-    failureReason: textType('failure_reason'),
+    failureReason: textType('failureReason'),
     status: textType('status'),
-    lastSyncedAt: textType('last_synced_at'),
-    lastFailedSyncAt: textType('last_failed_sync_at'),
+    lastSyncedAt: textType('lastSyncedAt'),
+    lastFailedSyncAt: textType('lastFailedSyncAt'),
   };
 }
 
@@ -198,55 +198,21 @@ export function buildFormLocalFields(textType: any) {
 export function buildSyncQueueFields(textType: any, intType: any) {
   return {
     id: textType('id').primaryKey(),
-    createdAt: textType('created_at')
+    createdAt: textType('createdAt')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
     operation: textType('operation').notNull(),
-    entityType: textType('entity_type').notNull(),
-    entityId: textType('entity_id').notNull(),
-    idempotencyKey: textType('idempotency_key').notNull().unique(),
+    entityType: textType('entityType').notNull(),
+    entityId: textType('entityId').notNull(),
+    idempotencyKey: textType('idempotencyKey').notNull().unique(),
     payload: textType('payload').notNull(),
     status: textType('status').notNull(),
     attempts: intType('attempts').notNull().default(0),
-    maxAttempts: intType('max_attempts').notNull().default(3),
-    lastError: textType('last_error'),
-    lastAttemptAt: textType('last_attempt_at'),
-    sequenceNumber: intType('sequence_number'),
-    dependsOn: textType('depends_on'),
-    deviceId: textType('device_id'),
+    maxAttempts: intType('maxAttempts').notNull().default(3),
+    lastError: textType('lastError'),
+    lastAttemptAt: textType('lastAttemptAt'),
+    sequenceNumber: intType('sequenceNumber'),
+    dependsOn: textType('dependsOn'),
+    deviceId: textType('deviceId'),
   };
 }
-
-/**
- * Field name constants for reference
- */
-export const FIELD_NAMES = {
-  // Common timestamp fields
-  CREATED_AT: 'created_at',
-  UPDATED_AT: 'updated_at',
-  DELETED_AT: 'deleted_at',
-
-  // Pin fields
-  PIN_ID: 'id',
-  PIN_LAT: 'lat',
-  PIN_LNG: 'lng',
-  PIN_TYPE: 'type',
-  PIN_NAME: 'name',
-  PIN_ADDRESS: 'address',
-  PIN_CITY_VILLAGE: 'city_village',
-  PIN_DESCRIPTION: 'description',
-  PIN_IMAGES: 'images',
-
-  // Form fields
-  FORM_ID: 'id',
-  FORM_PIN_ID: 'pin_id',
-  FORM_VILLAGE_ID: 'village_id',
-  FORM_VILLAGE: 'village',
-
-  // Local-only fields (sync tracking)
-  FAILURE_REASON: 'failure_reason',
-  STATUS: 'status',
-  LAST_SYNCED_AT: 'last_synced_at',
-  LAST_FAILED_SYNC_AT: 'last_failed_sync_at',
-  LOCAL_IMAGES: 'local_images',
-} as const;

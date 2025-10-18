@@ -44,8 +44,8 @@ export const forms = sqliteTable('forms', {
   // Common fields from builder (timestamps, relations, text fields)
   ...buildCommonFormFields(text),
 
-  // Array fields - stored as JSON strings
-  ...buildFormArrayFields((col: string) => text(col)),
+  // Array fields - stored as JSON strings (unified format)
+  ...buildFormArrayFields(text),
 
   // Local-only fields (sync tracking)
   ...buildFormLocalFields(text),

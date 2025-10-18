@@ -1,5 +1,5 @@
 {
-  "id": "a896a71d-8011-4be3-907a-35581972f390",
+  "id": "064a016a-2f09-4d64-a9c0-f8ae3317710f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,39 +10,38 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "default": "CURRENT_TIMESTAMP"
         },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "default": "now()"
+          "default": "CURRENT_TIMESTAMP"
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
+        "deletedAt": {
+          "name": "deletedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
-        "pin_id": {
-          "name": "pin_id",
-          "type": "uuid",
+        "pinId": {
+          "name": "pinId",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "village_id": {
-          "name": "village_id",
+        "villageId": {
+          "name": "villageId",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -53,14 +52,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "brush_teeth": {
-          "name": "brush_teeth",
+        "brushTeeth": {
+          "name": "brushTeeth",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "can_attend": {
-          "name": "can_attend",
+        "canAttend": {
+          "name": "canAttend",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -71,14 +70,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "cold_look_like": {
-          "name": "cold_look_like",
+        "coldLookLike": {
+          "name": "coldLookLike",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "condition_details": {
-          "name": "condition_details",
+        "conditionDetails": {
+          "name": "conditionDetails",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -95,32 +94,32 @@
           "primaryKey": false,
           "notNull": false
         },
-        "diarrhoea_action": {
-          "name": "diarrhoea_action",
+        "diarrhoeaAction": {
+          "name": "diarrhoeaAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "eat_clean_food": {
-          "name": "eat_clean_food",
+        "eatCleanFood": {
+          "name": "eatCleanFood",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "hand_after_toilet": {
-          "name": "hand_after_toilet",
+        "handAfterToilet": {
+          "name": "handAfterToilet",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "hand_before_meal": {
-          "name": "hand_before_meal",
+        "handBeforeMeal": {
+          "name": "handBeforeMeal",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "have_toothbrush": {
-          "name": "have_toothbrush",
+        "haveToothbrush": {
+          "name": "haveToothbrush",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -131,153 +130,153 @@
           "primaryKey": false,
           "notNull": false
         },
-        "know_doctor": {
-          "name": "know_doctor",
+        "knowDoctor": {
+          "name": "knowDoctor",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "know_water_filters": {
-          "name": "know_water_filters",
+        "knowWaterFilters": {
+          "name": "knowWaterFilters",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "msk_injury": {
-          "name": "msk_injury",
+        "mskInjury": {
+          "name": "mskInjury",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_brush_teeth": {
-          "name": "other_brush_teeth",
+        "otherBrushTeeth": {
+          "name": "otherBrushTeeth",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_buy_medicine": {
-          "name": "other_buy_medicine",
+        "otherBuyMedicine": {
+          "name": "otherBuyMedicine",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_condition": {
-          "name": "other_condition",
+        "otherCondition": {
+          "name": "otherCondition",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_learning": {
-          "name": "other_learning",
+        "otherLearning": {
+          "name": "otherLearning",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_management": {
-          "name": "other_management",
+        "otherManagement": {
+          "name": "otherManagement",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_sick_action": {
-          "name": "other_sick_action",
+        "otherSickAction": {
+          "name": "otherSickAction",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_water_filter_reason": {
-          "name": "other_water_filter_reason",
+        "otherWaterFilterReason": {
+          "name": "otherWaterFilterReason",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "other_water_source": {
-          "name": "other_water_source",
+        "otherWaterSource": {
+          "name": "otherWaterSource",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "own_transport": {
-          "name": "own_transport",
+        "ownTransport": {
+          "name": "ownTransport",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "poverty_card": {
-          "name": "poverty_card",
+        "povertyCard": {
+          "name": "povertyCard",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "where_buy_medicine": {
-          "name": "where_buy_medicine",
+        "whereBuyMedicine": {
+          "name": "whereBuyMedicine",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "cholesterol_action": {
-          "name": "cholesterol_action",
-          "type": "text[]",
+        "cholesterolAction": {
+          "name": "cholesterolAction",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "cold_action": {
-          "name": "cold_action",
-          "type": "text[]",
+        "coldAction": {
+          "name": "coldAction",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "diabetes_action": {
-          "name": "diabetes_action",
-          "type": "text[]",
+        "diabetesAction": {
+          "name": "diabetesAction",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "hypertension_action": {
-          "name": "hypertension_action",
-          "type": "text[]",
+        "hypertensionAction": {
+          "name": "hypertensionAction",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "long_term_conditions": {
-          "name": "long_term_conditions",
-          "type": "text[]",
+        "longTermConditions": {
+          "name": "longTermConditions",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "management_methods": {
-          "name": "management_methods",
-          "type": "text[]",
+        "managementMethods": {
+          "name": "managementMethods",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "msk_action": {
-          "name": "msk_action",
-          "type": "text[]",
+        "mskAction": {
+          "name": "mskAction",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "not_using_water_filter": {
-          "name": "not_using_water_filter",
-          "type": "text[]",
+        "notUsingWaterFilter": {
+          "name": "notUsingWaterFilter",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "unsafe_water": {
-          "name": "unsafe_water",
-          "type": "text[]",
+        "unsafeWater": {
+          "name": "unsafeWater",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "water_sources": {
-          "name": "water_sources",
-          "type": "text[]",
+        "waterSources": {
+          "name": "waterSources",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "what_do_when_sick": {
-          "name": "what_do_when_sick",
-          "type": "text[]",
+        "whatDoWhenSick": {
+          "name": "whatDoWhenSick",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }
@@ -296,28 +295,27 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "default": "CURRENT_TIMESTAMP"
         },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
-          "default": "now()"
+          "default": "CURRENT_TIMESTAMP"
         },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
+        "deletedAt": {
+          "name": "deletedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -351,8 +349,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "city_village": {
-          "name": "city_village",
+        "cityVillage": {
+          "name": "cityVillage",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -365,7 +363,7 @@
         },
         "images": {
           "name": "images",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }

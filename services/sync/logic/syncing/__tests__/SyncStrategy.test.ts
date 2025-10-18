@@ -54,10 +54,10 @@ type TestLocalItem = {
 
 type TestRemoteItem = {
   id: string;
-  updated_at: string | null;
-  deleted_at: string | null;
+  updatedAt: string | null; // PostgreSQL now uses camelCase after schema unification
+  deletedAt: string | null; // PostgreSQL now uses camelCase after schema unification
   name: string;
-  some_array: any; // Parsed array (remote API format)
+  someArray: any; // Parsed array (remote API format)
 };
 
 // ==================== Test Data Factories ====================
@@ -67,10 +67,10 @@ type TestRemoteItem = {
 function createRemoteItem(overrides: Partial<TestRemoteItem> = {}): TestRemoteItem {
   return {
     id: TEST_IDS.ONE,
-    updated_at: TEST_TIMESTAMPS.EARLY,
-    deleted_at: null,
+    updatedAt: TEST_TIMESTAMPS.EARLY,
+    deletedAt: null,
     name: 'Test Item',
-    some_array: [],
+    someArray: [],
     ...overrides,
   };
 }
@@ -103,8 +103,8 @@ describe('SyncStrategy', () => {
       // Arrange: Create test data
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.EARLY,
-          some_array: ['a', 'b'],
+          updatedAt: TEST_TIMESTAMPS.EARLY,
+          someArray: ['a', 'b'],
         }),
       ];
 
@@ -126,9 +126,9 @@ describe('SyncStrategy', () => {
       // Arrange
       const remoteItems = [
         createRemoteItem({
-          updated_at: null,
-          deleted_at: null,
-          some_array: null,
+          updatedAt: null,
+          deletedAt: null,
+          someArray: null,
         }),
       ];
 
@@ -143,7 +143,7 @@ describe('SyncStrategy', () => {
 
     it('should stringify empty arrays correctly', () => {
       // Arrange
-      const remoteItems = [createRemoteItem({ some_array: [] })];
+      const remoteItems = [createRemoteItem({ someArray: [] })];
 
       // Act
       const result = strategy.convertToLocal(remoteItems);
@@ -169,11 +169,11 @@ describe('SyncStrategy', () => {
       expect(result).toHaveLength(EXPECTED_COUNTS.ONE);
       expect(result[0]).toMatchObject({
         id: TEST_IDS.ONE,
-        updated_at: TEST_TIMESTAMPS.EARLY,
-        deleted_at: null,
+        updatedAt: TEST_TIMESTAMPS.EARLY,
+        deletedAt: null,
         name: 'Test Item',
       });
-      expect(result[0].some_array).toEqual(['a', 'b']);
+      expect(result[0].someArray).toEqual(['a', 'b']);
     });
 
     it('should preserve null values during conversion', () => {
@@ -191,9 +191,9 @@ describe('SyncStrategy', () => {
       const result = strategy.convertToRemote(localItems);
 
       // Assert
-      expect(result[0].updated_at).toBeNull();
-      expect(result[0].deleted_at).toBeNull();
-      expect(result[0].some_array).toBe(EXPECTED_JSON_STRINGS.NULL);
+      expect(result[0].updatedAt).toBeNull();
+      expect(result[0].deletedAt).toBeNull();
+      expect(result[0].someArray).toBe(EXPECTED_JSON_STRINGS.NULL);
     });
 
     it('should parse stringified arrays correctly', () => {
@@ -204,7 +204,7 @@ describe('SyncStrategy', () => {
       const result = strategy.convertToRemote(localItems);
 
       // Assert
-      expect(result[0].some_array).toEqual([]);
+      expect(result[0].someArray).toEqual([]);
     });
   });
 
@@ -246,7 +246,7 @@ describe('SyncStrategy', () => {
       const localItems = [createLocalItem()];
       const remoteItems = [
         createRemoteItem({
-          deleted_at: TEST_TIMESTAMPS.LATE,
+          deletedAt: TEST_TIMESTAMPS.LATE,
         }),
       ];
 
@@ -256,7 +256,7 @@ describe('SyncStrategy', () => {
       // Assert: Guard Conditions
       expect(toLocal).toHaveLength(EXPECTED_COUNTS.ONE);
       expect(toLocal[0].id).toBe(TEST_IDS.ONE);
-      expect(toLocal[0].deleted_at).toBe(TEST_TIMESTAMPS.LATE);
+      expect(toLocal[0].deletedAt).toBe(TEST_TIMESTAMPS.LATE);
       expect(toRemote).toHaveLength(EXPECTED_COUNTS.NONE);
     });
 
@@ -292,7 +292,7 @@ describe('SyncStrategy', () => {
       ];
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.LATE,
+          updatedAt: TEST_TIMESTAMPS.LATE,
           name: 'Remote Version',
         }),
       ];
@@ -318,7 +318,7 @@ describe('SyncStrategy', () => {
       ];
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.EARLY,
+          updatedAt: TEST_TIMESTAMPS.EARLY,
           name: 'Remote Version',
         }),
       ];
@@ -344,8 +344,8 @@ describe('SyncStrategy', () => {
       ];
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.LATE,
-          deleted_at: null,
+          updatedAt: TEST_TIMESTAMPS.LATE,
+          deletedAt: null,
         }),
       ];
 
@@ -371,7 +371,7 @@ describe('SyncStrategy', () => {
       ];
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.EARLY,
+          updatedAt: TEST_TIMESTAMPS.EARLY,
           name: 'Remote Version',
         }),
       ];
@@ -395,7 +395,7 @@ describe('SyncStrategy', () => {
       ];
       const remoteItems = [
         createRemoteItem({
-          updated_at: TEST_TIMESTAMPS.EARLY,
+          updatedAt: TEST_TIMESTAMPS.EARLY,
         }),
       ];
 
@@ -424,10 +424,10 @@ describe('SyncStrategy', () => {
       const remoteItems = [
         createRemoteItem({
           id: TEST_IDS.ONE,
-          updated_at: TEST_TIMESTAMPS.LATE,
+          updatedAt: TEST_TIMESTAMPS.LATE,
           name: 'Item 1 Remote',
         }), // Item 1: Remote newer
-        createRemoteItem({ id: TEST_IDS.TWO, updated_at: TEST_TIMESTAMPS.EARLY }), // Item 2: Local newer
+        createRemoteItem({ id: TEST_IDS.TWO, updatedAt: TEST_TIMESTAMPS.EARLY }), // Item 2: Local newer
         createRemoteItem({ id: TEST_IDS.FOUR }), // Item 4: New remote
       ];
 
@@ -462,7 +462,7 @@ describe('SyncStrategy', () => {
     it('should treat null timestamps as epoch zero for comparison', () => {
       // Arrange: Both have null timestamps
       const localItems = [createLocalItem({ updatedAt: null })];
-      const remoteItems = [createRemoteItem({ updated_at: null })];
+      const remoteItems = [createRemoteItem({ updatedAt: null })];
 
       // Act
       const { toLocal, toRemote } = strategy.resolve(localItems, remoteItems);
@@ -480,7 +480,7 @@ describe('SyncStrategy', () => {
           status: SYNC_STATUS.DIRTY,
         }),
       ];
-      const remoteItems = [createRemoteItem({ updated_at: null })];
+      const remoteItems = [createRemoteItem({ updatedAt: null })];
 
       // Act
       const { toLocal, toRemote } = strategy.resolve(localItems, remoteItems);

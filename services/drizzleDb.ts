@@ -3,7 +3,7 @@ import * as SQLite from 'expo-sqlite';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/expo-sqlite';
 import { forms, pins } from '~/db/schema/sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import migrations from 'drizzle/migrations';
+import migrations from '../drizzle/sqlite/migrations';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { getTableColumns, SQL, sql } from 'drizzle-orm';

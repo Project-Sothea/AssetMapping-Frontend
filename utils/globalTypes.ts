@@ -1,13 +1,28 @@
-import { pins, forms } from '~/db/schema';
-import { Database } from './database.types';
-import { offlineManager } from '@rnmapbox/maps';
+/**
+ * Global Type Re-exports
+ *
+ * @deprecated This file will be removed in the future.
+ * Import types directly from their source locations:
+ * - Database types: import from '~/db/types'
+ * - Offline pack types: import from '~/hooks/OfflinePacks/types'
+ *
+ * For backward compatibility, database types are still re-exported here.
+ */
 
-//promote single source of truth
-export type ReForm = Database['public']['Tables']['forms']['Row'];
-export type RePin = Database['public']['Tables']['pins']['Row'];
-export type Pin = typeof pins.$inferSelect;
-export type Form = typeof forms.$inferSelect;
-
-export type UseCreatePackProps = Parameters<typeof offlineManager.createPack>[0];
-
-export type CreateOfflinePackProps = Parameters<typeof offlineManager.createPack>[0];
+// Re-export database types for backward compatibility
+export type {
+  Pin,
+  Form,
+  SyncQueueItem,
+  RePin,
+  ReForm,
+  LocalPin,
+  LocalForm,
+  RemotePin,
+  RemoteForm,
+  InsertPin,
+  InsertForm,
+  InsertSyncQueueItem,
+  InsertRemotePin,
+  InsertRemoteForm,
+} from '~/db/types';

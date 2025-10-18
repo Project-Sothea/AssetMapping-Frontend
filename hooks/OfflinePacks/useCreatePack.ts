@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { CreateOfflinePack } from '~/apis/OfflinePacks/createOfflinePack';
-import { CreateOfflinePackProps } from '~/utils/globalTypes';
+import { CreateOfflinePack } from './createOfflinePack';
+import { CreateOfflinePackProps } from './types';
 
 export default function useCreatePack() {
   const [progress, setProgress] = useState<number>(0);

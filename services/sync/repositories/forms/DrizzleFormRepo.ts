@@ -1,7 +1,7 @@
 import { Form, forms } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
 import { LocalRepository } from '../LocalRepository';
-import { stringifyArrayFields } from '~/utils/dataShapes';
+import { stringifyArrayFields } from '~/db/utils';
 import { eq } from 'drizzle-orm';
 
 export class DrizzleFormRepo extends LocalRepository<Form, typeof forms> {
