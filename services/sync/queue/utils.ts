@@ -237,9 +237,9 @@ export function isNetworkError(error: Error): boolean {
     'network',
     'timeout',
     'fetch failed',
-    'ENOTFOUND',
-    'ECONNREFUSED',
-    'ETIMEDOUT',
+    'enotfound',
+    'econnrefused',
+    'etimedout',
   ];
 
   const message = error.message.toLowerCase();

@@ -1,39 +1,7 @@
 import { supabase } from '~/services/supabase';
 import { RePin } from '~/utils/globalTypes';
-
-/**
- * Convert camelCase keys to snake_case for Supabase
- * Local SQLite uses camelCase, Supabase uses snake_case
- */
-const toSnakeCase = (str: string): string => {
-  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-};
-
-/**
- * Array field names that need to be parsed from JSON strings to arrays
- * SQLite stores arrays as JSON strings, PostgreSQL expects actual arrays
- */
-const ARRAY_FIELDS = ['images'];
-
-const convertKeysToSnakeCase = (obj: Record<string, any>): Record<string, any> => {
-  const result: Record<string, any> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const snakeKey = toSnakeCase(key);
-
-    // Parse JSON strings to arrays for PostgreSQL array fields
-    if (ARRAY_FIELDS.includes(snakeKey) && typeof value === 'string') {
-      try {
-        result[snakeKey] = JSON.parse(value);
-      } catch {
-        // If parsing fails, set to empty array
-        result[snakeKey] = [];
-      }
-    } else {
-      result[snakeKey] = value;
-    }
-  }
-  return result;
-};
+import { convertKeysToSnakeCase } from '~/shared/utils/caseConversion';
+import { PIN_ARRAY_FIELDS_SNAKE } from '~/shared/utils/fieldMappings';
 
 export const fetchAll = async () => {
   try {
@@ -60,7 +28,9 @@ export const upsertAll = async (pins: RePin[]) => {
     );
 
     // Convert camelCase to snake_case for Supabase
-    const pinsWithSnakeCase = pinsToUpsert.map(convertKeysToSnakeCase);
+    const pinsWithSnakeCase = pinsToUpsert.map((pin) =>
+      convertKeysToSnakeCase(pin, PIN_ARRAY_FIELDS_SNAKE)
+    );
 
     const { error } = await supabase.from('pins').upsert(pinsWithSnakeCase, { onConflict: 'id' });
 
@@ -82,7 +52,9 @@ export const updateFieldsBatch = async (pins: Partial<RePin>[]) => {
     );
 
     // Convert camelCase to snake_case for Supabase
-    const pinsWithSnakeCase = pinsToUpsert.map(convertKeysToSnakeCase);
+    const pinsWithSnakeCase = pinsToUpsert.map((pin) =>
+      convertKeysToSnakeCase(pin, PIN_ARRAY_FIELDS_SNAKE)
+    );
 
     const { error } = await supabase.from('pins').upsert(pinsWithSnakeCase, { onConflict: 'id' });
 
@@ -109,7 +81,7 @@ export const upsertOne = async (pin: RePin) => {
     };
 
     // Convert camelCase to snake_case for Supabase
-    const pinWithSnakeCase = convertKeysToSnakeCase(pinToUpsert);
+    const pinWithSnakeCase = convertKeysToSnakeCase(pinToUpsert, PIN_ARRAY_FIELDS_SNAKE);
 
     const { error } = await supabase.from('pins').upsert(pinWithSnakeCase, { onConflict: 'id' });
 

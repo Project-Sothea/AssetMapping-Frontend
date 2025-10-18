@@ -15,11 +15,8 @@ import { SyncQueueManager } from '../SyncQueueManager';
 import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
 import { eq } from 'drizzle-orm';
-import { QueueEvent, QueueOperation } from '../types';
+import { QueueEvent } from '../types';
 import { getCurrentTimestamp } from '../utils';
-
-// Mock expo-crypto
-jest.mock('expo-crypto', () => require('./__mocks__/expo-crypto'));
 
 describe('SyncQueueManager', () => {
   let queueManager: SyncQueueManager;
@@ -33,6 +30,8 @@ describe('SyncQueueManager', () => {
     queueManager = SyncQueueManager.getInstance({
       maxAttempts: 3,
       batchSize: 5,
+      baseBackoffMs: 1000,
+      retentionDays: 7,
     });
 
     // Subscribe to events
@@ -221,7 +220,6 @@ describe('SyncQueueManager', () => {
         entityId: 'pin-123',
         data: { name: 'Test Pin' },
         timestamp: getCurrentTimestamp(),
-        maxAttempts: 2,
       });
 
       // Manually mark as failed with max attempts

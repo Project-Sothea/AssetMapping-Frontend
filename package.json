@@ -70,7 +70,16 @@
     "typescript": "~5.8.3"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": ["./jest.setup.js"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|uuid|@supabase|@rnmapbox))"
+    ],
+    "moduleNameMapper": {
+      "^~/(.*)$": "<rootDir>/$1",
+      "^db/(.*)$": "<rootDir>/db/$1",
+      "^drizzle/(.*)$": "<rootDir>/drizzle/$1"
+    }
   },
   "private": true
 }

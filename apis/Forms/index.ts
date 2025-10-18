@@ -1,51 +1,7 @@
 import { supabase } from '~/services/supabase';
 import { ReForm } from '~/utils/globalTypes';
-
-/**
- * Convert camelCase keys to snake_case for Supabase
- * Local SQLite uses camelCase, Supabase uses snake_case
- */
-const toSnakeCase = (str: string): string => {
-  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-};
-
-/**
- * Array field names that need to be parsed from JSON strings to arrays
- * SQLite stores arrays as JSON strings, PostgreSQL expects actual arrays
- */
-const ARRAY_FIELDS = [
-  'cholesterol_action',
-  'cold_action',
-  'diabetes_action',
-  'hypertension_action',
-  'long_term_conditions',
-  'management_methods',
-  'msk_action',
-  'not_using_water_filter',
-  'unsafe_water',
-  'water_sources',
-  'what_do_when_sick',
-];
-
-const convertKeysToSnakeCase = (obj: Record<string, any>): Record<string, any> => {
-  const result: Record<string, any> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const snakeKey = toSnakeCase(key);
-
-    // Parse JSON strings to arrays for PostgreSQL array fields
-    if (ARRAY_FIELDS.includes(snakeKey) && typeof value === 'string') {
-      try {
-        result[snakeKey] = JSON.parse(value);
-      } catch {
-        // If parsing fails, set to empty array
-        result[snakeKey] = [];
-      }
-    } else {
-      result[snakeKey] = value;
-    }
-  }
-  return result;
-};
+import { convertKeysToSnakeCase } from '~/shared/utils/caseConversion';
+import { FORM_ARRAY_FIELDS_SNAKE } from '~/shared/utils/fieldMappings';
 
 export const fetchAll = async () => {
   try {
@@ -72,7 +28,9 @@ export const upsertAll = async (forms: ReForm[]) => {
     );
 
     // Convert camelCase to snake_case for Supabase
-    const formsWithSnakeCase = formsToUpsert.map(convertKeysToSnakeCase);
+    const formsWithSnakeCase = formsToUpsert.map((form) =>
+      convertKeysToSnakeCase(form, FORM_ARRAY_FIELDS_SNAKE)
+    );
     console.log(formsWithSnakeCase);
 
     const { error } = await supabase.from('forms').upsert(formsWithSnakeCase, { onConflict: 'id' });
@@ -95,7 +53,9 @@ export const updateFieldsBatch = async (forms: Partial<ReForm>[]) => {
     );
 
     // Convert camelCase to snake_case for Supabase
-    const formsWithSnakeCase = formsToUpsert.map(convertKeysToSnakeCase);
+    const formsWithSnakeCase = formsToUpsert.map((form) =>
+      convertKeysToSnakeCase(form, FORM_ARRAY_FIELDS_SNAKE)
+    );
     console.log(formsWithSnakeCase);
 
     const { error } = await supabase.from('forms').upsert(formsWithSnakeCase, { onConflict: 'id' });
@@ -122,7 +82,7 @@ export const upsertOne = async (form: ReForm) => {
     };
 
     // Convert camelCase to snake_case for Supabase
-    const formWithSnakeCase = convertKeysToSnakeCase(formToUpsert);
+    const formWithSnakeCase = convertKeysToSnakeCase(formToUpsert, FORM_ARRAY_FIELDS_SNAKE);
 
     const { error } = await supabase.from('forms').upsert(formWithSnakeCase, { onConflict: 'id' });
 
