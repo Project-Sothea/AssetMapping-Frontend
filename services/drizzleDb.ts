@@ -1,7 +1,7 @@
 // db/index.ts
 import * as SQLite from 'expo-sqlite';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/expo-sqlite';
-import { forms, pins } from 'db/schema';
+import { forms, pins } from '~/db/schema/sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from 'drizzle/migrations';
 import { PgTable } from 'drizzle-orm/pg-core';

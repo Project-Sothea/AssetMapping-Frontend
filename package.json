@@ -9,7 +9,14 @@
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:pg:generate": "drizzle-kit generate --config=drizzle.config.postgresql.ts",
+    "db:pg:push": "drizzle-kit push --config=drizzle.config.postgresql.ts",
+    "db:pg:pull": "drizzle-kit pull --config=drizzle.config.postgresql.ts",
+    "db:pg:studio": "drizzle-kit studio --config=drizzle.config.postgresql.ts"
   },
   "dependencies": {
     "@expo/config-plugins": "~10.1.1",
@@ -40,6 +47,7 @@
     "expo-system-ui": "~5.0.10",
     "expo-web-browser": "~14.2.0",
     "formik": "^2.4.6",
+    "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -58,6 +66,7 @@
     "@react-native-community/cli": "^18.0.0",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^30.0.0",
+    "@types/pg": "^8.15.5",
     "@types/react": "~19.0.10",
     "ajv": "^8.12.0",
     "drizzle-kit": "^0.31.4",
@@ -71,7 +80,9 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFiles": ["./jest.setup.js"],
+    "setupFiles": [
+      "./jest.setup.js"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|uuid|@supabase|@rnmapbox))"
     ],
