@@ -1,13 +1,13 @@
 /**
  * Database Schema Exports
- * 
+ *
  * This file provides convenient exports for database schemas.
  * Import from here for cleaner code:
- * 
+ *
  * @example
  * // SQLite schema (default for local development)
  * import { pins, forms, syncQueue } from '~/db/schema';
- * 
+ *
  * // Or explicitly import from specific schema
  * import { pins as sqlitePins } from '~/db/schema/sqlite';
  * import { pins as postgresPins } from '~/db/schema/postgresql';

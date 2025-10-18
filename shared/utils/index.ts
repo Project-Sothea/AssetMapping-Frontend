@@ -1,6 +1,6 @@
 /**
  * Shared utilities for case conversion and field mappings
- * 
+ *
  * This module provides centralized utilities for converting between
  * SQLite (camelCase, JSON strings) and PostgreSQL (snake_case, arrays).
  */

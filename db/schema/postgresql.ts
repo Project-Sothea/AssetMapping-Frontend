@@ -1,13 +1,13 @@
 /**
  * PostgreSQL Schema (Supabase Remote Database)
- * 
+ *
  * This schema defines the remote PostgreSQL/Supabase database structure using Drizzle ORM.
  * It includes:
  * - Common fields (synced with local SQLite)
  * - snake_case naming convention (PostgreSQL/SQL style)
  * - Native array types (text[]) instead of JSON strings
  * - NO local-only fields (those stay in SQLite)
- * 
+ *
  * Note: This schema is for documentation and potential future migration generation.
  * The actual Supabase schema is currently managed via Supabase dashboard/SQL editor.
  */
@@ -21,23 +21,23 @@ import { pgTable, text, uuid, timestamp, doublePrecision } from 'drizzle-orm/pg-
 export const pins = pgTable('pins', {
   // Primary identifier
   id: uuid('id').primaryKey().defaultRandom(),
-  
+
   // Timestamps
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
-  
+
   // Location data (using double precision for better accuracy)
   lat: doublePrecision('lat'),
   lng: doublePrecision('lng'),
-  
+
   // Details
   type: text('type'),
   name: text('name'),
   address: text('address'),
   city_village: text('city_village'),
   description: text('description'),
-  
+
   // Images - native PostgreSQL text array
   images: text('images').array(), // ['url1', 'url2'] - native array, not JSON string
 });
@@ -88,7 +88,7 @@ export const forms = pgTable('forms', {
   own_transport: text('own_transport'),
   poverty_card: text('poverty_card'),
   where_buy_medicine: text('where_buy_medicine'),
-  
+
   // Array fields - native PostgreSQL text arrays
   cholesterol_action: text('cholesterol_action').array(),
   cold_action: text('cold_action').array(),
@@ -109,20 +109,20 @@ export type FormPostgres = typeof forms.$inferSelect;
 
 /**
  * Field Comparison: SQLite vs PostgreSQL
- * 
+ *
  * SQLite (Local):
  * - camelCase field names in code
  * - snake_case in database
  * - Arrays as JSON strings: '["value1", "value2"]'
  * - Has local-only fields: failureReason, status, lastSyncedAt, etc.
  * - ISO 8601 timestamp strings: '2024-10-18T10:30:00Z'
- * 
+ *
  * PostgreSQL (Supabase):
  * - snake_case field names
  * - Native arrays: {value1, value2} or ARRAY['value1', 'value2']
  * - NO local-only fields
  * - Native timestamps with timezone
- * 
+ *
  * Key Differences:
  * 1. Naming: camelCase (SQLite code) vs snake_case (PostgreSQL)
  * 2. Arrays: JSON strings (SQLite) vs native arrays (PostgreSQL)

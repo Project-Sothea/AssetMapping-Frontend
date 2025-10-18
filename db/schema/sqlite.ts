@@ -1,6 +1,6 @@
 /**
  * SQLite Schema (Local Database)
- * 
+ *
  * This schema defines the local SQLite database structure using Drizzle ORM.
  * It includes:
  * - Common fields (synced with Supabase)
@@ -19,31 +19,31 @@ import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
 export const pins = sqliteTable('pins', {
   // Primary identifier
   id: text('id').primaryKey(), // UUID
-  
+
   // Timestamps
   createdAt: text('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
-  
+
   // Local-only fields (not synced to Supabase)
   failureReason: text('failure_reason'),
   status: text('status'),
   lastSyncedAt: text('last_synced_at'),
   lastFailedSyncAt: text('last_failed_sync_at'),
-  
+
   // Location data
   lat: real('lat'),
   lng: real('lng'),
-  
+
   // Details
   type: text('type'),
   name: text('name'),
   address: text('address'),
   city_village: text('city/village'),
   description: text('description'),
-  
+
   // Images - stored as JSON string in SQLite
   images: text('images'), // JSON.stringify(['url1', 'url2'])
   localImages: text('local_images'), // Local file paths before upload
@@ -63,7 +63,7 @@ export const forms = sqliteTable('forms', {
     .default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   deletedAt: text('deleted_at'),
-  
+
   // Local-only fields (not synced to Supabase)
   failureReason: text('failure_reason'),
   status: text('status'),
@@ -103,7 +103,7 @@ export const forms = sqliteTable('forms', {
   ownTransport: text('own_transport'),
   povertyCard: text('poverty_card'),
   whereBuyMedicine: text('where_buy_medicine'),
-  
+
   // Array fields - stored as JSON strings in SQLite
   // PostgreSQL uses native arrays, but SQLite stores them as JSON.stringify(['value1', 'value2'])
   cholesterolAction: text('cholesterol_action'),

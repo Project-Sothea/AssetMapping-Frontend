@@ -1,9 +1,9 @@
 /**
  * Shared Schema Definitions
- * 
+ *
  * This file contains the common field definitions that are shared between
  * SQLite (local) and PostgreSQL (Supabase) schemas.
- * 
+ *
  * By defining fields once here, we ensure:
  * - No schema drift between local and remote databases
  * - Single source of truth for field definitions
@@ -18,23 +18,23 @@
 export const pinCommonFields = {
   // Identifiers
   id: 'id', // UUID primary key
-  
+
   // Timestamps
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   deletedAt: 'deleted_at', // Soft delete timestamp
-  
+
   // Location
   lat: 'lat', // Latitude (real/float)
   lng: 'lng', // Longitude (real/float)
-  
+
   // Details
   type: 'type', // Pin type/category
   name: 'name', // Pin name
   address: 'address',
   cityVillage: 'city_village',
   description: 'description',
-  
+
   // Images
   images: 'images', // SQLite: JSON string, PostgreSQL: text[] array
 } as const;
@@ -57,17 +57,17 @@ export const pinLocalOnlyFields = {
 export const formCommonFields = {
   // Identifiers
   id: 'id', // UUID primary key
-  
+
   // Timestamps
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   deletedAt: 'deleted_at',
-  
+
   // Relations
   pinId: 'pin_id', // Foreign key to pins table
   villageId: 'village_id',
   village: 'village',
-  
+
   // Health Assessment Fields (text fields)
   brushTeeth: 'brush_teeth',
   canAttend: 'can_attend',
@@ -96,7 +96,7 @@ export const formCommonFields = {
   ownTransport: 'own_transport',
   povertyCard: 'poverty_card',
   whereBuyMedicine: 'where_buy_medicine',
-  
+
   // Array Fields (SQLite: JSON string, PostgreSQL: text[] array)
   cholesterolAction: 'cholesterol_action',
   coldAction: 'cold_action',

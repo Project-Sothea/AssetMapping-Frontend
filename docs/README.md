@@ -5,17 +5,20 @@
 ## Quick Navigation
 
 ### 📚 For Users & Developers
+
 - **[Schema Management Guide](guides/SCHEMA_MANAGEMENT_WITH_DRIZZLE.md)** - How to manage database schemas
 - **[Testing Guide](guides/TESTING_GUIDE.md)** - How to write and run tests
 - **[Backend Integration](guides/BACKEND_INTEGRATION_GUIDE.md)** - Connecting to Supabase
 
 ### 🛠️ For Development Reference
+
 - **[Code Quality Guidelines](development/CODE_QUALITY_GUIDELINES.md)** ⭐ **START HERE**
 - **[Next Tasks](development/NEXT_TASKS.md)** - Current and upcoming work
 - **[Refactoring Strategy](development/REFACTORING.md)** - How we reduce code duplication
 - **[Soft Delete Pattern](development/SOFT_DELETE_PATTERN.md)** - How deleted records work
 
 ### 📦 Archive (Historical Context)
+
 - Phase completion summaries
 - Migration records
 - Fixed bugs documentation
@@ -60,6 +63,7 @@ Some documentation lives with the code it describes:
 ## Quick Reference Commands
 
 ### Database Management
+
 ```bash
 # SQLite (Local)
 npm run db:generate    # Generate migrations from schema changes
@@ -74,6 +78,7 @@ npm run db:pg:studio   # Open visual browser for Supabase
 ```
 
 ### Testing
+
 ```bash
 npm test                    # Run all tests
 npm test -- --watch         # Watch mode
@@ -82,6 +87,7 @@ npm test -- utils.test.ts   # Run specific test file
 ```
 
 ### Development
+
 ```bash
 npm start                   # Start Expo dev server
 npx expo run:ios            # Run on iOS simulator
@@ -107,12 +113,14 @@ When working on this codebase:
 ## Getting Started
 
 ### First Time Setup
+
 1. Read [Code Quality Guidelines](development/CODE_QUALITY_GUIDELINES.md)
 2. Review [Schema Management Guide](guides/SCHEMA_MANAGEMENT_WITH_DRIZZLE.md)
 3. Check [Next Tasks](development/NEXT_TASKS.md) for current work
 4. Set up environment variables (see Backend Integration guide)
 
 ### Making Changes
+
 1. Check if similar code exists (avoid duplication)
 2. Extract utilities if used 3+ times
 3. Follow naming conventions (see Code Quality Guidelines)
@@ -121,6 +129,7 @@ When working on this codebase:
 6. Run tests before committing
 
 ### Before Committing
+
 - [ ] No duplicated code
 - [ ] All types explicit
 - [ ] Functions < 50 lines
@@ -142,6 +151,7 @@ When adding new documentation:
 - **Code-specific docs** → Keep with the code
 
 Keep documentation:
+
 - **Concise** - Get to the point quickly
 - **Practical** - Include examples and commands
 - **Current** - Update dates and status

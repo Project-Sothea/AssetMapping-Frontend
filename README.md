@@ -40,7 +40,7 @@ npx expo run:android
 
 ```
 ├── app/                # Expo Router screens
-├── apis/               # Backend API clients  
+├── apis/               # Backend API clients
 ├── db/schema/          # Database schemas (SQLite + PostgreSQL)
 ├── features/           # Feature-specific logic
 ├── services/           # Business logic & repositories
@@ -55,6 +55,7 @@ npx expo run:android
 📚 **[Full Documentation](docs/README.md)**
 
 Essential docs:
+
 - **[Code Quality Guidelines](docs/development/CODE_QUALITY_GUIDELINES.md)** - Development standards
 - **[Next Tasks](docs/development/NEXT_TASKS.md)** - Current work & priorities
 - **[Schema Management](docs/guides/SCHEMA_MANAGEMENT_WITH_DRIZZLE.md)** - Database management
@@ -63,6 +64,7 @@ Essential docs:
 ## Common Commands
 
 ### Testing
+
 ```bash
 npm test                    # Run all tests
 npm test -- --watch         # Watch mode
@@ -70,6 +72,7 @@ npm test -- --coverage      # With coverage
 ```
 
 ### Database (Local SQLite)
+
 ```bash
 npm run db:generate         # Generate migrations
 npm run db:push             # Apply migrations
@@ -77,6 +80,7 @@ npm run db:studio           # Open database browser
 ```
 
 ### Database (Supabase PostgreSQL)
+
 ```bash
 npm run db:pg:generate      # Generate migrations
 npm run db:pg:push          # Apply migrations to Supabase
@@ -112,20 +116,23 @@ See [Code Quality Guidelines](docs/development/CODE_QUALITY_GUIDELINES.md) for d
 ## Architecture
 
 ### Offline-First Sync
+
 - Local-first: All operations on SQLite first
 - Background sync: Queue-based sync to Supabase
 - Conflict resolution: Last-write-wins with timestamps
 - Retry logic: Exponential backoff for failures
 
 ### Database Strategy
+
 - **SQLite** (local): Full schema with sync metadata
 - **PostgreSQL** (Supabase): Core tables only, no local-only fields
 - **Drizzle ORM**: Single source of truth for schemas
 - **Type safety**: Auto-generated types from schema
 
 ### Repository Pattern
+
 - `BaseLocalRepository` - Shared local DB operations
-- `BaseRemoteRepository` - Shared remote API operations  
+- `BaseRemoteRepository` - Shared remote API operations
 - Entity-specific repos extend bases
 - Consistent CRUD interface
 

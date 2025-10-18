@@ -5,18 +5,21 @@
 ## Core Principles
 
 ### 1. DRY (Don't Repeat Yourself)
+
 - **No code duplication**: Extract shared logic into utilities, base classes, or factories
 - **Single source of truth**: One place for each concept (e.g., field mappings, conversions)
 - **Before adding code**: Check if similar logic exists elsewhere
 - **Threshold**: If used 3+ times, extract it
 
 ### 2. Minimal Lines of Code (LOC)
+
 - **Target**: Reduce LOC while maintaining readability
 - **Refactoring metrics**: Aim for 20-30% reduction in duplicated code
 - **Quality > Quantity**: But concise code is usually better code
 - **Delete obsolete code**: Remove unused imports, functions, comments
 
 ### 3. Type Safety First
+
 - **Strict TypeScript**: Enable strict mode, avoid `any`
 - **Explicit types**: For function parameters, return values, and complex objects
 - **Type inference**: Use where it improves readability (e.g., const assignments)
@@ -25,6 +28,7 @@
 ## Code Organization
 
 ### File Structure
+
 ```
 /project-root
 ├── app/                    # Expo Router screens
@@ -49,18 +53,21 @@
 ### Naming Conventions
 
 #### Files
+
 - **Components**: PascalCase (e.g., `MapView.tsx`)
 - **Utilities**: camelCase (e.g., `caseConversion.ts`)
 - **Types**: PascalCase (e.g., `FormTypes.ts`)
 - **Hooks**: camelCase starting with `use` (e.g., `useRemoteToLocalSync.ts`)
 
 #### Variables & Functions
+
 - **camelCase**: For variables, functions, methods
 - **PascalCase**: For classes, types, interfaces, React components
 - **UPPER_SNAKE_CASE**: For constants only
 - **Descriptive names**: `getUserById` not `getUser`, `isFormValid` not `check`
 
 #### Database Fields
+
 - **SQLite (code)**: camelCase (e.g., `createdAt`)
 - **PostgreSQL (code)**: snake_case (e.g., `created_at`)
 - **Conversion**: Use `shared/utils/caseConversion.ts` helpers
@@ -68,6 +75,7 @@
 ## Architecture Patterns
 
 ### 1. Repository Pattern
+
 ```typescript
 // Base repository with shared methods
 abstract class BaseLocalRepository<T> {
@@ -84,6 +92,7 @@ class DrizzlePinRepo extends BaseLocalRepository<Pin> {
 ```
 
 ### 2. Factory Pattern
+
 ```typescript
 // Generic factory for similar APIs
 function createSupabaseAPI<T>(config: APIConfig) {
@@ -99,6 +108,7 @@ const pinAPI = createSupabaseAPI({ table: 'pins', schema: pinSchema });
 ```
 
 ### 3. Utility Extraction
+
 - **Location**: `shared/utils/`
 - **When**: Logic used in 3+ places
 - **Documentation**: Full JSDoc with examples
@@ -107,6 +117,7 @@ const pinAPI = createSupabaseAPI({ table: 'pins', schema: pinSchema });
 ## Documentation Standards
 
 ### File Headers
+
 ```typescript
 /**
  * @fileoverview Brief description of what this file does
@@ -115,14 +126,15 @@ const pinAPI = createSupabaseAPI({ table: 'pins', schema: pinSchema });
 ```
 
 ### Function Documentation
-```typescript
+
+````typescript
 /**
  * Converts an object's keys from camelCase to snake_case
- * 
+ *
  * @param obj - The object to convert
  * @param options - Conversion options (depth, exclusions)
  * @returns New object with snake_case keys
- * 
+ *
  * @example
  * ```typescript
  * toSnakeCase({ firstName: 'John' }) // { first_name: 'John' }
@@ -131,10 +143,11 @@ const pinAPI = createSupabaseAPI({ table: 'pins', schema: pinSchema });
 function toSnakeCase(obj: Record<string, any>, options?: ConversionOptions) {
   // ...
 }
-```
+````
 
 ### Complex Logic
-- **Inline comments**: Explain *why*, not *what*
+
+- **Inline comments**: Explain _why_, not _what_
 - **Block comments**: For algorithms or business logic
 - **TODO comments**: With ticket number or date
   ```typescript
@@ -144,12 +157,14 @@ function toSnakeCase(obj: Record<string, any>, options?: ConversionOptions) {
 ## Testing Requirements
 
 ### Coverage
+
 - **Utilities**: 100% coverage required
 - **Services**: 80% coverage minimum
 - **Components**: Test critical paths
 - **E2E**: Test happy paths only
 
 ### Test Structure
+
 ```typescript
 describe('FeatureName', () => {
   describe('methodName', () => {
@@ -161,6 +176,7 @@ describe('FeatureName', () => {
 ```
 
 ### Mocking
+
 - **Prefer**: Minimal mocking, test real behavior
 - **Mock**: External APIs, database calls, file I/O
 - **Avoid**: Over-mocking (makes tests brittle)
@@ -168,18 +184,21 @@ describe('FeatureName', () => {
 ## Performance Guidelines
 
 ### Database
+
 - **Batch operations**: Use bulk inserts/updates when possible
 - **Indexes**: Add for frequently queried fields
 - **Lazy loading**: Don't fetch related data unless needed
 - **Connection pooling**: Use for remote databases
 
 ### React
+
 - **Memoization**: Use `useMemo`/`useCallback` for expensive operations
 - **Virtual lists**: For long lists (use FlashList, not FlatList)
 - **Code splitting**: Lazy load screens/components
 - **Image optimization**: Use appropriate sizes, caching
 
 ### Bundle Size
+
 - **Tree shaking**: Use named imports
 - **Dependencies**: Audit regularly, remove unused
 - **Dynamic imports**: For large libraries used conditionally
@@ -187,6 +206,7 @@ describe('FeatureName', () => {
 ## Code Review Checklist
 
 Before committing:
+
 - [ ] No duplicated code (checked for similar logic)
 - [ ] All types explicit (no `any`, minimal inference)
 - [ ] Functions < 50 lines (extracted if longer)
@@ -201,6 +221,7 @@ Before committing:
 ## Migration Guidelines
 
 ### From Legacy to Shared
+
 1. **Identify**: Find duplicated logic
 2. **Extract**: Move to `shared/utils/`
 3. **Document**: Add JSDoc
@@ -210,6 +231,7 @@ Before committing:
 7. **Delete**: Remove old duplicated code
 
 ### Database Schema Changes
+
 1. **Update schema**: `db/schema/sqlite.ts` or `postgresql.ts`
 2. **Generate migration**: `npm run db:generate` or `db:pg:generate`
 3. **Review migration**: Check SQL is correct
@@ -220,6 +242,7 @@ Before committing:
 ## Common Anti-Patterns to Avoid
 
 ❌ **Don't do this:**
+
 ```typescript
 // Duplicated conversion logic
 const snake = { first_name: obj.firstName, last_name: obj.lastName };
@@ -231,10 +254,11 @@ if (field === 'firstName') return 'first_name';
 supabase.from('pins').select();
 
 // Untyped functions
-function process(data: any) { }
+function process(data: any) {}
 ```
 
 ✅ **Do this instead:**
+
 ```typescript
 // Use utility
 const snake = toSnakeCase(obj);
@@ -247,10 +271,11 @@ const TABLES = { PINS: 'pins' } as const;
 supabase.from(TABLES.PINS).select();
 
 // Explicit types
-function process<T extends BaseEntity>(data: T): ProcessedEntity { }
+function process<T extends BaseEntity>(data: T): ProcessedEntity {}
 ```
 
 ## References
+
 - [TypeScript Best Practices](https://www.typescriptlang.org/docs/handbook/)
 - [React Native Performance](https://reactnative.dev/docs/performance)
 - [Drizzle ORM Docs](https://orm.drizzle.team/)

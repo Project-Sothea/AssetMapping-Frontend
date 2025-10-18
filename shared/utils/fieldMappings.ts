@@ -1,10 +1,10 @@
 /**
  * Field mappings for array fields that require special handling
  * during conversion between SQLite (JSON strings) and PostgreSQL (arrays)
- * 
+ *
  * SQLite stores arrays as JSON strings (TEXT columns)
  * PostgreSQL stores arrays as native array types
- * 
+ *
  * When sending data TO Supabase: JSON strings → arrays
  * When receiving data FROM Supabase: arrays → JSON strings
  */

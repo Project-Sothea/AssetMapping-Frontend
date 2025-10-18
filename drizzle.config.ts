@@ -1,8 +1,8 @@
 /**
  * Drizzle Kit Configuration for SQLite (Local Database)
- * 
+ *
  * This is the default configuration used for local development with Expo SQLite.
- * 
+ *
  * Usage:
  * - Generate migration: npx drizzle-kit generate
  * - Push to database: npx drizzle-kit push
