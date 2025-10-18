@@ -169,7 +169,7 @@ export default function Map() {
               filter={['!', ['has', 'point_count']]}
               style={{
                 iconImage: 'pin',
-                iconSize: 0.075,
+                iconSize: 0.375,
                 iconAllowOverlap: true,
               }}
             />
