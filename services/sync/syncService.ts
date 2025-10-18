@@ -10,71 +10,203 @@ import { SupabaseFormRepo } from './repositories/forms/SupabaseFormRepo';
 import * as ImageManager from './logic/images/ImageManager';
 import { ImageManagerInterface } from './logic/images/types';
 
+// ==================== Type Definitions ====================
+
+type SyncContext = {
+  syncManager: SyncManager;
+  localPinRepo: DrizzlePinRepo;
+  localFormRepo: DrizzleFormRepo;
+};
+
+type InitializationOptions = {
+  imageManager?: ImageManagerInterface;
+};
+
+// ==================== Constants ====================
+
+const NOT_INITIALIZED_ERROR = 'Sync not initialized. Call initializeSync() before use.';
+
+// ==================== Module-Level State ====================
+// Note: Module-level state reduces testability. Consider dependency injection
+// pattern for better testing and flexibility in the future.
+
 let _localPinRepo: DrizzlePinRepo | null = null;
 let _remotePinRepo: SupabasePinRepo | null = null;
 let _localFormRepo: DrizzleFormRepo | null = null;
 let _remoteFormRepo: SupabaseFormRepo | null = null;
 let _syncManager: SyncManager | null = null;
 
-/**
- * Initialize sync environment. Returns constructed instances so callers can keep references or
- * tests can supply fakes instead of calling this.
- */
-export function initializeSync(opts?: { imageManager?: ImageManagerInterface }) {
-  if (_syncManager)
-    return {
-      syncManager: _syncManager,
-      localPinRepo: _localPinRepo!,
-      localFormRepo: _localFormRepo!,
-    };
+// ==================== Public API ====================
 
+/**
+ * Initialize the sync system with all necessary components.
+ *
+ * Creates and wires together:
+ * - Local and remote repositories
+ * - Sync strategies
+ * - Sync handlers for Pins and Forms
+ * - SyncManager singleton
+ *
+ * Idempotent: Safe to call multiple times (returns existing instance).
+ *
+ * @param opts Optional configuration (e.g., custom ImageManager for testing)
+ * @returns Initialized sync components
+ */
+export function initializeSync(opts?: InitializationOptions): SyncContext {
+  // Guard: Return existing instance if already initialized
+  if (isAlreadyInitialized()) {
+    return getExistingContext();
+  }
+
+  // Step 1: Create repositories
+  createRepositories();
+
+  // Step 2: Resolve dependencies (ImageManager)
+  const imageManager = resolveImageManager(opts);
+
+  // Step 3: Create and register sync handlers
+  const handlers = createSyncHandlers(imageManager);
+
+  // Step 4: Initialize and configure SyncManager
+  _syncManager = configureSyncManager(handlers);
+
+  // Step 5: Return context for caller
+  return buildSyncContext();
+}
+
+/**
+ * Convenience initializer using default dependencies.
+ * Equivalent to calling initializeSync() with no arguments.
+ */
+export function initializeDefaultSync(): SyncContext {
+  return initializeSync();
+}
+
+/**
+ * Get SyncManager instance.
+ * @throws Error if not initialized
+ */
+export function getSyncManager(): SyncManager {
+  assertInitialized(_syncManager, 'SyncManager');
+  return _syncManager;
+}
+
+/**
+ * Get local Pin repository.
+ * @throws Error if not initialized
+ */
+export function getLocalPinRepo(): DrizzlePinRepo {
+  assertInitialized(_localPinRepo, 'LocalPinRepo');
+  return _localPinRepo;
+}
+
+/**
+ * Get local Form repository.
+ * @throws Error if not initialized
+ */
+export function getLocalFormRepo(): DrizzleFormRepo {
+  assertInitialized(_localFormRepo, 'LocalFormRepo');
+  return _localFormRepo;
+}
+
+// ==================== Private Initialization Steps ====================
+
+/**
+ * Check if sync system is already initialized.
+ */
+function isAlreadyInitialized(): boolean {
+  return _syncManager !== null;
+}
+
+/**
+ * Get existing sync context (assumes already initialized).
+ */
+function getExistingContext(): SyncContext {
+  return {
+    syncManager: _syncManager!,
+    localPinRepo: _localPinRepo!,
+    localFormRepo: _localFormRepo!,
+  };
+}
+
+/**
+ * Create all repository instances.
+ */
+function createRepositories(): void {
   _localPinRepo = new DrizzlePinRepo();
   _remotePinRepo = new SupabasePinRepo();
   _localFormRepo = new DrizzleFormRepo();
   _remoteFormRepo = new SupabaseFormRepo();
-
-  const imageManager = (opts?.imageManager ?? (ImageManager as unknown)) as ImageManagerInterface;
-
-  const pinSyncHandler = new PinSyncHandler(
-    new SyncStrategy<Pin, RePin>(),
-    _localPinRepo,
-    _remotePinRepo,
-    imageManager
-  );
-
-  const formSyncHandler = new FormSyncHandler(
-    new SyncStrategy<Form, ReForm>(),
-    _localFormRepo,
-    _remoteFormRepo
-  );
-
-  _syncManager = SyncManager.getInstance();
-  _syncManager.addHandler(pinSyncHandler);
-  _syncManager.addHandler(formSyncHandler);
-
-  return { syncManager: _syncManager, localPinRepo: _localPinRepo, localFormRepo: _localFormRepo };
 }
 
 /**
- * Backwards-compatible getters: will throw if initializeSync() hasn't been called. This forces
- * explicit initialization in tests and app bootstrap.
+ * Resolve ImageManager dependency (allows injection for testing).
  */
-export function getSyncManager() {
-  if (!_syncManager) throw new Error('Sync not initialized. Call initializeSync() before use.');
-  return _syncManager;
+function resolveImageManager(opts?: InitializationOptions): ImageManagerInterface {
+  return (opts?.imageManager ?? (ImageManager as unknown)) as ImageManagerInterface;
 }
 
-export function getLocalPinRepo() {
-  if (!_localPinRepo) throw new Error('Sync not initialized. Call initializeSync() before use.');
-  return _localPinRepo;
+/**
+ * Create sync handlers for all entity types.
+ */
+function createSyncHandlers(imageManager: ImageManagerInterface) {
+  const pinHandler = createPinSyncHandler(imageManager);
+  const formHandler = createFormSyncHandler();
+
+  return { pinHandler, formHandler };
 }
 
-export function getLocalFormRepo() {
-  if (!_localFormRepo) throw new Error('Sync not initialized. Call initializeSync() before use.');
-  return _localFormRepo;
+/**
+ * Create Pin sync handler with dependencies.
+ */
+function createPinSyncHandler(imageManager: ImageManagerInterface): PinSyncHandler {
+  return new PinSyncHandler(
+    new SyncStrategy<Pin, RePin>(),
+    _localPinRepo!,
+    _remotePinRepo!,
+    imageManager
+  );
 }
 
-/** Convenience initializer that uses default ImageManager. Returns the same shape as initializeSync. */
-export function initializeDefaultSync() {
-  return initializeSync();
+/**
+ * Create Form sync handler with dependencies.
+ */
+function createFormSyncHandler(): FormSyncHandler {
+  return new FormSyncHandler(new SyncStrategy<Form, ReForm>(), _localFormRepo!, _remoteFormRepo!);
+}
+
+/**
+ * Configure SyncManager with handlers.
+ */
+function configureSyncManager(handlers: {
+  pinHandler: PinSyncHandler;
+  formHandler: FormSyncHandler;
+}): SyncManager {
+  const manager = SyncManager.getInstance();
+  manager.addHandler(handlers.pinHandler);
+  manager.addHandler(handlers.formHandler);
+  return manager;
+}
+
+/**
+ * Build sync context for return value.
+ */
+function buildSyncContext(): SyncContext {
+  return {
+    syncManager: _syncManager!,
+    localPinRepo: _localPinRepo!,
+    localFormRepo: _localFormRepo!,
+  };
+}
+
+// ==================== Private Guards ====================
+
+/**
+ * Assert that a component is initialized.
+ * @throws Error with descriptive message if not initialized
+ */
+function assertInitialized<T>(component: T | null, componentName: string): asserts component is T {
+  if (component === null) {
+    throw new Error(`${componentName}: ${NOT_INITIALIZED_ERROR}`);
+  }
 }
