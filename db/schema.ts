@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
 
 export const pins = sqliteTable('pins', {
   id: text('id').primaryKey(), // UUID
@@ -80,6 +80,49 @@ export const forms = sqliteTable('forms', {
   whereBuyMedicine: text('where_buy_medicine'),
 });
 
+// Sync Queue Table for Operation Queue
+export const syncQueue = sqliteTable('sync_queue', {
+  // Primary identifier
+  id: text('id').primaryKey(), // UUID
+
+  // Timestamps
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+
+  // Operation details
+  operation: text('operation').notNull(), // 'create' | 'update' | 'delete'
+  entityType: text('entity_type').notNull(), // 'pin' | 'form'
+  entityId: text('entity_id').notNull(),
+
+  // Idempotency - ensures operations aren't duplicated
+  idempotencyKey: text('idempotency_key').notNull().unique(),
+
+  // Payload - JSON stringified data
+  payload: text('payload').notNull(),
+
+  // Status tracking
+  status: text('status').notNull(), // 'pending' | 'in_progress' | 'completed' | 'failed'
+
+  // Retry logic
+  attempts: integer('attempts').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull().default(3),
+
+  // Error handling
+  lastError: text('last_error'),
+  lastAttemptAt: text('last_attempt_at'),
+
+  // Ordering - ensures operations execute in correct order
+  sequenceNumber: integer('sequence_number').notNull(),
+
+  // Dependencies - operation IDs this depends on (JSON array of IDs)
+  dependsOn: text('depends_on'),
+
+  // Device tracking
+  deviceId: text('device_id'),
+});
+
 // Export pin to use as an interface in your app
 export type Pin = typeof pins.$inferSelect;
 export type Form = typeof forms.$inferSelect;
+export type SyncQueueItem = typeof syncQueue.$inferSelect;

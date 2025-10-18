@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { getSyncManager } from '~/services/sync/syncService';
 import { formatSyncDisplay, SyncRawState } from '~/services/sync/utils/formatSyncStatus';
+import { processQueueNow, getQueueHealth, subscribeToQueueEvents } from '~/services/sync/queue';
 
 export const SyncStatusBar = () => {
   let initialStatus = { text: 'Unsynced', color: '#e74c3c' };
@@ -12,6 +13,7 @@ export const SyncStatusBar = () => {
     // not initialized yet, will wait for subscribe if initialized later
   }
   const [status, setStatus] = useState(initialStatus);
+  const [queuePending, setQueuePending] = useState(0);
   const [popup, setPopup] = useState<{ message: string; color: string } | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -25,6 +27,40 @@ export const SyncStatusBar = () => {
       // not initialized; nothing to cleanup
       return () => {};
     }
+  }, []);
+
+  // Subscribe to queue events
+  useEffect(() => {
+    const updateQueueStatus = async () => {
+      try {
+        const health = await getQueueHealth();
+        setQueuePending(health.pendingOperations);
+      } catch {
+        // Queue not ready yet
+      }
+    };
+
+    // Initial check
+    updateQueueStatus();
+
+    // Subscribe to queue events
+    const unsubscribe = subscribeToQueueEvents((event) => {
+      if (
+        event.type === 'operation_enqueued' ||
+        event.type === 'operation_completed' ||
+        event.type === 'batch_completed'
+      ) {
+        updateQueueStatus();
+      }
+    });
+
+    // Poll every 10 seconds
+    const interval = setInterval(updateQueueStatus, 10000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
   const showPopup = (message: string, color: string) => {
@@ -48,13 +84,22 @@ export const SyncStatusBar = () => {
 
   const handlePress = async () => {
     try {
+      // Process queue first
+      await processQueueNow();
+
+      // Then sync from backend
       await getSyncManager().syncNow();
+
       showPopup('Sync successful!', 'green');
     } catch (err) {
       console.error('Manual sync failed:', err);
       showPopup('Sync failed!', 'red');
     }
   };
+
+  // Construct status text with queue info
+  const displayText =
+    queuePending > 0 ? `${status.text} (${queuePending} queued)` : status.text || 'Sync Pins';
 
   return (
     <View style={styles.container}>
@@ -69,9 +114,7 @@ export const SyncStatusBar = () => {
               backgroundColor: pressed ? '#f0f0f0' : 'white',
             },
           ]}>
-          <Text style={[styles.statusText, { color: status.color }]}>
-            {status.text || 'Sync Pins'}
-          </Text>
+          <Text style={[styles.statusText, { color: status.color }]}>{displayText}</Text>
         </Pressable>
 
         {popup && (

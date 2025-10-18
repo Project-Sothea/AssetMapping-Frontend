@@ -7,6 +7,7 @@ import { getFormService } from '~/services/serviceFactory';
 import { FormCard } from '~/features/forms/components/Form/FormCard';
 import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
+import { enqueueFormSubmit, enqueueFormUpdate, enqueueFormDelete } from '~/services/sync/queue';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
@@ -42,7 +43,10 @@ export default function FormScreen() {
           const formService = getFormService();
           const result = await formService.deleteForm(formId);
 
-          if (!result.success) {
+          if (result.success) {
+            // Queue for backend sync
+            await enqueueFormDelete(formId);
+          } else {
             ErrorHandler.showAlert(result.error, 'Failed to delete form');
           }
         },
@@ -58,6 +62,9 @@ export default function FormScreen() {
       const result = await formService.updateForm(selectedForm.id, values);
 
       if (result.success) {
+        // Queue for backend sync
+        await enqueueFormUpdate(selectedForm.id, values);
+
         Alert.alert('Form Updated!');
         setSelectedForm(null);
         setModalVisible(false);
@@ -69,6 +76,9 @@ export default function FormScreen() {
       const result = await formService.createForm(values);
 
       if (result.success) {
+        // Queue for backend sync - IMPORTANT: Use the created form's data (includes generated ID)
+        await enqueueFormSubmit(result.data);
+
         Alert.alert('Form Created!');
         setSelectedForm(null);
         setModalVisible(false);

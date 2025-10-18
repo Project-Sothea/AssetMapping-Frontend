@@ -21,6 +21,7 @@ import { Pin } from '~/db/schema';
 import { getPinService } from '~/services/serviceFactory';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
+import { enqueuePinCreate, enqueuePinUpdate, enqueuePinDelete } from '~/services/sync/queue';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -58,6 +59,9 @@ export default function Map() {
     const result = await pinService.createPin(values);
 
     if (result.success) {
+      // Queue for backend sync - IMPORTANT: Use the created pin's data (includes generated ID)
+      await enqueuePinCreate(result.data);
+
       Alert.alert('Pin Created!');
       setModalVisible(false);
       setDroppedCoords(null);
@@ -76,6 +80,9 @@ export default function Map() {
     const result = await pinService.updatePin(values.id, values);
 
     if (result.success) {
+      // Queue for backend sync
+      await enqueuePinUpdate(values.id, values);
+
       Alert.alert('Pin Updated!');
       setDetailsVisible(false);
       setDroppedCoords(null);
@@ -94,6 +101,9 @@ export default function Map() {
     const result = await pinService.deletePin(pin.id);
 
     if (result.success) {
+      // Queue for backend sync
+      await enqueuePinDelete(pin.id);
+
       Alert.alert('Pin Deleted!');
       setDetailsVisible(false);
       setDroppedCoords(null);
