@@ -1,0 +1,393 @@
+{
+  "id": "a896a71d-8011-4be3-907a-35581972f390",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.forms": {
+      "name": "forms",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pin_id": {
+          "name": "pin_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "village_id": {
+          "name": "village_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "village": {
+          "name": "village",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brush_teeth": {
+          "name": "brush_teeth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "can_attend": {
+          "name": "can_attend",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cholesterol": {
+          "name": "cholesterol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cold_look_like": {
+          "name": "cold_look_like",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "condition_details": {
+          "name": "condition_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diabetes": {
+          "name": "diabetes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diarrhoea": {
+          "name": "diarrhoea",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diarrhoea_action": {
+          "name": "diarrhoea_action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eat_clean_food": {
+          "name": "eat_clean_food",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hand_after_toilet": {
+          "name": "hand_after_toilet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hand_before_meal": {
+          "name": "hand_before_meal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "have_toothbrush": {
+          "name": "have_toothbrush",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hypertension": {
+          "name": "hypertension",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "know_doctor": {
+          "name": "know_doctor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "know_water_filters": {
+          "name": "know_water_filters",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "msk_injury": {
+          "name": "msk_injury",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_brush_teeth": {
+          "name": "other_brush_teeth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_buy_medicine": {
+          "name": "other_buy_medicine",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_condition": {
+          "name": "other_condition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_learning": {
+          "name": "other_learning",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_management": {
+          "name": "other_management",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_sick_action": {
+          "name": "other_sick_action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_water_filter_reason": {
+          "name": "other_water_filter_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_water_source": {
+          "name": "other_water_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "own_transport": {
+          "name": "own_transport",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poverty_card": {
+          "name": "poverty_card",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "where_buy_medicine": {
+          "name": "where_buy_medicine",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cholesterol_action": {
+          "name": "cholesterol_action",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cold_action": {
+          "name": "cold_action",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "diabetes_action": {
+          "name": "diabetes_action",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hypertension_action": {
+          "name": "hypertension_action",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "long_term_conditions": {
+          "name": "long_term_conditions",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "management_methods": {
+          "name": "management_methods",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "msk_action": {
+          "name": "msk_action",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "not_using_water_filter": {
+          "name": "not_using_water_filter",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unsafe_water": {
+          "name": "unsafe_water",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "water_sources": {
+          "name": "water_sources",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "what_do_when_sick": {
+          "name": "what_do_when_sick",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pins": {
+      "name": "pins",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city_village": {
+          "name": "city_village",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "images": {
+          "name": "images",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
