@@ -7,8 +7,8 @@ import { PinSyncHandler } from './logic/handlers/PinSyncHandler';
 import { FormSyncHandler } from './logic/handlers/FormSyncHandler';
 import { DrizzleFormRepo } from './repositories/forms/DrizzleFormRepo';
 import { ApiFormRepo } from './repositories/forms/ApiFormRepo';
-import * as ImageManager from './logic/images/ImageManager';
-import { ImageManagerInterface } from './logic/images/types';
+import * as ImageManager from '../images/ImageManager';
+import { ImageManagerInterface } from '../images/types';
 
 // ==================== Type Definitions ====================
 

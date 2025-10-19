@@ -1,6 +1,6 @@
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import Form from './Form';
-import { Form as FormType } from '~/utils/globalTypes';
+import { Form as FormType } from '~/db/schema';
 
 type PinDetailsModalProps = {
   visible: boolean;

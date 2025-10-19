@@ -4,7 +4,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
-import { Form as FormType } from '~/utils/globalTypes';
+import { Form as FormType } from '~/db/schema';
 import GeneralSection from '../Form/GeneralSection';
 import WaterSection from '../Form/WaterSection';
 import HealthSection from '../Form/HealthSection';

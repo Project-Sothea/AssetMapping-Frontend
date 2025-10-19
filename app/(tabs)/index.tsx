@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Stack } from 'expo-router';
 import { SearchBar } from '~/shared/components/ui/SearchBar';
-import { useFetchLocalPins } from '~/features/pins/hooks/usePins';
+import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 
 export default function Home() {
   const { data: pins = [] } = useFetchLocalPins(); // live reactive pins

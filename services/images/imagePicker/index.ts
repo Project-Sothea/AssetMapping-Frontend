@@ -1,0 +1,1 @@
+export { pickImage } from './ImagePicker';

@@ -2,7 +2,7 @@ import { Pin } from '~/db/schema';
 import PinDetails from './PinDetails';
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import { PinFormValues } from './PinForm';
-import { useFetchLocalPin } from '~/features/pins/hooks/usePins';
+import { useFetchLocalPin } from '~/features/pins/hooks/useFetchPins';
 import { Text } from 'react-native';
 
 type PinDetailsModalProps = {

@@ -2,14 +2,14 @@
 import { pins } from '~/db/schema';
 import { BaseSyncHandler } from '../BaseSyncHandler';
 import { SyncStrategy } from '../syncing/SyncStrategy';
-import { Pin, RePin } from '~/utils/globalTypes';
+import { Pin, RePin } from '~/db/types';
 import { LocalRepository } from '../../repositories/LocalRepository';
 import { RemoteRepository } from '../../repositories/RemoteRepository';
 import {
   ImageManagerInterface,
   ImageUpsertLocalResult,
   ImageUpsertRemoteResult,
-} from '../images/types';
+} from '../../../images/types';
 
 export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
   constructor(
@@ -21,7 +21,7 @@ export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
     super(strategy, localRepo, remoteRepo);
   }
 
-  protected async postSync(localUpserts: Pin[], remoteUpserts: RePin[]): Promise<void> {
+  protected async postSync(localUpserts: Pin[], remoteUpserts: Pin[]): Promise<void> {
     console.log(
       'syncing pin images...',
       'local:',
@@ -68,7 +68,7 @@ export class PinSyncHandler extends BaseSyncHandler<Pin, RePin, typeof pins> {
 
       const remoteFieldUpdates = remoteImageFields.map((update: ImageUpsertRemoteResult) => ({
         id: update.pinId,
-        images: JSON.stringify(update.images),
+        images: update.images,
       }));
       await this.localRepo.updateFieldsBatch(localFieldUpdates);
       await this.remoteRepo.upsertAll(remoteFieldUpdates);

@@ -11,17 +11,17 @@ import {
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
-import { useFetchLocalPins } from '~/features/pins/hooks/usePins';
+import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './MapPin/PinFormModal';
 import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';
-import { getPinService } from '~/services/serviceFactory';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ErrorHandler } from '~/shared/utils/errorHandling';
-import { enqueuePinCreate, enqueuePinUpdate, enqueuePinDelete } from '~/services/sync/queue';
+import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
+import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
+import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -35,6 +35,9 @@ export default function Map() {
   const [detailsVisible, setDetailsVisible] = useState(false);
 
   const screenIsFocused = useIsFocused();
+  const { createPinAsync } = useCreatePin();
+  const { updatePinAsync } = useUpdatePin();
+  const { deletePinAsync } = useDeletePin();
 
   const refreshMap = () => {
     setMapKey((k) => k + 1); // force remount
@@ -55,18 +58,13 @@ export default function Map() {
       return;
     }
 
-    const pinService = getPinService();
-    const result = await pinService.createPin(values);
-
-    if (result.success) {
-      // Queue for backend sync - IMPORTANT: Use the created pin's data (includes generated ID)
-      await enqueuePinCreate(result.data);
-
+    try {
+      await createPinAsync(values);
       Alert.alert('Pin Created!');
       setModalVisible(false);
       setDroppedCoords(null);
-    } else {
-      ErrorHandler.showAlert(result.error, 'Failed to create pin');
+    } catch (error) {
+      Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
     }
   };
 
@@ -76,18 +74,13 @@ export default function Map() {
       return;
     }
 
-    const pinService = getPinService();
-    const result = await pinService.updatePin(values.id, values);
-
-    if (result.success) {
-      // Queue for backend sync
-      await enqueuePinUpdate(values.id, values);
-
+    try {
+      await updatePinAsync({ id: values.id, updates: values });
       Alert.alert('Pin Updated!');
       setDetailsVisible(false);
       setDroppedCoords(null);
-    } else {
-      ErrorHandler.showAlert(result.error, 'Failed to update pin');
+    } catch (error) {
+      Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
     }
   };
 
@@ -97,18 +90,13 @@ export default function Map() {
       return;
     }
 
-    const pinService = getPinService();
-    const result = await pinService.deletePin(pin.id);
-
-    if (result.success) {
-      // Queue for backend sync
-      await enqueuePinDelete(pin.id);
-
+    try {
+      await deletePinAsync(pin.id);
       Alert.alert('Pin Deleted!');
       setDetailsVisible(false);
       setDroppedCoords(null);
-    } else {
-      ErrorHandler.showAlert(result.error, 'Failed to delete pin');
+    } catch (error) {
+      Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

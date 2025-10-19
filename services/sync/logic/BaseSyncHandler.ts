@@ -71,7 +71,7 @@ export abstract class BaseSyncHandler<
     await this.upsertToRepositories(localUpserts, remoteUpserts);
 
     // Phase 5: Execute entity-specific post-sync operations
-    await this.executePostSync(localUpserts, remoteUpserts);
+    await this.executePostSync(localUpserts, resolution.toRemote);
 
     // Phase 6: Mark items as successfully synced
     await this.markItemsAsSynced(localUpserts, resolution.toLocal);
@@ -87,12 +87,12 @@ export abstract class BaseSyncHandler<
    * - FormSyncHandler: Validate form data
    * - UserSyncHandler: Update profile cache
    *
-   * @param syncedLocalItems Items synced to local repository
-   * @param syncedRemoteItems Items synced to remote repository
+   * @param syncedToLocalItems Items synced to local repository
+   * @param syncedToRemoteItems Original local items that were synced to remote repository
    */
   protected abstract postSync(
-    syncedLocalItems: LocalType[],
-    syncedRemoteItems: RemoteType[]
+    syncedToLocalItems: LocalType[],
+    syncedToRemoteItems: LocalType[]
   ): Promise<void>;
 
   // ==================== Private Sync Phases ====================
@@ -148,13 +148,9 @@ export abstract class BaseSyncHandler<
     ]);
   }
 
-  /**
-   * Phase 5: Execute entity-specific post-sync operations.
-   * Wraps abstract postSync with logging.
-   */
   private async executePostSync(
     localUpserts: LocalType[],
-    remoteUpserts: RemoteType[]
+    remoteUpserts: LocalType[]
   ): Promise<void> {
     console.log('postsync start');
     await this.postSync(localUpserts, remoteUpserts);

@@ -16,13 +16,13 @@
 import * as sqliteSchema from './schema/sqlite';
 
 // ==================== LOCAL TYPES (SQLite) ====================
-export type LocalPin = typeof sqliteSchema.pins.$inferSelect;
-export type LocalForm = typeof sqliteSchema.forms.$inferSelect;
-export type LocalSyncQueueItem = typeof sqliteSchema.syncQueue.$inferSelect;
+type LocalPin = typeof sqliteSchema.pins.$inferSelect;
+type LocalForm = typeof sqliteSchema.forms.$inferSelect;
+type LocalSyncQueueItem = typeof sqliteSchema.syncQueue.$inferSelect;
 
 // ==================== REMOTE TYPES (API Responses) ====================
 // These represent the shape of data returned by backend API
-export type RemotePin = {
+type RemotePin = {
   id: string;
   title?: string;
   description?: string;
@@ -36,7 +36,7 @@ export type RemotePin = {
   version: number;
 };
 
-export type RemoteForm = {
+type RemoteForm = {
   id: string;
   pinId?: string;
   title?: string;

@@ -1,4 +1,10 @@
 // Image manager types redefined here (previously lived in top-level images/types.ts).
+export interface ImageSyncResult {
+  pinId: string;
+  localImages: string[];
+  images: string[];
+}
+
 export interface ImageUpsertLocalResult {
   pinId: string;
   localImages: string[];

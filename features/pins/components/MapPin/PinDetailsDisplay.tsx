@@ -55,7 +55,7 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
 
       <View style={styles.infoCard}>
-        <InfoRow label="City/Village" value={pin.city_village} />
+        <InfoRow label="City/Village" value={pin.cityVillage} />
         <InfoRow label="Address" value={pin.address} />
         <InfoRow label="Type" value={pin.type} />
       </View>

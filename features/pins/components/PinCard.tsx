@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
-import { useFetchLocalForms } from '~/features/forms/hooks/useForms';
+import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 
 type PinCardProps = {
   pin: Pin;
@@ -10,7 +10,7 @@ type PinCardProps = {
 
 export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   const router = useRouter();
-  const { data: forms = [] } = useFetchLocalForms(pin.id);
+  const { data: forms = [] } = useFetchForms(pin.id);
 
   const handleViewForms = () => {
     router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });

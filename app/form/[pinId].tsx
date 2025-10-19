@@ -1,36 +1,33 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
-import { useFetchLocalForms } from '~/features/forms/hooks/useForms';
-import { Form as FormType } from '~/utils/globalTypes';
-import { getFormService } from '~/services/serviceFactory';
+import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
+import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
+import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
+import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
+import { Form as FormType } from '~/db/schema';
 import { FormCard } from '~/features/forms/components/Form/FormCard';
 import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
-import { enqueueFormSubmit, enqueueFormUpdate, enqueueFormDelete } from '~/services/sync/queue';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
-  const { data: forms } = useFetchLocalForms(pinId);
+  const { data: forms } = useFetchForms(pinId);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+
+  const { createFormAsync } = useCreateForm();
+  const { updateFormAsync } = useUpdateForm();
+  const { deleteFormAsync } = useDeleteForm();
 
   const handleModalClose = () => {
     setSelectedForm(null);
     setModalVisible(false);
   };
 
-  const handleFormEdit = async (form: FormType) => {
-    // Fetch fresh form data from database using service
-    const formService = getFormService();
-    const result = await formService.getForm(form.id);
-
-    if (result.success) {
-      setSelectedForm(result.data);
-      setModalVisible(true);
-    } else {
-      ErrorHandler.showAlert(result.error, 'Failed to load form');
-    }
+  const handleFormEdit = (form: FormType) => {
+    setSelectedForm(form);
+    setModalVisible(true);
   };
 
   const handleFormDelete = (formId: string) => {
@@ -40,14 +37,12 @@ export default function FormScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          const formService = getFormService();
-          const result = await formService.deleteForm(formId);
-
-          if (result.success) {
-            // Queue for backend sync
-            await enqueueFormDelete(formId);
-          } else {
-            ErrorHandler.showAlert(result.error, 'Failed to delete form');
+          try {
+            await deleteFormAsync(formId);
+            Alert.alert('Form Deleted!');
+          } catch (error) {
+            const appError = ErrorHandler.handle(error, 'Failed to delete form');
+            ErrorHandler.showAlert(appError, 'Error');
           }
         },
       },
@@ -55,36 +50,25 @@ export default function FormScreen() {
   };
 
   const handleFormSubmit = async (values: any) => {
-    const formService = getFormService();
-
-    if (selectedForm) {
-      // Update existing form
-      const result = await formService.updateForm(selectedForm.id, values);
-
-      if (result.success) {
-        // Queue for backend sync
-        await enqueueFormUpdate(selectedForm.id, values);
+    try {
+      if (selectedForm) {
+        // Update existing form
+        await updateFormAsync({ id: selectedForm.id, values });
 
         Alert.alert('Form Updated!');
         setSelectedForm(null);
         setModalVisible(false);
       } else {
-        ErrorHandler.showAlert(result.error, 'Failed to update form');
-      }
-    } else {
-      // Create new form
-      const result = await formService.createForm(values);
-
-      if (result.success) {
-        // Queue for backend sync - IMPORTANT: Use the created form's data (includes generated ID)
-        await enqueueFormSubmit(result.data);
+        // Create new form
+        await createFormAsync(values);
 
         Alert.alert('Form Created!');
         setSelectedForm(null);
         setModalVisible(false);
-      } else {
-        ErrorHandler.showAlert(result.error, 'Failed to create form');
       }
+    } catch (error) {
+      const appError = ErrorHandler.handle(error, 'Failed to submit form');
+      ErrorHandler.showAlert(appError, 'Error');
     }
   };
 

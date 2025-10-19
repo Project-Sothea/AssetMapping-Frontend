@@ -1,11 +1,100 @@
 import { apiClient } from '~/services/apiClient';
-import { Pin } from '~/utils/globalTypes';
 import { v4 as uuidv4 } from 'uuid';
-import * as ImageManager from '~/services/sync/logic/images/ImageManager';
 import { db } from '~/services/drizzleDb';
-import { pins } from '~/db/schema';
+import { Pin, pins } from '~/db/schema';
 import { eq } from 'drizzle-orm';
 import { QueryClient } from '@tanstack/react-query';
+
+/**
+ * Upload images to remote storage using signed URLs
+ * Delete-all-and-reupload approach for simplicity
+ */
+async function uploadImagesToRemote(pinId: string, localImageUris: string[]): Promise<string[]> {
+  if (!localImageUris?.length) return [];
+
+  console.log(`Getting signed URLs for ${localImageUris.length} images`);
+
+  // Get signed URLs for each image
+  const signedUrlPromises = localImageUris.map(async (localUri, index) => {
+    // Extract filename from URI or generate one
+    const filename = extractFilename(localUri) || `image_${index}_${Date.now()}.jpg`;
+
+    const result = await apiClient.getSignedUrl({
+      entityType: 'pin',
+      entityId: pinId,
+      filename,
+      contentType: 'image/jpeg',
+    });
+
+    if (!result.success || !result.data) {
+      throw new Error(`Failed to get signed URL for image ${index}: ${result.error}`);
+    }
+
+    return {
+      localUri,
+      signedUrl: result.data.uploadUrl,
+      publicUrl: result.data.publicUrl,
+    };
+  });
+
+  const signedUrls = await Promise.all(signedUrlPromises);
+  console.log(`Got ${signedUrls.length} signed URLs`);
+
+  // Upload each image to its signed URL
+  const uploadPromises = signedUrls.map(async ({ localUri, signedUrl, publicUrl }) => {
+    try {
+      // Get image blob from local URI
+      const response = await fetch(localUri);
+      if (!response.ok) {
+        throw new Error(`Failed to read local image: ${response.status}`);
+      }
+      const blob = await response.blob();
+
+      // Upload to signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': 'image/jpeg',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status}`);
+      }
+
+      console.log(`✓ Uploaded image to ${publicUrl}`);
+      return publicUrl;
+    } catch (error) {
+      console.error(`✖ Failed to upload ${localUri}:`, error);
+      throw error;
+    }
+  });
+
+  const remoteUrls = await Promise.all(uploadPromises);
+  console.log(`✓ Successfully uploaded ${remoteUrls.length} images`);
+  return remoteUrls;
+}
+
+/**
+ * Extract filename from a local file URI
+ */
+function extractFilename(localUri: string): string | null {
+  if (!localUri) return null;
+
+  // Remove 'file://' prefix if present
+  const cleanedUri = localUri.startsWith('file://') ? localUri.slice(7) : localUri;
+
+  // Find the last slash position
+  const lastSlashIndex = cleanedUri.lastIndexOf('/');
+
+  if (lastSlashIndex === -1) {
+    return null; // No slash found
+  }
+
+  // Extract filename after the last slash
+  return cleanedUri.substring(lastSlashIndex + 1);
+}
 
 // Get query client for cache invalidation
 let queryClient: QueryClient | null = null;
@@ -25,8 +114,7 @@ export const upsertOne = async (pin: Pin) => {
       console.log(`Uploading ${pin.localImages.length} images for pin ${pin.id}`);
 
       try {
-        const uploadResult = await ImageManager.uploadToRemote(pin.id, pin.localImages);
-        remoteImageUrls = uploadResult.images;
+        const remoteImageUrls = await uploadImagesToRemote(pin.id, pin.localImages);
         console.log(`✓ Uploaded ${remoteImageUrls.length} images successfully`);
       } catch (uploadError: any) {
         console.error(`✖ Image upload failed for pin ${pin.id}:`, uploadError.message);
@@ -77,27 +165,16 @@ export const upsertOne = async (pin: Pin) => {
       throw new Error(response.error || 'Failed to sync pin');
     }
 
-    // Step 4: Update local database with remote image URLs AND download images locally
+    // Step 4: Update local database with remote image URLs
     if (remoteImageUrls.length > 0) {
-      // Download the remote images to local storage so they persist on device
-      console.log(`Downloading ${remoteImageUrls.length} remote images to local storage`);
-      const downloadResult = await ImageManager.updateImagesLocally(
-        pin.id,
-        remoteImageUrls,
-        [] // No existing local URIs since we just uploaded
-      );
-
       await db
         .update(pins)
         .set({
           images: JSON.stringify(remoteImageUrls),
-          localImages: JSON.stringify(downloadResult.success),
           lastSyncedAt: new Date().toISOString(),
         })
         .where(eq(pins.id, pin.id));
-      console.log(
-        `Updated local DB with ${remoteImageUrls.length} remote URLs and ${downloadResult.success.length} local paths`
-      );
+      console.log(`Updated local DB with ${remoteImageUrls.length} remote URLs`);
     }
   } catch (e) {
     console.error('Failed to upsert pin:', e);

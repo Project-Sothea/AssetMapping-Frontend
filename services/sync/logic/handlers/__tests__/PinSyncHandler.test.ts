@@ -9,7 +9,7 @@ import { SyncStrategy } from '../../syncing/SyncStrategy';
 import { Pin, RePin } from '~/utils/globalTypes';
 import { LocalRepository } from '../../../repositories/LocalRepository';
 import { RemoteRepository } from '../../../repositories/RemoteRepository';
-import { ImageManagerInterface } from '../../images/types';
+import { ImageManagerInterface } from '../../../../images/types';
 import { pins } from '~/db/schema';
 
 // Mock implementations

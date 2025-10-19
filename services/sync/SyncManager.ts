@@ -59,7 +59,7 @@ export class SyncManager {
       deletedAt: string | null;
       status: string | null;
     },
-    RemoteType extends { id: string; updated_at: string | null; deleted_at: string | null },
+    RemoteType extends { id: string; updatedAt: string | null; deletedAt: string | null },
     Table extends Record<string, any>,
   >(handler: BaseSyncHandler<LocalType, RemoteType, Table>): void {
     this.handlers.push(handler);

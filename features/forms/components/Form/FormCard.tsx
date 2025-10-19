@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
-import { Form as FormType } from '~/utils/globalTypes';
+import { Form as FormType } from '~/db/schema';
 
 type FormCardProps = {
   form: FormType;

@@ -15,4 +15,4 @@ export * from './utils/formatSyncStatus';
 
 export * as handlers from './logic/handlers';
 export * as repos from './repositories';
-export * as images from './logic/images';
+export * as images from '../images';
