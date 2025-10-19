@@ -5,7 +5,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
-import { pins } from '~/db/schema';
+import { pins, forms } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
 import { ImageManager } from '~/services/images';
 
@@ -62,13 +62,23 @@ export async function syncPin(operation: Operation, data: any): Promise<void> {
     throw new Error(response.error || 'Sync failed');
   }
 
-  // Update local DB with remote URLs
+  // Update local DB with remote URLs and sync status
   if (remoteUrls.length > 0) {
     await db
       .update(pins)
       .set({
         images: JSON.stringify(remoteUrls),
         lastSyncedAt: new Date().toISOString(),
+        status: 'synced',
+      })
+      .where(eq(pins.id, data.id));
+  } else {
+    // Still update sync status even without images
+    await db
+      .update(pins)
+      .set({
+        lastSyncedAt: new Date().toISOString(),
+        status: 'synced',
       })
       .where(eq(pins.id, data.id));
   }
@@ -97,5 +107,16 @@ export async function syncForm(operation: Operation, data: any): Promise<void> {
 
   if (!response.success) {
     throw new Error(response.error || 'Sync failed');
+  }
+
+  // Mark form as synced in local DB (skip for delete operations)
+  if (operation !== 'delete') {
+    await db
+      .update(forms)
+      .set({
+        lastSyncedAt: new Date().toISOString(),
+        status: 'synced',
+      })
+      .where(eq(forms.id, data.id));
   }
 }

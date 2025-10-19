@@ -7,8 +7,18 @@ export async function createFormDb(form: Form): Promise<void> {
   await db.insert(forms).values(sanitizeFormForDb(form));
 }
 
-export async function updateFormDb(form: Form): Promise<void> {
-  await db.update(forms).set(sanitizeFormForDb(form)).where(eq(forms.id, form.id));
+export async function updateFormDb(form: Form): Promise<Form> {
+  const sanitized = sanitizeFormForDb(form);
+  console.log('Sanitized form before DB update:', sanitized);
+
+  const result = await db.update(forms).set(sanitized).where(eq(forms.id, form.id)).returning();
+
+  if (result.length === 0) {
+    throw new Error(`Form with id ${form.id} not found`);
+  }
+  console.log(result[0].village);
+
+  return result[0];
 }
 
 export async function softDeleteFormDb(id: string): Promise<void> {

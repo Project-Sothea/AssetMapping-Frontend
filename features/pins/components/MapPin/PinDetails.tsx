@@ -31,7 +31,7 @@ const intoPinFormValues = (pin: Pin): PinFormValues => {
   return {
     id: pin.id,
     name: pin.name,
-    cityVillage: (pin as any).city_village,
+    cityVillage: pin.cityVillage, // Schema is now camelCase after migration
     address: pin.address,
     description: pin.description,
     type: pin.type,

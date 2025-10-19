@@ -9,10 +9,7 @@ type FormCardProps = {
 
 export const FormCard = ({ form, onEdit, onDelete }: FormCardProps) => {
   // Determine border color based on status
-  const borderColor =
-    form.status === 'dirty'
-      ? '#e74c3c' // red for unsynced
-      : '#2ecc71'; // green for synced
+  const borderColor = form.status === 'synced' ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced
 
   return (
     <View style={[styles.card, { borderLeftColor: borderColor }]}>

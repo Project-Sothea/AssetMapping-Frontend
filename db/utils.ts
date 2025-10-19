@@ -71,19 +71,37 @@ export function sanitizeForDb(obj: any): any {
   return sanitized;
 }
 
+export function sanitizeForDb2(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (obj instanceof Date) return obj.toISOString();
+  if (Array.isArray(obj)) return JSON.stringify(obj); // ✅ Fix here
+
+  if (typeof obj === 'object') {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        sanitized[key] = sanitizeFormForDb(value);
+      }
+    }
+    return sanitized;
+  }
+
+  return obj;
+}
+
 /**
  * Helper: Convert empty strings to null
  */
-const nullIfEmpty = (val: any) => (val === '' ? null : (val ?? null));
+const nullIfEmpty = (v: any) => (v === undefined || v === '' ? null : v);
 
 /**
  * Helper: Ensure arrays are JSON strings for SQLite
  */
-const jsonifyArray = (val: any) => {
-  if (Array.isArray(val)) return JSON.stringify(val);
-  if (typeof val === 'string') return val;
-  return null;
-};
+function jsonifyArray(value: any) {
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (value === undefined || value === null) return '[]';
+  return typeof value === 'string' ? value : JSON.stringify([value]);
+}
 
 /**
  * Sanitize Pin for SQLite insertion
@@ -130,20 +148,13 @@ export function sanitizeFormForDb(form: any): any {
     // Text fields
     brushTeeth: nullIfEmpty(form.brushTeeth),
     canAttend: nullIfEmpty(form.canAttend),
-    cholesterol: nullIfEmpty(form.cholesterol),
-    coldLookLike: nullIfEmpty(form.coldLookLike),
     conditionDetails: nullIfEmpty(form.conditionDetails),
-    diabetes: nullIfEmpty(form.diabetes),
-    diarrhoea: nullIfEmpty(form.diarrhoea),
-    diarrhoeaAction: nullIfEmpty(form.diarrhoeaAction),
     eatCleanFood: nullIfEmpty(form.eatCleanFood),
     handAfterToilet: nullIfEmpty(form.handAfterToilet),
     handBeforeMeal: nullIfEmpty(form.handBeforeMeal),
     haveToothbrush: nullIfEmpty(form.haveToothbrush),
-    hypertension: nullIfEmpty(form.hypertension),
     knowDoctor: nullIfEmpty(form.knowDoctor),
     knowWaterFilters: nullIfEmpty(form.knowWaterFilters),
-    mskInjury: nullIfEmpty(form.mskInjury),
     otherBrushTeeth: nullIfEmpty(form.otherBrushTeeth),
     otherBuyMedicine: nullIfEmpty(form.otherBuyMedicine),
     otherCondition: nullIfEmpty(form.otherCondition),
@@ -154,20 +165,27 @@ export function sanitizeFormForDb(form: any): any {
     otherWaterSource: nullIfEmpty(form.otherWaterSource),
     ownTransport: nullIfEmpty(form.ownTransport),
     povertyCard: nullIfEmpty(form.povertyCard),
-    whereBuyMedicine: nullIfEmpty(form.whereBuyMedicine),
 
     // Array fields (stored as JSON strings)
+    cholesterol: jsonifyArray(form.cholesterol),
     cholesterolAction: jsonifyArray(form.cholesterolAction),
     coldAction: jsonifyArray(form.coldAction),
+    coldLookLike: jsonifyArray(form.coldLookLike),
+    diabetes: jsonifyArray(form.diabetes),
     diabetesAction: jsonifyArray(form.diabetesAction),
+    diarrhoea: jsonifyArray(form.diarrhoea),
+    diarrhoeaAction: jsonifyArray(form.diarrhoeaAction),
+    hypertension: jsonifyArray(form.hypertension),
     hypertensionAction: jsonifyArray(form.hypertensionAction),
+    mskAction: jsonifyArray(form.mskAction),
+    mskInjury: jsonifyArray(form.mskInjury),
     longTermConditions: jsonifyArray(form.longTermConditions),
     managementMethods: jsonifyArray(form.managementMethods),
-    mskAction: jsonifyArray(form.mskAction),
     notUsingWaterFilter: jsonifyArray(form.notUsingWaterFilter),
     unsafeWater: jsonifyArray(form.unsafeWater),
     waterSources: jsonifyArray(form.waterSources),
     whatDoWhenSick: jsonifyArray(form.whatDoWhenSick),
+    whereBuyMedicine: jsonifyArray(form.whereBuyMedicine), // ← include if multi-select
 
     // Sync tracking fields
     status: nullIfEmpty(form.status),

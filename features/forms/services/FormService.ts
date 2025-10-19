@@ -11,11 +11,22 @@ export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
 }
 
 export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<Form> {
+  console.log('before: ');
   const existing = await getFormById(id);
   if (!existing) throw new Error(`Form ${id} not found`);
-  await updateFormDb(existing);
-  await enqueueForm('update', values);
-  return existing;
+
+  // Merge existing form with new values
+  const mergedForm = {
+    ...existing,
+    ...values,
+    id, // Ensure ID doesn't change
+    updatedAt: new Date().toISOString(), // Update timestamp
+  };
+
+  const updated = await updateFormDb(mergedForm);
+  console.log('new form data:', updated);
+  await enqueueForm('update', updated);
+  return updated; // Return the updated form data
 }
 
 export async function deleteForm(id: string): Promise<void> {

@@ -4,7 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function preparePinForInsertion(pin: Omit<Pin, 'id'>): Promise<Pin> {
   const pinId = uuidv4();
-  const pinWithId = { ...pin, id: pinId };
+  const pinWithId = {
+    ...pin,
+    id: pinId,
+    status: pin.status || 'unsynced', // Default to unsynced for new pins
+  };
   return pinWithId;
 }
 
@@ -17,6 +21,7 @@ export async function savePinImages(pin: Pin): Promise<Pin> {
 }
 
 export async function updatePinImages(existingPin: Pin, updates: Partial<Pin>): Promise<Pin> {
+  console.log(updates);
   const updatedPin = { ...existingPin, ...updates };
 
   //if there are updates for localImages
