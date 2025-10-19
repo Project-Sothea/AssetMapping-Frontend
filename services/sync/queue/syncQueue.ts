@@ -122,3 +122,10 @@ export async function retryFailed(): Promise<void> {
 export async function cleanupOld(): Promise<void> {
   await db.delete(syncQueue).where(eq(syncQueue.status, 'completed'));
 }
+
+/**
+ * Clear all failed operations
+ */
+export async function clearFailed(): Promise<void> {
+  await db.delete(syncQueue).where(eq(syncQueue.status, 'failed'));
+}

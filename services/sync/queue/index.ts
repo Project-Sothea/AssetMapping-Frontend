@@ -11,4 +11,5 @@ export {
   getQueueMetrics,
   retryFailed,
   cleanupOld,
+  clearFailed,
 } from './syncQueue';

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useWebSocketStatus } from '~/hooks/useWebSocketStatus';
+import { useWebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 
 export function ConnectionStatusIndicator() {
   const { isConnected } = useWebSocketStatus();

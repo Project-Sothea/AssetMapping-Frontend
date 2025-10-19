@@ -12,7 +12,7 @@
  * - Status subscription system
  */
 
-import type { WebSocketStatus } from '~/hooks/useWebSocketStatus';
+import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
 type MessageHandler = (message: any) => void;

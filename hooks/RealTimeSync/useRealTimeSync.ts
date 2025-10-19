@@ -28,7 +28,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { getSyncManager } from '~/services/sync/syncService';
+import { processQueue } from '~/services/sync/queue';
 
 interface NotificationMessage {
   type: 'pin' | 'form' | 'image' | 'system' | 'welcome' | 'pong';
@@ -76,19 +76,14 @@ export function useRealTimeSync(userId: string | undefined) {
           if (message.aggregateId) {
             queryClient.invalidateQueries({ queryKey: ['pins', message.aggregateId] });
           }
-          // Trigger automatic sync to pull latest data and mark as synced
-          try {
-            getSyncManager()
-              .syncNow()
-              .then(() => {
-                console.log('✅ Auto-sync completed after pin update');
-              })
-              .catch((err) => {
-                console.warn('⚠️ Auto-sync failed after pin update:', err);
-              });
-          } catch (err) {
-            console.warn('⚠️ Failed to trigger auto-sync:', err);
-          }
+          // Trigger automatic queue processing to sync latest data
+          processQueue()
+            .then(() => {
+              console.log('✅ Auto-sync completed after pin update');
+            })
+            .catch((err: any) => {
+              console.warn('⚠️ Auto-sync failed after pin update:', err);
+            });
           break;
 
         case 'form':
@@ -104,19 +99,14 @@ export function useRealTimeSync(userId: string | undefined) {
               queryKey: ['forms', 'pin', message.payload.pinId],
             });
           }
-          // Trigger automatic sync to pull latest data and mark as synced
-          try {
-            getSyncManager()
-              .syncNow()
-              .then(() => {
-                console.log('✅ Auto-sync completed after form update');
-              })
-              .catch((err) => {
-                console.warn('⚠️ Auto-sync failed after form update:', err);
-              });
-          } catch (err) {
-            console.warn('⚠️ Failed to trigger auto-sync:', err);
-          }
+          // Trigger automatic queue processing to sync latest data
+          processQueue()
+            .then(() => {
+              console.log('✅ Auto-sync completed after form update');
+            })
+            .catch((err: any) => {
+              console.warn('⚠️ Auto-sync failed after form update:', err);
+            });
           break;
 
         case 'image':

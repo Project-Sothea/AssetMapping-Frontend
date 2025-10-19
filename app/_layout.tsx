@@ -10,9 +10,8 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '../drizzle/sqlite/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { initializeDefaultSync } from '~/services/sync/syncService';
 import { migrateAddVersionColumn } from '~/db/migrations/add_version_column';
-import { useRealTimeSync } from '~/hooks/useRealTimeSync';
+import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 
 export const DATABASE_NAME = 'local.db';
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
@@ -49,12 +48,7 @@ export default function RootLayout() {
       console.error('Migration error:', error);
     } else if (success) {
       setMigrationStatus('done');
-      // initialize sync environment after successful migrations
-      try {
-        initializeDefaultSync();
-      } catch (err) {
-        console.warn('Failed to initialize sync environment', err);
-      }
+      console.log('✅ Database migrations completed');
     } else {
       setMigrationStatus('loading');
     }

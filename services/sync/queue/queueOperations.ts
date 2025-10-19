@@ -4,25 +4,7 @@ import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
-
-/**
- * Sanitize data for SQLite storage
- * Removes undefined values and converts Dates to ISO strings
- */
-function sanitizeForDb(obj: any): any {
-  if (obj === null || obj === undefined) return null;
-  if (typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return obj.toISOString();
-  if (Array.isArray(obj)) return obj.map(sanitizeForDb);
-
-  const sanitized: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
-      sanitized[key] = sanitizeForDb(value);
-    }
-  }
-  return sanitized;
-}
+import { sanitizeForDb } from '~/db/utils';
 
 export async function enqueue(params: {
   operation: Operation;
@@ -78,6 +60,10 @@ export async function enqueue(params: {
   }
 }
 
+/**
+ * Processes a queued operation by executing the appropriate sync function
+ * @param op - The queued operation object containing entityType, operation, and payload
+ */
 export async function processOperation(op: any): Promise<void> {
   const payload = JSON.parse(op.payload);
   if (op.entityType === 'pin') await syncPin(op.operation, payload);

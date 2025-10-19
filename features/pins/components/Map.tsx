@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './MapPin/PinFormModal';
-import { convertPinsToPointCollection } from '~/utils/Map/convertPinsToCollection';
+import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import { Pin } from '~/db/schema';

@@ -1,34 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { getSyncManager } from '~/services/sync/syncService';
+import { View, Text, Pressable, StyleSheet, Animated, Alert } from 'react-native';
 import { ConnectionStatusIndicator } from '~/shared/components/ConnectionStatusIndicator';
-import { formatSyncDisplay, SyncRawState } from '~/services/sync/utils/formatSyncStatus';
-import { processQueue, getQueueMetrics } from '~/services/sync/queue';
+import { processQueue, getQueueMetrics, retryFailed, clearFailed } from '~/services/sync/queue';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const SyncStatusBar = () => {
-  let initialStatus = { text: 'Unsynced', color: '#e74c3c' };
-  try {
-    const state = getSyncManager().getState();
-    initialStatus = formatSyncDisplay(state);
-  } catch {
-    // not initialized yet, will wait for subscribe if initialized later
-  }
-  const [status, setStatus] = useState(initialStatus);
+  const queryClient = useQueryClient();
   const [queuePending, setQueuePending] = useState(0);
+  const [queueFailed, setQueueFailed] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [popup, setPopup] = useState<{ message: string; color: string } | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    try {
-      const unsubscribe = getSyncManager().subscribe((state: SyncRawState) => {
-        setStatus(formatSyncDisplay(state));
-      });
-      return () => unsubscribe();
-    } catch {
-      // not initialized; nothing to cleanup
-      return () => {};
-    }
-  }, []);
 
   // Poll queue status
   useEffect(() => {
@@ -36,6 +18,7 @@ export const SyncStatusBar = () => {
       try {
         const metrics = await getQueueMetrics();
         setQueuePending(metrics.pending);
+        setQueueFailed(metrics.failed);
       } catch {
         // Queue not ready yet
       }
@@ -44,8 +27,8 @@ export const SyncStatusBar = () => {
     // Initial check
     updateQueueStatus();
 
-    // Poll every 5 seconds
-    const interval = setInterval(updateQueueStatus, 5000);
+    // Poll every 3 seconds
+    const interval = setInterval(updateQueueStatus, 3000);
 
     return () => {
       clearInterval(interval);
@@ -72,23 +55,114 @@ export const SyncStatusBar = () => {
   };
 
   const handlePress = async () => {
+    if (isSyncing) return; // Prevent double-tap
+
+    const beforeMetrics = { pending: queuePending, failed: queueFailed };
+    setIsSyncing(true);
+
     try {
-      // Process queue first
-      await processQueue();
+      if (queueFailed > 0) {
+        // Retry failed operations first
+        await retryFailed();
+        await processQueue();
 
-      // Then sync from backend
-      await getSyncManager().syncNow();
+        // Check results after processing
+        const afterMetrics = await getQueueMetrics();
+        setQueuePending(afterMetrics.pending);
+        setQueueFailed(afterMetrics.failed);
 
-      showPopup('Sync successful!', 'green');
+        if (afterMetrics.failed > 0) {
+          showPopup(
+            `${beforeMetrics.failed - afterMetrics.failed} synced, ${afterMetrics.failed} still failed`,
+            '#f39c12'
+          );
+        } else {
+          showPopup('All synced!', 'green');
+        }
+      } else if (queuePending > 0) {
+        // Process pending operations
+        await processQueue();
+
+        // Check results
+        const afterMetrics = await getQueueMetrics();
+        setQueuePending(afterMetrics.pending);
+        setQueueFailed(afterMetrics.failed);
+
+        if (afterMetrics.failed > 0) {
+          showPopup(`${afterMetrics.failed} failed`, 'red');
+        } else {
+          showPopup('All synced!', 'green');
+        }
+      } else {
+        // Nothing to sync, pull latest from server
+        await queryClient.invalidateQueries({ queryKey: ['pins'] });
+        await queryClient.invalidateQueries({ queryKey: ['forms'] });
+        showPopup('Refreshed!', 'green');
+      }
     } catch (err) {
-      console.error('Manual sync failed:', err);
+      console.error('Sync failed:', err);
       showPopup('Sync failed!', 'red');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
-  // Construct status text with queue info
-  const displayText =
-    queuePending > 0 ? `${status.text} (${queuePending} queued)` : status.text || 'Sync Pins';
+  const handleLongPress = async () => {
+    // In production, show helpful info instead of allowing deletion
+    if (!__DEV__ && queueFailed > 0) {
+      Alert.alert(
+        'Sync Issues Detected',
+        `${queueFailed} operation${queueFailed > 1 ? 's' : ''} failed to sync. This usually means:\n\n• Poor internet connection\n• Server temporarily unavailable\n\nThe app will keep retrying automatically. Data is safe locally.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Development mode only - allow clearing
+    if (__DEV__ && queueFailed > 0) {
+      Alert.alert(
+        'Clear Failed Items (DEV)',
+        `Delete ${queueFailed} failed sync operation${queueFailed > 1 ? 's' : ''}? This cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await clearFailed();
+                const metrics = await getQueueMetrics();
+                setQueuePending(metrics.pending);
+                setQueueFailed(metrics.failed);
+                showPopup('Failed items cleared', 'green');
+              } catch (err) {
+                console.error('Failed to clear:', err);
+                showPopup('Clear failed!', 'red');
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  // Construct status display
+  const getStatusColor = () => {
+    if (isSyncing) return '#3498db'; // Blue for syncing
+    if (queueFailed > 0) return '#e74c3c'; // Red for failed
+    if (queuePending > 0) return '#f39c12'; // Orange for pending
+    return '#27ae60'; // Green for synced
+  };
+
+  const getStatusText = () => {
+    if (isSyncing) return 'Syncing...';
+    if (queueFailed > 0) return `${queueFailed} failed`;
+    if (queuePending > 0) return `${queuePending} pending`;
+    return 'Synced';
+  };
+
+  const statusColor = getStatusColor();
+  const displayText = getStatusText();
 
   return (
     <View style={styles.container}>
@@ -96,15 +170,16 @@ export const SyncStatusBar = () => {
         <ConnectionStatusIndicator />
         <Pressable
           onPress={handlePress}
+          onLongPress={handleLongPress}
           style={({ pressed }) => [
             styles.button,
             {
-              borderColor: status.color,
+              borderColor: statusColor,
               transform: [{ scale: pressed ? 0.97 : 1 }],
               backgroundColor: pressed ? '#f0f0f0' : 'white',
             },
           ]}>
-          <Text style={[styles.statusText, { color: status.color }]}>{displayText}</Text>
+          <Text style={[styles.statusText, { color: statusColor }]}>{displayText}</Text>
         </Pressable>
 
         {popup && (

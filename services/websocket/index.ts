@@ -18,4 +18,4 @@ export {
 } from './WebSocketDebug';
 
 // Types
-export type { WebSocketStatus, ConnectionStatus } from '~/hooks/useWebSocketStatus';
+export type { WebSocketStatus, ConnectionStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
