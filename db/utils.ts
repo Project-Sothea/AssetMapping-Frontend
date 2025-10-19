@@ -52,3 +52,21 @@ export function parseArrayFields(value: any): typeof value {
   }
   return result;
 }
+
+/**
+ * Sanitize data for SQLite - remove undefined values and convert Dates
+ */
+export function sanitizeForDb(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj.toISOString();
+  if (Array.isArray(obj)) return obj.map(sanitizeForDb);
+
+  const sanitized: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      sanitized[key] = sanitizeForDb(value);
+    }
+  }
+  return sanitized;
+}

@@ -12,23 +12,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { eq, asc } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
-import { syncPin, syncForm } from './syncOperations';
-
-// ==================== Types ====================
-
-type Operation = 'create' | 'update' | 'delete';
-type EntityType = 'pin' | 'form';
-
-interface QueueMetrics {
-  pending: number;
-  failed: number;
-  completed: number;
-}
-
-// ==================== Private State ====================
-
-let isProcessing = false;
-let processingTimer: ReturnType<typeof setTimeout> | null = null;
+import { Operation, QueueMetrics } from './types';
+import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
+import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueUtils';
 
 // ==================== Public API ====================
 
@@ -37,12 +23,14 @@ let processingTimer: ReturnType<typeof setTimeout> | null = null;
  */
 export async function enqueuePin(operation: Operation, data: any): Promise<string> {
   const id = data.id || uuidv4();
-  return enqueue({
+  const operationId = await enqueue({
     operation,
     entityType: 'pin',
     entityId: id,
     payload: { ...data, id },
   });
+  scheduleNextProcess(processQueue);
+  return operationId;
 }
 
 /**
@@ -50,12 +38,23 @@ export async function enqueuePin(operation: Operation, data: any): Promise<strin
  */
 export async function enqueueForm(operation: Operation, data: any): Promise<string> {
   const id = data.id || uuidv4();
-  return enqueue({
+
+  // Ensure dates are properly serialized
+  const cleanData = {
+    ...data,
+    id,
+    createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
+    updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt,
+  };
+
+  const operationId = await enqueue({
     operation,
     entityType: 'form',
     entityId: id,
-    payload: { ...data, id },
+    payload: cleanData,
   });
+  scheduleNextProcess(processQueue);
+  return operationId;
 }
 
 /**
@@ -74,8 +73,8 @@ export async function getQueueMetrics(): Promise<QueueMetrics> {
  * Process pending queue operations
  */
 export async function processQueue(): Promise<void> {
-  if (isProcessing) return;
-  isProcessing = true;
+  if (getIsProcessing()) return;
+  setIsProcessing(true);
 
   try {
     const pending = await db
@@ -101,8 +100,8 @@ export async function processQueue(): Promise<void> {
       }
     }
   } finally {
-    isProcessing = false;
-    scheduleNextProcess();
+    setIsProcessing(false);
+    scheduleNextProcess(processQueue);
   }
 }
 
@@ -114,7 +113,7 @@ export async function retryFailed(): Promise<void> {
     .update(syncQueue)
     .set({ status: 'pending', attempts: 0, lastError: null })
     .where(eq(syncQueue.status, 'failed'));
-  scheduleNextProcess();
+  scheduleNextProcess(processQueue);
 }
 
 /**
@@ -122,64 +121,4 @@ export async function retryFailed(): Promise<void> {
  */
 export async function cleanupOld(): Promise<void> {
   await db.delete(syncQueue).where(eq(syncQueue.status, 'completed'));
-}
-
-// ==================== Private Implementation ====================
-
-async function enqueue(params: {
-  operation: Operation;
-  entityType: EntityType;
-  entityId: string;
-  payload: any;
-}): Promise<string> {
-  const operationId = uuidv4();
-  const timestamp = new Date().toISOString();
-
-  await db.insert(syncQueue).values({
-    id: operationId,
-    operation: params.operation,
-    entityType: params.entityType,
-    entityId: params.entityId,
-    idempotencyKey: `${params.entityType}-${params.entityId}-${timestamp}`,
-    payload: JSON.stringify(params.payload),
-    status: 'pending',
-    attempts: 0,
-    maxAttempts: 3,
-    sequenceNumber: Date.now(),
-    deviceId: 'mobile-app',
-    createdAt: timestamp,
-  });
-
-  console.log(`📝 Queued ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`);
-  scheduleNextProcess();
-  return operationId;
-}
-
-async function processOperation(op: any): Promise<void> {
-  const payload = JSON.parse(op.payload);
-  if (op.entityType === 'pin') await syncPin(op.operation, payload);
-  else await syncForm(op.operation, payload);
-}
-
-async function markCompleted(operationId: string): Promise<void> {
-  await db
-    .update(syncQueue)
-    .set({ status: 'completed', lastAttemptAt: new Date().toISOString() })
-    .where(eq(syncQueue.id, operationId));
-}
-
-async function handleError(op: any, error: Error): Promise<void> {
-  const attempts = op.attempts + 1;
-  const isRetriable = error.message.includes('network') || error.message.includes('timeout');
-  const update = { attempts, lastError: error.message, lastAttemptAt: new Date().toISOString() };
-
-  await db
-    .update(syncQueue)
-    .set(isRetriable && attempts < op.maxAttempts ? update : { ...update, status: 'failed' })
-    .where(eq(syncQueue.id, op.id));
-}
-
-function scheduleNextProcess(): void {
-  if (processingTimer) clearTimeout(processingTimer);
-  processingTimer = setTimeout(() => processQueue(), 2000);
 }
