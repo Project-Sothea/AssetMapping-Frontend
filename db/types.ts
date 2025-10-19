@@ -1,29 +1,69 @@
 /**
  * Database Type Definitions
  *
- * Provides separate type definitions for SQLite (local) and PostgreSQL (remote) schemas.
- * After migration, remote PostgreSQL uses camelCase while local SQLite still uses snake_case.
+ * Provides separate type definitions for SQLite (local) and API response (remote) schemas.
+ * Remote types represent what the backend API returns.
  *
  * Local types (SQLite):
  * - Include sync tracking fields
  * - Use snake_case column names (until local migration applied)
  *
- * Remote types (PostgreSQL):
- * - Exclude sync tracking fields
- * - Use camelCase column names (after PostgreSQL migration)
+ * Remote types (API responses):
+ * - Match backend API response format
+ * - Used by API repositories and sync handlers
  */
 
 import * as sqliteSchema from './schema/sqlite';
-import * as postgresqlSchema from './schema/postgresql';
 
 // ==================== LOCAL TYPES (SQLite) ====================
 export type LocalPin = typeof sqliteSchema.pins.$inferSelect;
 export type LocalForm = typeof sqliteSchema.forms.$inferSelect;
 export type LocalSyncQueueItem = typeof sqliteSchema.syncQueue.$inferSelect;
 
-// ==================== REMOTE TYPES (PostgreSQL) ====================
-export type RemotePin = typeof postgresqlSchema.pins.$inferSelect;
-export type RemoteForm = typeof postgresqlSchema.forms.$inferSelect;
+// ==================== REMOTE TYPES (API Responses) ====================
+// These represent the shape of data returned by backend API
+export type RemotePin = {
+  id: string;
+  title?: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  images?: string[] | null;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  userId: string;
+  version: number;
+};
+
+export type RemoteForm = {
+  id: string;
+  pinId?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  priority?: string;
+  status?: string;
+  images?: string[] | null;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  userId: string;
+  version: number;
+  // Form-specific fields
+  structureType?: string;
+  constructionType?: string;
+  foundationType?: string;
+  roofType?: string;
+  wallType?: string;
+  floorType?: string;
+  windowType?: string;
+  doorType?: string;
+  electrical?: string;
+  plumbing?: string;
+  sanitation?: string;
+  additionalNotes?: string;
+};
 
 // ==================== ALIASES ====================
 // Default exports use local types (for most app code)
@@ -39,6 +79,3 @@ export type ReForm = RemoteForm;
 export type InsertPin = typeof sqliteSchema.pins.$inferInsert;
 export type InsertForm = typeof sqliteSchema.forms.$inferInsert;
 export type InsertSyncQueueItem = typeof sqliteSchema.syncQueue.$inferInsert;
-
-export type InsertRemotePin = typeof postgresqlSchema.pins.$inferInsert;
-export type InsertRemoteForm = typeof postgresqlSchema.forms.$inferInsert;

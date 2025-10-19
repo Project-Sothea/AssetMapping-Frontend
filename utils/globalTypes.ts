@@ -23,6 +23,4 @@ export type {
   InsertPin,
   InsertForm,
   InsertSyncQueueItem,
-  InsertRemotePin,
-  InsertRemoteForm,
 } from '~/db/types';

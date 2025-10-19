@@ -18,16 +18,16 @@ describe('syncService', () => {
     DrizzlePinRepo: jest.fn().mockImplementation(() => ({})),
   }));
 
-  jest.mock('../repositories/pins/SupabasePinRepo', () => ({
-    SupabasePinRepo: jest.fn().mockImplementation(() => ({})),
+  jest.mock('../repositories/pins/ApiPinRepo', () => ({
+    ApiPinRepo: jest.fn().mockImplementation(() => ({})),
   }));
 
   jest.mock('../repositories/forms/DrizzleFormRepo', () => ({
     DrizzleFormRepo: jest.fn().mockImplementation(() => ({})),
   }));
 
-  jest.mock('../repositories/forms/SupabaseFormRepo', () => ({
-    SupabaseFormRepo: jest.fn().mockImplementation(() => ({})),
+  jest.mock('../repositories/forms/ApiFormRepo', () => ({
+    ApiFormRepo: jest.fn().mockImplementation(() => ({})),
   }));
 
   // Note: This is a basic test structure. Full implementation would require

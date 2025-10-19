@@ -32,7 +32,23 @@ export class LocalRepository<T = any, Table = any> {
       if (!('id' in item)) continue;
       const id = (item as any).id;
       const exists = await this.exists(id);
-      const payload = this.transformBeforeInsert(item as Partial<T>);
+      let payload = this.transformBeforeInsert(item as Partial<T>);
+
+      // Preserve local-only fields when updating from remote
+      if (exists) {
+        const existing: any = await this.db
+          .select()
+          .from(this.table)
+          .where(eq((this.table as any).id, id))
+          .limit(1)
+          .then((rows: any[]) => rows[0]);
+
+        // Preserve localImages field if it exists in local but not in remote payload
+        if (existing?.localImages && !(payload as any).localImages) {
+          payload = { ...payload, localImages: existing.localImages };
+        }
+      }
+
       try {
         if (!exists) {
           await this.db.insert(this.table).values(payload as any);

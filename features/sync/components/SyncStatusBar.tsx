@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { getSyncManager } from '~/services/sync/syncService';
+import { ConnectionStatusIndicator } from '~/shared/components/ConnectionStatusIndicator';
 import { formatSyncDisplay, SyncRawState } from '~/services/sync/utils/formatSyncStatus';
 import { processQueueNow, getQueueHealth, subscribeToQueueEvents } from '~/services/sync/queue';
 
@@ -104,6 +105,7 @@ export const SyncStatusBar = () => {
   return (
     <View style={styles.container}>
       <View style={styles.buttonWrapper}>
+        <ConnectionStatusIndicator />
         <Pressable
           onPress={handlePress}
           style={({ pressed }) => [
@@ -130,7 +132,12 @@ export const SyncStatusBar = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' }, // idk if shld remove flex:1... ugh
-  buttonWrapper: { position: 'relative', alignItems: 'center', alignSelf: 'center' },
+  buttonWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
   button: {
     paddingVertical: 6, // reduced paddings so wldnt look so fat
     paddingHorizontal: 14,

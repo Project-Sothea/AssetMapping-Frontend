@@ -26,8 +26,8 @@ import {
  * Stores location pins with health facility/community information
  */
 export const pins = sqliteTable('pins', {
-  // Common fields from builder (timestamps, location, details)
-  ...buildCommonPinFields(text, real),
+  // Common fields from builder (timestamps, location, details, version)
+  ...buildCommonPinFields(text, real, undefined, integer),
 
   // Local-only fields (sync tracking)
   ...buildPinLocalFields(text),
@@ -41,8 +41,8 @@ export const pins = sqliteTable('pins', {
  * Stores health assessment forms linked to pins
  */
 export const forms = sqliteTable('forms', {
-  // Common fields from builder (timestamps, relations, text fields)
-  ...buildCommonFormFields(text),
+  // Common fields from builder (timestamps, relations, text fields, version)
+  ...buildCommonFormFields(text, undefined, integer),
 
   // Array fields - stored as JSON strings (unified format)
   ...buildFormArrayFields(text),

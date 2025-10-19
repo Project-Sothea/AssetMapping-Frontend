@@ -88,15 +88,15 @@ export class RemoteImageStorage {
     // Ensure URI is properly formatted
     const normalizedUri = normalizeFileUri(localUri);
 
-    // Upload to Supabase
-    return await supabaseImageApi.uploadToRemote(normalizedUri, remotePath);
+    // Upload to Supabase - pass pinId as entityId
+    return await supabaseImageApi.uploadToRemote(normalizedUri, remotePath, pinId);
   }
 
   /**
-   * Delete images from remote storage
+   * Delete multiple images from remote storage
    *
    * @param pinId - Pin identifier
-   * @param filenames - Array of filenames to delete (without pinId prefix)
+   * @param filenames - Array of filenames or URLs to delete
    * @returns Deletion results
    */
   async deleteImages(pinId: string, filenames: string[]): Promise<DeleteResult> {
@@ -111,9 +111,9 @@ export class RemoteImageStorage {
 
     console.log(`Deleting ${filenames.length} images for pin ${pinId}`);
 
-    // Create delete tasks
-    const deleteTasks = filenames.map((filename) =>
-      supabaseImageApi.deleteImage(`${pinId}/${filename}`)
+    // Create delete tasks - pass imageUrl, entityType, and entityId
+    const deleteTasks = filenames.map((imageUrl) =>
+      supabaseImageApi.deleteImage(imageUrl, 'pin', pinId)
     );
 
     // Execute all deletions in parallel
@@ -121,14 +121,14 @@ export class RemoteImageStorage {
 
     // Process results
     results.forEach((deleteResult, index) => {
-      const fullPath = `${pinId}/${filenames[index]}`;
+      const imageUrl = filenames[index];
 
-      if (deleteResult.status === 'fulfilled') {
-        result.deleted.push(fullPath);
+      if (deleteResult.status === 'fulfilled' && deleteResult.value) {
+        result.deleted.push(imageUrl);
       } else {
         result.failedDelete.push({
-          uri: fullPath,
-          error: deleteResult.reason,
+          uri: imageUrl,
+          error: deleteResult.status === 'rejected' ? deleteResult.reason : 'Unknown error',
         });
       }
     });
@@ -143,11 +143,11 @@ export class RemoteImageStorage {
    * List all images for a pin in remote storage
    *
    * @param pinId - Pin identifier
-   * @returns Array of filenames (without pinId prefix)
+   * @returns Array of image URLs
    */
   async listImages(pinId: string): Promise<string[]> {
     try {
-      return await supabaseImageApi.listFilesInBucket(`${pinId}/`);
+      return await supabaseImageApi.listFilesInBucket(pinId, 'pin');
     } catch (error) {
       console.warn(`Failed to list remote images for pin ${pinId}:`, error);
       return [];

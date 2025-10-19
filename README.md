@@ -8,6 +8,10 @@ React Native (Expo) app for offline-first asset mapping with Mapbox integration.
 # Install dependencies
 npm install
 
+# Configure environment
+# Add backend API URL to .env:
+# EXPO_PUBLIC_API_URL=http://localhost:3000
+
 # Start development server
 npm start
 
@@ -18,13 +22,22 @@ npx expo run:ios
 npx expo run:android
 ```
 
+## Prerequisites
+
+- Node.js 18+
+- Backend server running (see [Backend Setup](../AssetMapping-Backend/docs/SETUP.md))
+- iOS Simulator or Android Emulator
+- Expo CLI (`npm install -g expo-cli`)
+
 ## Key Features
 
 - 📍 Pin-based asset mapping with Mapbox
 - 📝 Dynamic forms with field validation
 - 🔄 Offline-first with background sync
 - 📦 Offline map pack downloads
-- 🗃️ Dual database: SQLite (local) + PostgreSQL (Supabase)
+- 🗃️ Dual database: SQLite (local) + PostgreSQL (via Backend API)
+- 🔐 Idempotent sync operations via backend
+- 📊 Event streaming and audit logging
 
 ## Tech Stack
 
@@ -32,9 +45,33 @@ npx expo run:android
 - **TypeScript** (strict mode)
 - **Mapbox** for maps
 - **Drizzle ORM** for type-safe database
-- **Supabase** for backend
+- **Backend API** for sync operations (Express.js)
+- **Supabase** for database (via backend)
 - **React Query** for API state
 - **Jest** for testing
+
+## Architecture
+
+```
+┌─────────────────┐
+│  Mobile App     │
+│  (React Native) │
+└────────┬────────┘
+         │
+         │ API Client
+         │
+┌────────▼────────┐      ┌─────────────┐      ┌──────────────┐
+│  Backend API    │─────▶│   Redis     │      │    Kafka     │
+│  (Express.js)   │      │(Idempotency)│      │  (Events)    │
+└────────┬────────┘      └─────────────┘      └──────────────┘
+         │
+         │
+         │
+┌────────▼────────┐
+│    Supabase     │
+│  (PostgreSQL)   │
+└─────────────────┘
+```
 
 ## Project Structure
 
@@ -53,13 +90,6 @@ npx expo run:android
 ## Documentation
 
 📚 **[Full Documentation](docs/README.md)**
-
-Essential docs:
-
-- **[Code Quality Guidelines](docs/development/CODE_QUALITY_GUIDELINES.md)** - Development standards
-- **[Next Tasks](docs/development/NEXT_TASKS.md)** - Current work & priorities
-- **[Schema Management](docs/guides/SCHEMA_MANAGEMENT_WITH_DRIZZLE.md)** - Database management
-- **[Testing Guide](docs/guides/TESTING_GUIDE.md)** - How to test
 
 ## Common Commands
 

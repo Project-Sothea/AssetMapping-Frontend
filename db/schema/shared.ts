@@ -48,9 +48,11 @@ import { sql } from 'drizzle-orm';
 export function buildCommonPinFields(
   textType: any,
   numericType: any,
-  timestampFn?: (col: string) => any
+  timestampFn?: (col: string) => any,
+  intType?: any
 ) {
   const timestamp = timestampFn || ((col: string) => textType(col));
+  const integer = intType || ((col: string) => textType(col));
 
   return {
     // Primary identifier
@@ -62,6 +64,9 @@ export function buildCommonPinFields(
       .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp('updatedAt').default(sql`CURRENT_TIMESTAMP`),
     deletedAt: timestamp('deletedAt'), // Soft delete
+
+    // Version for optimistic concurrency control
+    version: integer('version').notNull().default(1),
 
     // Location
     lat: numericType('lat'),
@@ -97,10 +102,16 @@ export function buildPinLocalFields(textType: any) {
  *
  * @param textType - text type from drizzle-orm
  * @param timestampFn - optional timestamp function for pg
+ * @param intType - optional integer type for version column
  * @returns Object with common form field definitions (non-array fields)
  */
-export function buildCommonFormFields(textType: any, timestampFn?: (col: string) => any) {
+export function buildCommonFormFields(
+  textType: any,
+  timestampFn?: (col: string) => any,
+  intType?: any
+) {
   const timestamp = timestampFn || ((col: string) => textType(col));
+  const integer = intType || ((col: string) => textType(col));
 
   return {
     // Primary identifier
@@ -112,6 +123,9 @@ export function buildCommonFormFields(textType: any, timestampFn?: (col: string)
       .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: timestamp('updatedAt').default(sql`CURRENT_TIMESTAMP`),
     deletedAt: timestamp('deletedAt'),
+
+    // Version for optimistic concurrency control
+    version: integer('version').notNull().default(1),
 
     // Relations
     pinId: textType('pinId'), // Foreign key
