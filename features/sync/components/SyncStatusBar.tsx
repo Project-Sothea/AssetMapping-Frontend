@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { getSyncManager } from '~/services/sync/syncService';
 import { ConnectionStatusIndicator } from '~/shared/components/ConnectionStatusIndicator';
 import { formatSyncDisplay, SyncRawState } from '~/services/sync/utils/formatSyncStatus';
-import { processQueueNow, getQueueHealth, subscribeToQueueEvents } from '~/services/sync/queue';
+import { processQueue, getQueueMetrics } from '~/services/sync/queue';
 
 export const SyncStatusBar = () => {
   let initialStatus = { text: 'Unsynced', color: '#e74c3c' };
@@ -30,12 +30,12 @@ export const SyncStatusBar = () => {
     }
   }, []);
 
-  // Subscribe to queue events
+  // Poll queue status
   useEffect(() => {
     const updateQueueStatus = async () => {
       try {
-        const health = await getQueueHealth();
-        setQueuePending(health.pendingOperations);
+        const metrics = await getQueueMetrics();
+        setQueuePending(metrics.pending);
       } catch {
         // Queue not ready yet
       }
@@ -44,22 +44,10 @@ export const SyncStatusBar = () => {
     // Initial check
     updateQueueStatus();
 
-    // Subscribe to queue events
-    const unsubscribe = subscribeToQueueEvents((event) => {
-      if (
-        event.type === 'operation_enqueued' ||
-        event.type === 'operation_completed' ||
-        event.type === 'batch_completed'
-      ) {
-        updateQueueStatus();
-      }
-    });
-
-    // Poll every 10 seconds
-    const interval = setInterval(updateQueueStatus, 10000);
+    // Poll every 5 seconds
+    const interval = setInterval(updateQueueStatus, 5000);
 
     return () => {
-      unsubscribe();
       clearInterval(interval);
     };
   }, []);
@@ -86,7 +74,7 @@ export const SyncStatusBar = () => {
   const handlePress = async () => {
     try {
       // Process queue first
-      await processQueueNow();
+      await processQueue();
 
       // Then sync from backend
       await getSyncManager().syncNow();

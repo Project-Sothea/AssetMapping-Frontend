@@ -1,7 +1,7 @@
 // imageStorage.ts
 
 import { copyFile, downloadFile, deleteFile } from './fileSystemsUtils';
-import { isLocalUri, isRemoteUri, generateUniqueFilename } from './uriUtils';
+import { isLocalUri, isRemoteUri, generateUniqueFilename } from '../utils/uriUtils';
 import { cleanupEmptyDirectory, getPinDirectoryPath } from './directoryUtils';
 
 // --- Interfaces ---

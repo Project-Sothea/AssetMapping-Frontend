@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PropsWithChildren, useEffect, useState } from 'react';
-import { setQueryClient } from '~/services/sync/queue/api/pins';
+import { PropsWithChildren, useState } from 'react';
 
 /**
  * QueryProvider with offline-first configuration
@@ -42,11 +41,5 @@ export default function QueryProvider({ children }: PropsWithChildren) {
         },
       })
   );
-
-  // Initialize PinsAPI with queryClient for cache invalidation on errors
-  useEffect(() => {
-    setQueryClient(client);
-  }, [client]);
-
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

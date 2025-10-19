@@ -43,3 +43,13 @@ export function normalizeFileUri(uri: string): string {
 export function generateUniqueFilename(): string {
   return `${uuidv4()}.jpg`;
 }
+
+/**
+ * Extract filename from local URI
+ */
+export function extractFilename(uri: string): string {
+  if (!uri) return `image_${Date.now()}.jpg`;
+  const cleaned = uri.startsWith('file://') ? uri.slice(7) : uri;
+  const lastSlash = cleaned.lastIndexOf('/');
+  return lastSlash === -1 ? `image_${Date.now()}.jpg` : cleaned.substring(lastSlash + 1);
+}
