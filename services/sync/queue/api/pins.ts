@@ -114,7 +114,7 @@ export const upsertOne = async (pin: Pin) => {
       console.log(`Uploading ${pin.localImages.length} images for pin ${pin.id}`);
 
       try {
-        const remoteImageUrls = await uploadImagesToRemote(pin.id, pin.localImages);
+        remoteImageUrls = await uploadImagesToRemote(pin.id, pin.localImages);
         console.log(`✓ Uploaded ${remoteImageUrls.length} images successfully`);
       } catch (uploadError: any) {
         console.error(`✖ Image upload failed for pin ${pin.id}:`, uploadError.message);
@@ -146,10 +146,16 @@ export const upsertOne = async (pin: Pin) => {
 
     const pinToSync = {
       ...rest,
-      // Use uploaded remote URLs if available, otherwise keep existing images
-      images: remoteImageUrls.length > 0 ? JSON.stringify(remoteImageUrls) : rest.images,
       updatedAt: rest.updatedAt ?? new Date().toISOString(),
     };
+
+    // Set images field appropriately
+    if (remoteImageUrls.length > 0) {
+      pinToSync.images = JSON.stringify(remoteImageUrls);
+    } else if (rest.images) {
+      pinToSync.images = rest.images;
+    }
+    // If no remote URLs and no existing images, omit the images field to avoid overwriting with null
 
     // Step 3: Use backend API for sync
     const response = await apiClient.syncItem({

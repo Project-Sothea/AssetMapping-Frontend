@@ -1,4 +1,3 @@
-import { Form, Pin, ReForm, RePin } from '~/utils/globalTypes';
 import { SyncManager } from './SyncManager';
 import { DrizzlePinRepo } from './repositories/pins/DrizzlePinRepo';
 import { ApiPinRepo } from './repositories/pins/ApiPinRepo';
@@ -7,8 +6,7 @@ import { PinSyncHandler } from './logic/handlers/PinSyncHandler';
 import { FormSyncHandler } from './logic/handlers/FormSyncHandler';
 import { DrizzleFormRepo } from './repositories/forms/DrizzleFormRepo';
 import { ApiFormRepo } from './repositories/forms/ApiFormRepo';
-import * as ImageManager from '../images/ImageManager';
-import { ImageManagerInterface } from '../images/types';
+import { Pin, Form, ReForm, RePin } from '~/db/types';
 
 // ==================== Type Definitions ====================
 
@@ -19,7 +17,7 @@ type SyncContext = {
 };
 
 type InitializationOptions = {
-  imageManager?: ImageManagerInterface;
+  // No options needed since image sync is handled in queue
 };
 
 // ==================== Constants ====================
@@ -61,13 +59,8 @@ export function initializeSync(opts?: InitializationOptions): SyncContext {
   // Step 1: Create repositories
   createRepositories();
 
-  // Step 2: Resolve dependencies (ImageManager)
-  const imageManager = resolveImageManager(opts);
-
-  // Step 3: Create and register sync handlers
-  const handlers = createSyncHandlers(imageManager);
-
-  // Step 4: Initialize and configure SyncManager
+  // Step 2: Create and register sync handlers
+  const handlers = createSyncHandlers(); // Step 4: Initialize and configure SyncManager
   _syncManager = configureSyncManager(handlers);
 
   // Step 5: Return context for caller
@@ -140,17 +133,10 @@ function createRepositories(): void {
 }
 
 /**
- * Resolve ImageManager dependency (allows injection for testing).
- */
-function resolveImageManager(opts?: InitializationOptions): ImageManagerInterface {
-  return (opts?.imageManager ?? (ImageManager as unknown)) as ImageManagerInterface;
-}
-
-/**
  * Create sync handlers for all entity types.
  */
-function createSyncHandlers(imageManager: ImageManagerInterface) {
-  const pinHandler = createPinSyncHandler(imageManager);
+function createSyncHandlers() {
+  const pinHandler = createPinSyncHandler();
   const formHandler = createFormSyncHandler();
 
   return { pinHandler, formHandler };
@@ -159,13 +145,8 @@ function createSyncHandlers(imageManager: ImageManagerInterface) {
 /**
  * Create Pin sync handler with dependencies.
  */
-function createPinSyncHandler(imageManager: ImageManagerInterface): PinSyncHandler {
-  return new PinSyncHandler(
-    new SyncStrategy<Pin, RePin>(),
-    _localPinRepo!,
-    _remotePinRepo!,
-    imageManager
-  );
+function createPinSyncHandler(): PinSyncHandler {
+  return new PinSyncHandler(new SyncStrategy<Pin, RePin>(), _localPinRepo!, _remotePinRepo!);
 }
 
 /**
