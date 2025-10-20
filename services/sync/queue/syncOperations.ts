@@ -87,7 +87,7 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
 }
 
 /**
- * Sync pin data to backend
+ * Push pin data to backend
  */
 async function syncPinToBackend(
   operation: Operation,
