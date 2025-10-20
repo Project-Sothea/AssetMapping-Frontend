@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { SyncStatusBar } from '~/features/sync/components/SyncStatusBar';
+import { SyncStatusBar } from '~/shared/components/SyncStatusBar';
+import { ReconnectButton } from '~/shared/components/ReconnectButton';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -21,6 +22,7 @@ export default function Layout() {
           headerShown: true,
           headerTitle: () => <SyncStatusBar />,
           headerTitleAlign: 'center',
+          headerRight: () => <ReconnectButton />,
           tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="home" color={color} />,
         }}
       />

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
-import { SyncStatusBar } from '~/features/sync/components/SyncStatusBar';
+import { SyncStatusBar } from '~/shared/components/SyncStatusBar';
+import { ReconnectButton } from '~/shared/components/ReconnectButton';
 
 export default function mapLayout() {
   return (
@@ -9,6 +10,7 @@ export default function mapLayout() {
         options={{
           headerTitle: () => <SyncStatusBar />,
           headerTitleAlign: 'center',
+          headerRight: () => <ReconnectButton />,
         }}
       />
     </Stack>

@@ -12,6 +12,8 @@ import migrations from '../drizzle/sqlite/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { migrateAddVersionColumn } from '~/db/migrations/add_version_column';
 import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
+import { PopupProvider } from '~/shared/contexts/PopupContext';
 
 export const DATABASE_NAME = 'local.db';
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
@@ -19,17 +21,7 @@ export const db = drizzle(expoDB, { schema: { pins } });
 
 // Helper component to initialize real-time sync inside QueryProvider
 function RealTimeSyncInitializer() {
-  const [deviceId] = useState(() => {
-    // Generate a stable device ID or retrieve from storage
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('deviceId') : null;
-    if (stored) return stored;
-
-    const newId = `device-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('deviceId', newId);
-    }
-    return newId;
-  });
+  const deviceId = getDeviceId();
 
   useRealTimeSync(deviceId);
   return null;
@@ -100,20 +92,22 @@ export default function RootLayout() {
           <QueryProvider>
             <RealTimeSyncInitializer />
             <SafeAreaProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="form/[pinId]"
-                  options={({ route }) => {
-                    const { pinName } = route.params as { pinName?: string };
-                    return {
-                      title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
-                      headerBackTitle: 'All forms',
-                      headerBackTitleVisible: false,
-                    };
-                  }}
-                />
-              </Stack>
+              <PopupProvider>
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="form/[pinId]"
+                    options={({ route }) => {
+                      const { pinName } = route.params as { pinName?: string };
+                      return {
+                        title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
+                        headerBackTitle: 'All forms',
+                        headerBackTitleVisible: false,
+                      };
+                    }}
+                  />
+                </Stack>
+              </PopupProvider>
             </SafeAreaProvider>
           </QueryProvider>
         </SQLiteProvider>

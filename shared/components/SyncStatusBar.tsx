@@ -1,13 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { processQueue, getQueueMetrics, retryFailed, clearFailed } from '~/services/sync/queue';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { usePopup } from '~/shared/contexts/PopupContext';
 
 export const SyncStatusBar = () => {
   const queryClient = useQueryClient();
+  const { showPopup } = usePopup();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [popup, setPopup] = useState<{ message: string; color: string } | null>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Use React Query for polling queue metrics
   const { data: metrics } = useQuery({
@@ -19,25 +19,6 @@ export const SyncStatusBar = () => {
 
   const queuePending = metrics?.pending || 0;
   const queueFailed = metrics?.failed || 0;
-
-  const showPopup = (message: string, color: string) => {
-    setPopup({ message, color });
-
-    fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => setPopup(null));
-      }, 1500);
-    });
-  };
 
   const handlePress = async () => {
     if (isSyncing) return; // Prevent double-tap
@@ -166,13 +147,6 @@ export const SyncStatusBar = () => {
           ]}>
           <Text style={[styles.statusText, { color: statusColor }]}>{displayText}</Text>
         </Pressable>
-
-        {popup && (
-          <Animated.View
-            style={[styles.popup, { opacity: fadeAnim, backgroundColor: popup.color }]}>
-            <Text style={styles.popupText}>{popup.message}</Text>
-          </Animated.View>
-        )}
       </View>
     </View>
   );
@@ -199,16 +173,4 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   statusText: { fontSize: 14, fontWeight: '600' },
-  popup: {
-    position: 'absolute',
-    top: '100%', // just below the button
-    marginTop: 8, // spacing
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    width: 140,
-    alignItems: 'center',
-    elevation: 5,
-  },
-  popupText: { color: 'white', fontWeight: '600', fontSize: 13 },
 });

@@ -61,7 +61,7 @@ class WebSocketManager {
 
     this.userId = userId;
     this.disconnect(); // Clean up any existing connection
-    this.updateStatus({ status: 'connecting' });
+    this.updateStatus({ status: 'connecting', reconnectAttempts: 0 });
     this.createConnection();
   }
 
