@@ -7,6 +7,7 @@ import PinDetailsDisplay from './PinDetailsDisplay';
 import Spacer from '~/shared/components/ui/Spacer';
 import { PinForm, PinFormValues } from './PinForm';
 import { MaterialIcons } from '@expo/vector-icons';
+import { parseJsonArray } from '~/shared/utils/parsing';
 
 type PinDetailsProps = {
   pin: Pin;
@@ -16,17 +17,7 @@ type PinDetailsProps = {
 
 //helper
 const intoPinFormValues = (pin: Pin): PinFormValues => {
-  let parsedLocalImages: string[] = [];
-  try {
-    if (pin.localImages && pin.localImages !== '') {
-      const parsed = JSON.parse(pin.localImages);
-      // Ensure it's always an array
-      parsedLocalImages = Array.isArray(parsed) ? parsed : [];
-    }
-  } catch (error) {
-    console.error('Error parsing localImages:', error);
-    parsedLocalImages = [];
-  }
+  const parsedLocalImages = parseJsonArray(pin.localImages);
 
   return {
     id: pin.id,

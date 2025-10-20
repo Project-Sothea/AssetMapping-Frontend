@@ -5,6 +5,7 @@
 
 import { apiClient } from '~/services/apiClient';
 import { extractFilename } from '../utils/uriUtils';
+import { parseUriInput } from '~/shared/utils/parsing';
 
 interface SignedUploadData {
   localUri: string;
@@ -21,7 +22,7 @@ export async function imageUpload(
   entityId: string,
   localUris: string[] | string | null | undefined
 ): Promise<string[]> {
-  const uris = normalizeUrisInput(localUris);
+  const uris = parseUriInput(localUris);
 
   if (uris.length === 0) return [];
 
@@ -35,28 +36,6 @@ export async function imageUpload(
 }
 
 // ========== Helper Functions ==========
-
-/**
- * Normalize various input types to a string array
- */
-function normalizeUrisInput(localUris: string[] | string | null | undefined): string[] {
-  if (!localUris) return [];
-
-  if (typeof localUris === 'string') {
-    try {
-      return JSON.parse(localUris);
-    } catch {
-      // If it's a single URI string, wrap in array
-      return [localUris];
-    }
-  }
-
-  if (Array.isArray(localUris)) {
-    return localUris;
-  }
-
-  return [];
-}
 
 /**
  * Prepare signed upload URLs for all images

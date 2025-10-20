@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'rea
 import { useState, useMemo } from 'react';
 import { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
+import { parseJsonArray } from '~/shared/utils/parsing';
 
 type PinDetailsProps = { pin: Pin };
 
@@ -10,11 +11,7 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const imageURIs: string[] = useMemo(() => {
-    try {
-      return pin.localImages ? JSON.parse(pin.localImages) : [];
-    } catch {
-      return [];
-    }
+    return parseJsonArray(pin.localImages);
   }, [pin.localImages]);
 
   const openImage = (index: number) => {

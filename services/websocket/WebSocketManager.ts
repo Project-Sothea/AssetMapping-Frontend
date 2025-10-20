@@ -13,6 +13,7 @@
  */
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
+import { safeJsonParse } from '~/shared/utils/parsing';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
 type MessageHandler = (message: any) => void;
@@ -193,7 +194,7 @@ class WebSocketManager {
    */
   private handleMessage(event: MessageEvent): void {
     try {
-      const message = JSON.parse(event.data);
+      const message = safeJsonParse(event.data, { type: 'unknown' });
 
       // Handle pong response for latency measurement
       if (message.type === 'pong' && this.pingStartTime) {

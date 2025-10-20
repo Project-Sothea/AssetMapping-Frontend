@@ -5,6 +5,7 @@ import { syncQueue } from '~/db/schema';
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
 import { sanitizeForDb } from '~/db/utils';
+import { safeJsonParse } from '~/shared/utils/parsing';
 
 export async function enqueue(params: {
   operation: Operation;
@@ -60,12 +61,8 @@ export async function enqueue(params: {
   }
 }
 
-/**
- * Processes a queued operation by executing the appropriate sync function
- * @param op - The queued operation object containing entityType, operation, and payload
- */
 export async function processOperation(op: any): Promise<void> {
-  const payload = JSON.parse(op.payload);
+  const payload = safeJsonParse(op.payload, {});
   if (op.entityType === 'pin') await syncPin(op.operation, payload);
   else await syncForm(op.operation, payload);
 }

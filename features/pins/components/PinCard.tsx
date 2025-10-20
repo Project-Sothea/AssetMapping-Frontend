@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
+import { parseJsonArray } from '~/shared/utils/parsing';
 
 type PinCardProps = {
   pin: Pin;
@@ -21,11 +22,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
 
   // Parse local images
   const imageURIs: string[] = useMemo(() => {
-    try {
-      return pin.localImages && pin.localImages !== '' ? JSON.parse(pin.localImages) : [];
-    } catch {
-      return [];
-    }
+    return parseJsonArray(pin.localImages);
   }, [pin.localImages]);
 
   return (

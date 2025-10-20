@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { parseJsonArray } from '~/shared/utils/parsing';
 
 export function isLocalUri(uri: string): boolean {
   return uri.startsWith('file://') || uri.startsWith('/');
@@ -65,17 +66,7 @@ export function extractFilenames(uris: string[]): string[] {
  * Parse localImages field (JSON string or array) into array of URIs
  */
 export function parseImageUris(localImages: string | string[] | undefined | null): string[] {
-  if (!localImages) return [];
-
-  if (typeof localImages === 'string') {
-    try {
-      return JSON.parse(localImages);
-    } catch {
-      return [];
-    }
-  }
-
-  return Array.isArray(localImages) ? localImages : [];
+  return parseJsonArray(localImages);
 }
 
 /**
