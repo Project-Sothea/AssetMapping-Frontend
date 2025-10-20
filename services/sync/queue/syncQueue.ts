@@ -14,7 +14,7 @@ import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
 import { Operation, QueueMetrics } from './types';
 import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
-import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueUtils';
+import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueState';
 
 // ==================== Public API ====================
 

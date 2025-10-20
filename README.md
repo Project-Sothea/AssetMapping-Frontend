@@ -50,29 +50,6 @@ npx expo run:android
 - **React Query** for API state
 - **Jest** for testing
 
-## Architecture
-
-```
-┌─────────────────┐
-│  Mobile App     │
-│  (React Native) │
-└────────┬────────┘
-         │
-         │ API Client
-         │
-┌────────▼────────┐      ┌─────────────┐      ┌──────────────┐
-│  Backend API    │─────▶│   Redis     │      │    Kafka     │
-│  (Express.js)   │      │(Idempotency)│      │  (Events)    │
-└────────┬────────┘      └─────────────┘      └──────────────┘
-         │
-         │
-         │
-┌────────▼────────┐
-│    Supabase     │
-│  (PostgreSQL)   │
-└─────────────────┘
-```
-
 ## Project Structure
 
 ```

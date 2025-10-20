@@ -29,6 +29,43 @@ export async function syncPin(operation: Operation, data: any): Promise<void> {
   await updateLocalPinAfterSync(data.id, remoteUrls, validLocalUris);
 }
 
+/**
+ * Sync form to backend
+ */
+export async function syncForm(operation: Operation, data: any): Promise<void> {
+  const { failureReason, status, lastSyncedAt, lastFailedSyncAt, ...rest } = data;
+
+  const response = await apiClient.syncItem({
+    idempotencyKey: uuidv4(),
+    entityType: 'form',
+    operation,
+    payload:
+      operation === 'delete'
+        ? { id: data.id }
+        : {
+            ...rest,
+            updatedAt: rest.updatedAt || new Date().toISOString(),
+          },
+    deviceId: 'mobile-app',
+    timestamp: new Date().toISOString(),
+  });
+
+  if (!response.success) {
+    throw new Error(response.error || 'Sync failed');
+  }
+
+  // Mark form as synced in local DB (skip for delete operations)
+  if (operation !== 'delete') {
+    await db
+      .update(forms)
+      .set({
+        lastSyncedAt: new Date().toISOString(),
+        status: 'synced',
+      })
+      .where(eq(forms.id, data.id));
+  }
+}
+
 // ========== Helper Functions ==========
 
 /**
@@ -110,41 +147,4 @@ async function updateLocalPinAfterSync(
   }
 
   await db.update(pins).set(updates).where(eq(pins.id, pinId));
-}
-
-/**
- * Sync form to backend
- */
-export async function syncForm(operation: Operation, data: any): Promise<void> {
-  const { failureReason, status, lastSyncedAt, lastFailedSyncAt, ...rest } = data;
-
-  const response = await apiClient.syncItem({
-    idempotencyKey: uuidv4(),
-    entityType: 'form',
-    operation,
-    payload:
-      operation === 'delete'
-        ? { id: data.id }
-        : {
-            ...rest,
-            updatedAt: rest.updatedAt || new Date().toISOString(),
-          },
-    deviceId: 'mobile-app',
-    timestamp: new Date().toISOString(),
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Sync failed');
-  }
-
-  // Mark form as synced in local DB (skip for delete operations)
-  if (operation !== 'delete') {
-    await db
-      .update(forms)
-      .set({
-        lastSyncedAt: new Date().toISOString(),
-        status: 'synced',
-      })
-      .where(eq(forms.id, data.id));
-  }
 }

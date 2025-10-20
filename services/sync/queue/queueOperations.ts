@@ -7,6 +7,21 @@ import { Operation, EntityType } from './types';
 import { sanitizeForDb } from '~/db/utils';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
+/**
+ * Sync a queued operation to remote by syncing the entity (pin or form) based on its type and operation.
+ * @param op - The operation object from the queue.
+ */
+export async function processOperation(op: any): Promise<void> {
+  const payload = safeJsonParse(op.payload, {});
+  if (op.entityType === 'pin') await syncPin(op.operation, payload);
+  else await syncForm(op.operation, payload);
+}
+
+/**
+ * Enqueues a new operation into the sync queue for later processing.
+ * @param params - The operation details including type, entity, and payload.
+ * @returns The unique operation ID.
+ */
 export async function enqueue(params: {
   operation: Operation;
   entityType: EntityType;
@@ -61,12 +76,10 @@ export async function enqueue(params: {
   }
 }
 
-export async function processOperation(op: any): Promise<void> {
-  const payload = safeJsonParse(op.payload, {});
-  if (op.entityType === 'pin') await syncPin(op.operation, payload);
-  else await syncForm(op.operation, payload);
-}
-
+/**
+ * Marks a queued operation as completed in the database.
+ * @param operationId - The ID of the operation to mark as completed.
+ */
 export async function markCompleted(operationId: string): Promise<void> {
   await db
     .update(syncQueue)
@@ -74,6 +87,11 @@ export async function markCompleted(operationId: string): Promise<void> {
     .where(eq(syncQueue.id, operationId));
 }
 
+/**
+ * Handles errors for a failed operation, updating attempts and status accordingly.
+ * @param op - The operation object that failed.
+ * @param error - The error that occurred.
+ */
 export async function handleError(op: any, error: Error): Promise<void> {
   const attempts = op.attempts + 1;
   const isRetriable = error.message.includes('network') || error.message.includes('timeout');

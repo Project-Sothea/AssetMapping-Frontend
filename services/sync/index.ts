@@ -3,6 +3,3 @@
 
 // Queue-based sync system (current implementation)
 export * from './queue';
-
-// Image management
-export * as images from '../images';
