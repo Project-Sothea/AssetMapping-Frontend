@@ -8,8 +8,13 @@ export async function createPinDb(pin: Pin): Promise<void> {
   await db.insert(pins).values(sanitizePinForDb(pin));
 }
 
-export async function updatePinDb(pin: Pin): Promise<void> {
-  await db.update(pins).set(sanitizePinForDb(pin)).where(eq(pins.id, pin.id));
+export async function updatePinDb(pin: Pin): Promise<Pin> {
+  const result = await db
+    .update(pins)
+    .set(sanitizePinForDb(pin))
+    .where(eq(pins.id, pin.id))
+    .returning();
+  return result[0] ?? null;
 }
 
 export async function getPinById(id: string): Promise<Pin | null> {

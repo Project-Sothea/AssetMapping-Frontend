@@ -12,12 +12,26 @@ export async function createPin(pin: Omit<Pin, 'id'>): Promise<Pin> {
 }
 
 export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin> {
-  const existing = await getPinById(id);
-  if (!existing) throw new Error(`Pin ${id} not found`);
-  const updated = await updatePinImages(existing, updates);
-  await updatePinDb(updated);
-  await enqueuePin('update', updated);
-  return updated;
+  try {
+    const existing = await getPinById(id);
+    if (!existing) {
+      throw new Error(`Pin ${id} not found`);
+    }
+
+    // Process image updates (handles add/remove/keep)
+    const updated = await updatePinImages(existing, updates);
+
+    // Save to local database
+    const saved = await updatePinDb(updated);
+
+    // Queue for background sync to backend
+    await enqueuePin('update', saved);
+
+    return updated;
+  } catch (error) {
+    console.error('❌ Failed to update pin:', error);
+    throw error;
+  }
 }
 
 export async function deletePin(id: string): Promise<void> {

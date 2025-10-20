@@ -6,6 +6,13 @@
 import { apiClient } from '~/services/apiClient';
 import { extractFilename } from '../utils/uriUtils';
 
+interface SignedUploadData {
+  localUri: string;
+  signedUrl: string;
+  publicUrl: string;
+  blob: Blob;
+}
+
 /**
  * Upload local images to remote storage
  * @returns Array of public URLs for uploaded images
@@ -14,73 +21,137 @@ export async function imageUpload(
   entityId: string,
   localUris: string[] | string | null | undefined
 ): Promise<string[]> {
-  // Handle various input types
-  let uris: string[] = [];
+  const uris = normalizeUrisInput(localUris);
 
+  if (uris.length === 0) return [];
+
+  console.log(`📤 Uploading ${uris.length} images for ${entityId}`);
+
+  const signedData = await prepareSignedUploads(entityId, uris);
+  const uploadedUrls = await uploadAllImages(signedData);
+
+  console.log(`✅ Uploaded ${uploadedUrls.length} images`);
+  return uploadedUrls;
+}
+
+// ========== Helper Functions ==========
+
+/**
+ * Normalize various input types to a string array
+ */
+function normalizeUrisInput(localUris: string[] | string | null | undefined): string[] {
   if (!localUris) return [];
 
   if (typeof localUris === 'string') {
     try {
-      uris = JSON.parse(localUris);
+      return JSON.parse(localUris);
     } catch {
       // If it's a single URI string, wrap in array
-      uris = [localUris];
+      return [localUris];
     }
-  } else if (Array.isArray(localUris)) {
-    uris = localUris;
-  } else {
-    return [];
   }
 
-  if (!uris.length) return [];
+  if (Array.isArray(localUris)) {
+    return localUris;
+  }
 
-  console.log(`📤 Uploading ${uris.length} images for ${entityId}`);
+  return [];
+}
 
-  // Get signed URLs for each image
-  const signedUrls = await Promise.all(
-    uris.map(async (uri, index) => {
-      const filename = extractFilename(uri) || `image_${index}_${Date.now()}.jpg`;
+/**
+ * Prepare signed upload URLs for all images
+ */
+async function prepareSignedUploads(entityId: string, uris: string[]): Promise<SignedUploadData[]> {
+  return Promise.all(uris.map((uri, index) => prepareSignedUpload(entityId, uri, index)));
+}
 
-      // Fetch the image to get its size
-      const response = await fetch(uri);
-      if (!response.ok) throw new Error(`Failed to read image: ${response.status}`);
-      const blob = await response.blob();
+/**
+ * Prepare signed upload URL for a single image
+ */
+async function prepareSignedUpload(
+  entityId: string,
+  uri: string,
+  index: number
+): Promise<SignedUploadData> {
+  const filename = extractFilename(uri) || `image_${index}_${Date.now()}.jpg`;
+  const blob = await fetchImageBlob(uri);
+  const { uploadUrl, publicUrl } = await getSignedUrl(entityId, filename, blob.size);
 
-      const result = await apiClient.getSignedUrl({
-        entityType: 'pin',
-        entityId,
-        filename,
-        contentType: 'image/jpeg',
-        sizeBytes: blob.size,
-      });
+  return {
+    localUri: uri,
+    signedUrl: uploadUrl,
+    publicUrl,
+    blob,
+  };
+}
 
-      if (!result.success || !result.data) {
-        throw new Error(`Failed to get signed URL: ${result.error}`);
-      }
+/**
+ * Fetch image as blob from local URI
+ */
+async function fetchImageBlob(uri: string): Promise<Blob> {
+  const response = await fetch(uri);
 
-      return {
-        localUri: uri,
-        signedUrl: result.data.uploadUrl,
-        publicUrl: result.data.publicUrl,
-        blob, // Pass blob to avoid fetching twice
-      };
-    })
+  if (!response.ok) {
+    throw new Error(`Failed to read image: ${response.status}`);
+  }
+
+  return response.blob();
+}
+
+/**
+ * Get signed URL from backend
+ */
+async function getSignedUrl(
+  entityId: string,
+  filename: string,
+  sizeBytes: number
+): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const result = await apiClient.getSignedUrl({
+    entityType: 'pin',
+    entityId,
+    filename,
+    contentType: 'image/jpeg',
+    sizeBytes,
+  });
+
+  if (!result.success || !result.data) {
+    throw new Error(`Failed to get signed URL: ${result.error}`);
+  }
+
+  return {
+    uploadUrl: result.data.uploadUrl,
+    publicUrl: result.data.publicUrl,
+  };
+}
+
+/**
+ * Upload all images to their signed URLs
+ */
+async function uploadAllImages(signedData: SignedUploadData[]): Promise<string[]> {
+  return Promise.all(
+    signedData.map(({ signedUrl, publicUrl, blob }) =>
+      uploadSingleImage(signedUrl, publicUrl, blob)
+    )
   );
+}
 
-  // Upload each image
-  const uploadedUrls = await Promise.all(
-    signedUrls.map(async ({ signedUrl, publicUrl, blob }) => {
-      const uploadRes = await fetch(signedUrl, {
-        method: 'PUT',
-        body: blob,
-        headers: { 'Content-Type': 'image/jpeg' },
-      });
+/**
+ * Upload a single image to its signed URL
+ */
+async function uploadSingleImage(
+  signedUrl: string,
+  publicUrl: string,
+  blob: Blob
+): Promise<string> {
+  const response = await fetch(signedUrl, {
+    method: 'PUT',
+    body: blob,
+    headers: { 'Content-Type': 'image/jpeg' },
+  });
 
-      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
-      return publicUrl;
-    })
-  );
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status}`);
+  }
 
-  console.log(`✅ Uploaded ${uploadedUrls.length} images`);
-  return uploadedUrls;
+  return publicUrl;
 }

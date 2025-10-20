@@ -1,18 +1,12 @@
 // imageStorage.ts
-
 import { copyFile, downloadFile, deleteFile } from './fileSystemsUtils';
 import { isLocalUri, isRemoteUri, generateUniqueFilename } from '../utils/uriUtils';
-import { cleanupEmptyDirectory, getPinDirectoryPath } from './directoryUtils';
+import { getPinDirectoryPath } from './directoryUtils';
+// import { cleanupEmptyDirectory } from './directoryUtils';
 
 // --- Interfaces ---
 export interface Result {
   success: string[];
-  fail: string[];
-}
-
-export interface DownloadResult {
-  localImages: string[];
-  images: string[];
   fail: string[];
 }
 
@@ -28,6 +22,12 @@ export async function saveNewImages(pinId: string, newUris: string[]): Promise<R
   return await processBatchOperation(newUris, async (uri) => saveImage(uri, pinDirName));
 }
 
+/**
+ *
+ * @param pinId
+ * @param filenames the full URIs
+ * @returns
+ */
 export async function deleteImages(pinId: string, filenames: string[]): Promise<Result> {
   if (!filenames?.length) return { success: [], fail: [] };
 
@@ -35,11 +35,12 @@ export async function deleteImages(pinId: string, filenames: string[]): Promise<
 
   const result = await processBatchOperation(filenames, async (filename) => {
     const uri = `${pinDirName}${filename}`;
+    // const uri = `${filename}`;
     await deleteFile(uri);
     return uri;
   });
 
-  await cleanupEmptyDirectory(pinDirName);
+  // await cleanupEmptyDirectory(pinDirName);
 
   return result;
 }

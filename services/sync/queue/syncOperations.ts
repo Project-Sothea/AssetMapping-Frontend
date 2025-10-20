@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
 import { pins, forms } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
-import { ImageManager } from '~/services/images';
+import { validateAndUploadImages } from '~/services/images';
 
 type Operation = 'create' | 'update' | 'delete';
 
@@ -15,40 +15,62 @@ type Operation = 'create' | 'update' | 'delete';
  * Sync pin to backend
  */
 export async function syncPin(operation: Operation, data: any): Promise<void> {
+  // Handle delete operations
   if (operation === 'delete') {
-    const response = await apiClient.syncItem({
-      idempotencyKey: uuidv4(),
-      entityType: 'pin',
-      operation: 'delete',
-      payload: { id: data.id },
-      deviceId: 'mobile-app',
-      timestamp: new Date().toISOString(),
-    });
-    if (!response.success) throw new Error(response.error || 'Sync failed');
+    await deletePinOnBackend(data.id);
     return;
   }
 
-  // Upload images if present
-  let remoteUrls: string[] = [];
-  if (data.localImages?.length > 0) {
-    remoteUrls = await ImageManager.uploadImages(data.id, data.localImages);
-  }
+  // Handle create/update operations with image upload
+  const { remoteUrls, validLocalUris } = await validateAndUploadImages(data.id, data.localImages);
 
-  // Prepare payload
+  await syncPinToBackend(operation, data, remoteUrls);
+
+  await updateLocalPinAfterSync(data.id, remoteUrls, validLocalUris);
+}
+
+// ========== Helper Functions ==========
+
+/**
+ * Delete pin on backend
+ */
+async function deletePinOnBackend(pinId: string): Promise<void> {
+  const response = await apiClient.syncItem({
+    idempotencyKey: uuidv4(),
+    entityType: 'pin',
+    operation: 'delete',
+    payload: { id: pinId },
+    deviceId: 'mobile-app',
+    timestamp: new Date().toISOString(),
+  });
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delete pin');
+  }
+}
+
+/**
+ * Sync pin data to backend
+ */
+async function syncPinToBackend(
+  operation: Operation,
+  data: any,
+  remoteUrls: string[]
+): Promise<void> {
   const { lastSyncedAt, lastFailedSyncAt, status, failureReason, ...rest } = data;
+
   const payload: any = {
     ...rest,
     updatedAt: rest.updatedAt || new Date().toISOString(),
   };
 
-  // Set images field
+  // Include remote image URLs if available
   if (remoteUrls.length > 0) {
     payload.images = JSON.stringify(remoteUrls);
   } else if (rest.images) {
     payload.images = rest.images;
   }
 
-  // Sync to backend
   const response = await apiClient.syncItem({
     idempotencyKey: uuidv4(),
     entityType: 'pin',
@@ -61,27 +83,33 @@ export async function syncPin(operation: Operation, data: any): Promise<void> {
   if (!response.success) {
     throw new Error(response.error || 'Sync failed');
   }
+}
 
-  // Update local DB with remote URLs and sync status
+/**
+ * Update local database after successful sync
+ */
+async function updateLocalPinAfterSync(
+  pinId: string,
+  remoteUrls: string[],
+  validLocalUris: string[]
+): Promise<void> {
+  const updates: any = {
+    lastSyncedAt: new Date().toISOString(),
+    status: 'synced',
+  };
+
+  // Update remote image URLs if we uploaded any
   if (remoteUrls.length > 0) {
-    await db
-      .update(pins)
-      .set({
-        images: JSON.stringify(remoteUrls),
-        lastSyncedAt: new Date().toISOString(),
-        status: 'synced',
-      })
-      .where(eq(pins.id, data.id));
-  } else {
-    // Still update sync status even without images
-    await db
-      .update(pins)
-      .set({
-        lastSyncedAt: new Date().toISOString(),
-        status: 'synced',
-      })
-      .where(eq(pins.id, data.id));
+    updates.images = JSON.stringify(remoteUrls);
   }
+
+  // Clean up localImages to remove deleted/invalid files
+  if (validLocalUris.length > 0) {
+    updates.localImages = JSON.stringify(validLocalUris);
+    console.log(`Cleaned up localImages: ${validLocalUris.length} valid files`);
+  }
+
+  await db.update(pins).set(updates).where(eq(pins.id, pinId));
 }
 
 /**
