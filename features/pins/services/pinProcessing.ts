@@ -1,5 +1,5 @@
 import { ImageManager } from '~/services/images/ImageManager';
-import { parseImageUris, areImagesEqual, extractFilenames } from '~/services/images/utils/uriUtils';
+import { parseImageUris, areUrisEqual } from '~/services/images/utils/uriUtils';
 import { Pin } from '~/db/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,7 +39,7 @@ export async function updatePinImages(existingPin: Pin, updates: Partial<Pin>): 
   const newUris = parseImageUris(updates.localImages);
 
   // If images haven't changed, skip image processing
-  if (areImagesEqual(existingUris, newUris)) {
+  if (areUrisEqual(existingUris, newUris)) {
     return {
       ...existingPin,
       ...updates,
@@ -52,38 +52,22 @@ export async function updatePinImages(existingPin: Pin, updates: Partial<Pin>): 
 
   // Handle complete removal
   if (existingUris.length === 0 && newUris.length === 0) {
-    await deleteAllImages(existingPin.id, existingUris);
+    console.log('deleting: ', existingUris);
+    await ImageManager.deleteImages(existingUris);
     return { ...updatedPin, localImages: '[]', images: null };
   }
 
   // Handle incremental update (add/remove specific images)
-  const finalUris = await processIncrementalImageUpdate(
-    existingPin.id,
-    updatedPin.id,
-    existingUris,
-    newUris
-  );
+  const finalUris = await processIncrementalImageUpdate(updatedPin.id, existingUris, newUris);
 
   return { ...updatedPin, localImages: JSON.stringify(finalUris), images: null };
 }
 
 // ========== Helper Functions ==========
-
-/**
- * Delete all images for a pin
- */
-async function deleteAllImages(pinId: string, imageUris: string[]): Promise<void> {
-  if (imageUris.length === 0) return;
-
-  const filenames = extractFilenames(imageUris);
-  await ImageManager.deleteImages(pinId, filenames);
-}
-
 /**
  * Process incremental image update (delete removed, keep existing, add new)
  */
 async function processIncrementalImageUpdate(
-  existingPinId: string,
   updatedPinId: string,
   existingUris: string[],
   newUris: string[]
@@ -92,18 +76,12 @@ async function processIncrementalImageUpdate(
   const urisToDelete = existingUris.filter((uri) => !newUris.includes(uri));
   const urisToAdd = newUris.filter((uri) => !existingUris.includes(uri));
 
-  console.log('📊 Image Update:');
-  console.log('  Before:', existingUris);
-  console.log('  After:', newUris);
-  console.log('  → Delete:', urisToDelete);
-  console.log('  → Add:', urisToAdd);
-
   // Delete removed images
   if (urisToDelete.length > 0) {
     try {
-      const filenames = extractFilenames(urisToDelete);
-      await ImageManager.deleteImages(existingPinId, filenames);
-      console.log('  ✓ Deleted:', filenames);
+      // const filenames = extractFilenames(urisToDelete);
+      await ImageManager.deleteImages(urisToDelete);
+      console.log('  ✓ Deleted:', urisToDelete);
     } catch (error) {
       console.error('  ✗ Delete failed:', error);
       // Continue - deletion failure shouldn't break the update

@@ -28,14 +28,14 @@ export async function saveNewImages(pinId: string, newUris: string[]): Promise<R
  * @param filenames the full URIs
  * @returns
  */
-export async function deleteImages(pinId: string, filenames: string[]): Promise<Result> {
+export async function deleteImages(filenames: string[]): Promise<Result> {
   if (!filenames?.length) return { success: [], fail: [] };
 
-  const pinDirName = await getPinDirectoryPath(pinId);
+  // const pinDirName = await getPinDirectoryPath(pinId);
 
   const result = await processBatchOperation(filenames, async (filename) => {
-    const uri = `${pinDirName}${filename}`;
-    // const uri = `${filename}`;
+    // const uri = `${pinDirName}${filename}`;
+    const uri = `${filename}`;
     await deleteFile(uri);
     return uri;
   });

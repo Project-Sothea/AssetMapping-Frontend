@@ -81,9 +81,20 @@ export function parseImageUris(localImages: string | string[] | undefined | null
 /**
  * Check if two image URI arrays are identical
  */
-export function areImagesEqual(uris1: string[], uris2: string[]): boolean {
+export function areUrisEqual(uris1: string[], uris2: string[]): boolean {
   if (uris1.length !== uris2.length) return false;
   const sorted1 = [...uris1].sort();
   const sorted2 = [...uris2].sort();
   return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+}
+
+/**
+ * Calculate differences between two URI arrays
+ * Returns what to add and what to remove to transform array1 into array2
+ */
+export function calculateUriDifferences(existingUris: string[], newUris: string[]) {
+  const toDelete = existingUris.filter((uri) => !newUris.includes(uri));
+  const toAdd = newUris.filter((uri) => !existingUris.includes(uri));
+
+  return { toDelete, toAdd };
 }
