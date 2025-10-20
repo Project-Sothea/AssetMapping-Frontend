@@ -10,9 +10,3 @@ import { offlineManager } from '@rnmapbox/maps';
  * Props for creating a Mapbox offline pack
  */
 export type CreateOfflinePackProps = Parameters<typeof offlineManager.createPack>[0];
-
-/**
- * Alias for CreateOfflinePackProps
- * @deprecated Use CreateOfflinePackProps instead
- */
-export type UseCreatePackProps = CreateOfflinePackProps;

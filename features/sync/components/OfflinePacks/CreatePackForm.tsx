@@ -1,14 +1,14 @@
 import { View, TextInput, StyleSheet, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { UseCreatePackProps } from '~/hooks/OfflinePacks/types';
+import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
 import Spacer from '~/shared/components/ui/Spacer';
 import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
 
 interface Props {
-  onSubmit: (pack: UseCreatePackProps) => void;
+  onSubmit: (pack: CreateOfflinePackProps) => void;
   progress: number;
 }
 
@@ -67,7 +67,7 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
           [Number(values.maxLng), Number(values.maxLat)], //top right (NE)
           [Number(values.minLng), Number(values.minLat)], //bottom left (SW)
         ];
-        const pack: UseCreatePackProps = {
+        const pack: CreateOfflinePackProps = {
           name: values.name,
           styleURL: values.styleURL,
           bounds,

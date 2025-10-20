@@ -71,24 +71,6 @@ export function sanitizeForDb(obj: any): any {
   return sanitized;
 }
 
-export function sanitizeForDb2(obj: any): any {
-  if (obj === null || obj === undefined) return null;
-  if (obj instanceof Date) return obj.toISOString();
-  if (Array.isArray(obj)) return JSON.stringify(obj); // ✅ Fix here
-
-  if (typeof obj === 'object') {
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        sanitized[key] = sanitizeFormForDb(value);
-      }
-    }
-    return sanitized;
-  }
-
-  return obj;
-}
-
 /**
  * Helper: Convert empty strings to null
  */

@@ -45,24 +45,6 @@ export function buildUpsertSet<Table extends Record<string, any>>(
   // }
 }
 
-export function buildSoftDeleteSet<T extends Record<string, any>>(
-  table: T,
-  exclude: (keyof T)[],
-  systemOverrides: Partial<Record<keyof T, any>> = {}
-) {
-  const set: Record<string, any> = {};
-
-  for (const col of Object.keys(table)) {
-    if (exclude.includes(col as keyof T)) continue;
-    set[col] = null; // default nullify
-  }
-
-  return {
-    ...set,
-    ...systemOverrides,
-  };
-}
-
 export const buildConflictUpdateColumns = <
   T extends PgTable | SQLiteTable,
   Q extends keyof T['_']['columns'],

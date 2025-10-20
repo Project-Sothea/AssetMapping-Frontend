@@ -2,7 +2,6 @@
 import { copyFile, downloadFile, deleteFile } from './fileSystemsUtils';
 import { isLocalUri, isRemoteUri, generateUniqueFilename } from '../utils/uriUtils';
 import { getPinDirectoryPath } from './directoryUtils';
-// import { cleanupEmptyDirectory } from './directoryUtils';
 
 // --- Interfaces ---
 export interface Result {
@@ -31,16 +30,11 @@ export async function saveNewImages(pinId: string, newUris: string[]): Promise<R
 export async function deleteImages(filenames: string[]): Promise<Result> {
   if (!filenames?.length) return { success: [], fail: [] };
 
-  // const pinDirName = await getPinDirectoryPath(pinId);
-
   const result = await processBatchOperation(filenames, async (filename) => {
-    // const uri = `${pinDirName}${filename}`;
     const uri = `${filename}`;
     await deleteFile(uri);
     return uri;
   });
-
-  // await cleanupEmptyDirectory(pinDirName);
 
   return result;
 }
