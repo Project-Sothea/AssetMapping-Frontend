@@ -3,12 +3,16 @@ import { useState, useMemo } from 'react';
 import { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
 import { parseJsonArray } from '~/shared/utils/parsing';
+import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 
 type PinDetailsProps = { pin: Pin };
 
 export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Check sync status from operations table
+  const isSynced = usePinQueueStatus(pin.id);
 
   const imageURIs: string[] = useMemo(() => {
     return parseJsonArray(pin.localImages);
@@ -19,14 +23,14 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
     setModalVisible(true);
   };
 
-  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, red if not
+  const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{pin.name}</Text>
         <View style={[styles.statusBadge, { backgroundColor: accentColor }]}>
-          <Text style={styles.statusText}>{pin.status === 'synced' ? 'Synced' : 'Unsynced'}</Text>
+          <Text style={styles.statusText}>{isSynced ? 'Synced' : 'Unsynced'}</Text>
         </View>
       </View>
 

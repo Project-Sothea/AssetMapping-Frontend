@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Button } from 'react-native';
 import { Form as FormType } from '~/db/schema';
+import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 
 type FormCardProps = {
   form: FormType;
@@ -8,8 +9,9 @@ type FormCardProps = {
 };
 
 export const FormCard = ({ form, onEdit, onDelete }: FormCardProps) => {
-  // Determine border color based on status
-  const borderColor = form.status === 'synced' ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced
+  // Determine border color based on sync status from operations table
+  const isSynced = useFormQueueStatus(form.id);
+  const borderColor = isSynced ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced
 
   return (
     <View style={[styles.card, { borderLeftColor: borderColor }]}>

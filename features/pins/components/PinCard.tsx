@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { parseJsonArray } from '~/shared/utils/parsing';
+import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 
 type PinCardProps = {
   pin: Pin;
@@ -13,12 +14,15 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   const router = useRouter();
   const { data: forms = [] } = useFetchForms(pin.id);
 
+  // Check sync status from operations table
+  const isSynced = usePinQueueStatus(pin.id);
+
   const handleViewForms = () => {
     router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
   };
 
   // Dynamic accent color based on synced status
-  const accentColor = pin.status === 'synced' ? '#10B981' : '#e74c3c'; // green if synced, red if not
+  const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   // Parse local images
   const imageURIs: string[] = useMemo(() => {
