@@ -5,6 +5,7 @@ import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
 import Spacer from '~/shared/components/ui/Spacer';
 import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePackForm';
+import PremadePacks from '~/features/sync/components/OfflinePacks/PremadePacks';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
@@ -14,6 +15,17 @@ export default function Home() {
     <ScreenWrapper>
       <ScrollView>
         <Spacer />
+        <PremadePacks
+          progress={progress || 0}
+          onPress={async (pack) => {
+            try {
+              await createPackMutation(pack);
+            } catch (err) {
+              console.error('Premade pack error:', err);
+            }
+          }}
+        />
+        
         <CreatePackForm
           onSubmit={async (pack) => {
             try {
