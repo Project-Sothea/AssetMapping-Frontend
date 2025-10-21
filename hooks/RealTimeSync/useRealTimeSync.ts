@@ -29,6 +29,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { processQueue } from '~/services/sync/queue';
+import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
 
 interface NotificationMessage {
   type: 'pin' | 'form' | 'image' | 'system' | 'welcome' | 'pong';
@@ -59,6 +60,8 @@ export function useRealTimeSync(userId: string | undefined) {
 
     // Subscribe to incoming messages
     const unsubscribe = webSocketManager.onMessage((message: NotificationMessage) => {
+      console.log('🔄 WebSocket notification received:', message);
+
       // Handle different message types
       switch (message.type) {
         case 'welcome':
@@ -71,12 +74,19 @@ export function useRealTimeSync(userId: string | undefined) {
 
         case 'pin':
           console.log('📍 Pin update:', message.action, message.aggregateId);
-          // Invalidate pin queries
-          queryClient.invalidateQueries({ queryKey: ['pins'] });
+
+          // Pull updated pin data from backend and save to local database
           if (message.aggregateId) {
-            queryClient.invalidateQueries({ queryKey: ['pins', message.aggregateId] });
+            pullPinUpdate(message.aggregateId)
+              .then(() => {
+                console.log('✅ Pin data synced from backend to local DB');
+              })
+              .catch((err: any) => {
+                console.warn('⚠️ Failed to pull pin update:', err);
+              });
           }
-          // Trigger automatic queue processing to sync latest data
+
+          // Also process any pending local operations
           processQueue()
             .then(() => {
               console.log('✅ Auto-sync completed after pin update');
@@ -88,18 +98,19 @@ export function useRealTimeSync(userId: string | undefined) {
 
         case 'form':
           console.log('📋 Form update:', message.action, message.aggregateId);
-          // Invalidate form queries
-          queryClient.invalidateQueries({ queryKey: ['forms'] });
+
+          // Pull updated form data from backend and save to local database
           if (message.aggregateId) {
-            queryClient.invalidateQueries({ queryKey: ['forms', message.aggregateId] });
+            pullFormUpdate(message.aggregateId)
+              .then(() => {
+                console.log('✅ Form data synced from backend to local DB');
+              })
+              .catch((err: any) => {
+                console.warn('⚠️ Failed to pull form update:', err);
+              });
           }
-          // Also invalidate pin-specific forms if we have pinId in payload
-          if (message.payload?.pinId) {
-            queryClient.invalidateQueries({
-              queryKey: ['forms', 'pin', message.payload.pinId],
-            });
-          }
-          // Trigger automatic queue processing to sync latest data
+
+          // Also process any pending local operations
           processQueue()
             .then(() => {
               console.log('✅ Auto-sync completed after form update');
