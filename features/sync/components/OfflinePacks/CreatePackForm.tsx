@@ -15,8 +15,6 @@ interface Props {
 const validationSchema = Yup.object({
   name: Yup.string().required('Required'),
   styleURL: Yup.string().required('Required'),
-  minZoom: Yup.number().min(0).max(22).required(),
-  maxZoom: Yup.number().min(0).max(22).required(),
   maxLng: Yup.number()
     .min(-180, 'Longitude must be ≥ -180')
     .max(180, 'Longitude must be ≤ 180')
@@ -71,14 +69,15 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
           name: values.name,
           styleURL: values.styleURL,
           bounds,
-          minZoom: Number(values.minZoom),
-          maxZoom: Number(values.maxZoom),
+          minZoom: 16,
+          maxZoom: 22,
         };
         onSubmit(pack);
       }}>
       {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
         <View style={styles.container}>
-          <Text>Name</Text>
+          <Text style={styles.sectionHeader}>Create Your Own Pack</Text>
+          <Text>Pack Name</Text>
           <TextInput
             placeholder="Name"
             style={styles.input}
@@ -88,28 +87,6 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
           />
           {touched.name && errors.name && <Text style={styles.error}>{errors.name}</Text>}
 
-          <Text>Min Zoom</Text>
-          <TextInput
-            placeholder="Min Zoom"
-            style={styles.input}
-            keyboardType="numeric"
-            onChangeText={handleChange('minZoom')}
-            onBlur={handleBlur('minZoom')}
-            value={String(values.minZoom)}
-          />
-          {touched.minZoom && errors.minZoom && <Text style={styles.error}>{errors.minZoom}</Text>}
-
-          <Text>Max Zoom</Text>
-
-          <TextInput
-            placeholder="Max Zoom"
-            style={styles.input}
-            keyboardType="numeric"
-            onChangeText={handleChange('maxZoom')}
-            onBlur={handleBlur('maxZoom')}
-            value={String(values.maxZoom)}
-          />
-          {touched.maxZoom && errors.maxZoom && <Text style={styles.error}>{errors.maxZoom}</Text>}
 
           <Text>Top Right [lat, lng]</Text>
           <View style={styles.row}>
@@ -213,5 +190,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#333',
     marginTop: 4,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#111827',
   },
 });

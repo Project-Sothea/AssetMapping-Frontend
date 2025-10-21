@@ -43,7 +43,7 @@ const presets: { id: string; title: string; options: CreateOfflinePackProps }[] 
 const PremadePacks: React.FC<Props> = ({ onPress, progress = 0 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Pre-Made Packs</Text>
+      <Text style={styles.sectionHeader}>Pre-Made Packs</Text>
       <View style={styles.row}>
         {presets.map((p) => (
           <View key={p.id} style={styles.preset}>
@@ -72,6 +72,12 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 16,
     marginBottom: 8,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#111827',
   },
   row: {
     flexDirection: 'column',
