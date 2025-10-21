@@ -1,11 +1,17 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { db } from '~/services/drizzleDb';
 import * as schema from '~/db/schema';
-import { isNull, eq, and } from 'drizzle-orm';
+import { isNull, eq, and, desc } from 'drizzle-orm';
 
 export const useFetchLocalPins = () => {
   // Filter out soft-deleted pins
-  const query = db.select().from(schema.pins).where(isNull(schema.pins.deletedAt));
+  // Order pins by last updated time (most recent first) so activity like form create/update
+  // moves the parent pin to the top of the list.
+  const query = db
+    .select()
+    .from(schema.pins)
+    .where(isNull(schema.pins.deletedAt))
+    .orderBy(desc(schema.pins.updatedAt));
   return useLiveQuery(query) ?? [];
 };
 
