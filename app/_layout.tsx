@@ -14,16 +14,40 @@ import { migrateAddVersionColumn } from '~/db/migrations/add_version_column';
 import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 import { PopupProvider } from '~/shared/contexts/PopupContext';
+import { useInitialSync } from '~/hooks/RealTimeSync/useInitialSync';
 
 export const DATABASE_NAME = 'local.db';
 const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
 export const db = drizzle(expoDB, { schema: { pins } });
 
-// Helper component to initialize real-time sync inside QueryProvider
-function RealTimeSyncInitializer() {
+// Helper component to initialize real-time sync and initial data sync
+function SyncInitializer() {
   const deviceId = getDeviceId();
+  const { isLoading: initialSyncLoading, error: initialSyncError } = useInitialSync();
 
   useRealTimeSync(deviceId);
+
+  // Show loading indicator during initial sync
+  if (initialSyncLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#fff',
+        }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={{ marginTop: 10, fontSize: 16 }}>Syncing data...</Text>
+      </View>
+    );
+  }
+
+  // Show error if initial sync failed, but still allow app to continue
+  if (initialSyncError) {
+    console.warn('Initial sync failed, but app will continue:', initialSyncError);
+  }
+
   return null;
 }
 
@@ -90,7 +114,7 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}
           useSuspense>
           <QueryProvider>
-            <RealTimeSyncInitializer />
+            <SyncInitializer />
             <SafeAreaProvider>
               <PopupProvider>
                 <Stack>

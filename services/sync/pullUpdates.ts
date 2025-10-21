@@ -99,6 +99,7 @@ export async function pullFormUpdate(formId: string): Promise<void> {
 
 /**
  * Pull all pins from backend and sync to local database
+ * Issue: the local image URIs pulled do not exist in the device
  */
 export async function pullAllPins(): Promise<void> {
   try {
