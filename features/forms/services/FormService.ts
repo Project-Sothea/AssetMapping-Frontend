@@ -13,9 +13,10 @@ export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
       // touchPin sets the local device time immediately (so UI updates while offline)
       // The updatedAt value will be synced/reconciled with the server when the
       // queued sync operation completes.
+      console.debug(`[FormService] createForm: touching pin ${prepared.pinId} for new form ${prepared.id}`);
       await touchPin(prepared.pinId);
     } catch (err) {
-      console.warn('Failed to touch pin after form create', err);
+      console.warn(`[FormService] createForm: failed to touch pin ${prepared.pinId} for form ${prepared.id}`, err);
     }
   }
   await enqueueForm('create', prepared);
@@ -43,9 +44,10 @@ export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<
       // touchPin sets the local device time immediately (so UI updates while offline)
       // The updatedAt value will be synced/reconciled with the server when the
       // queued sync operation completes.
+      console.debug(`[FormService] updateForm: touching pin ${updated.pinId} for updated form ${updated.id}`);
       await touchPin(updated.pinId);
     } catch (err) {
-      console.warn('Failed to touch pin after form update', err);
+      console.warn(`[FormService] updateForm: failed to touch pin ${updated.pinId} for form ${updated.id}`, err);
     }
   }
   await enqueueForm('update', updated);

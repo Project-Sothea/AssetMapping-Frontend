@@ -21,7 +21,7 @@ export const PinDetailsModal = ({
   onDelete,
 }: PinDetailsModalProps) => {
   // Use live query to automatically re-render when pin data changes (e.g., after sync)
-  const pin = useFetchLocalPin(pinId);
+  const { data: pin } = useFetchLocalPin(pinId);
 
   if (!pin) {
     return (

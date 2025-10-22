@@ -12,7 +12,8 @@ export const useFetchLocalPins = () => {
     .from(schema.pins)
     .where(isNull(schema.pins.deletedAt))
     .orderBy(desc(schema.pins.updatedAt));
-  return useLiveQuery(query) ?? [];
+  const result = useLiveQuery(query) ?? [];
+  return { data: result };
 };
 
 /**
@@ -26,6 +27,6 @@ export const useFetchLocalPin = (pinId: string) => {
     .from(schema.pins)
     .where(and(eq(schema.pins.id, pinId), isNull(schema.pins.deletedAt)));
 
-  const result = useLiveQuery(query);
-  return result?.data?.[0] ?? null;
+  const result = useLiveQuery(query) ?? { data: [] };
+  return { data: result?.data?.[0] ?? null };
 };

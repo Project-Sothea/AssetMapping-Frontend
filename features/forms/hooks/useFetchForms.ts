@@ -9,5 +9,6 @@ export const useFetchForms = (pinId: string) => {
     .select()
     .from(schema.forms)
     .where(and(eq(schema.forms.pinId, pinId), isNull(schema.forms.deletedAt)));
-  return useLiveQuery(query) ?? [];
+  const result = useLiveQuery(query) ?? [];
+  return { data: result };
 };
