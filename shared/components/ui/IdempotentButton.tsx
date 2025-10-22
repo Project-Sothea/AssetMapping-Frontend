@@ -4,13 +4,14 @@ import { Button } from './Button';
 type IdempotentButtonProps = {
   title: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function IdempotentButton({ title, onPress }: IdempotentButtonProps) {
+export function IdempotentButton({ title, onPress, disabled = false,}: IdempotentButtonProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePress = () => {
-    if (isSubmitting) return; // Prevent re-entry
+    if (isSubmitting || disabled) return; // Prevent re-entry
 
     setIsSubmitting(true);
     try {
@@ -22,5 +23,11 @@ export function IdempotentButton({ title, onPress }: IdempotentButtonProps) {
     }
   };
 
-  return <Button title={title} onPress={handlePress} disabled={isSubmitting} />;
+  return (
+    <Button 
+      title={title} 
+      onPress={handlePress} 
+      disabled={disabled || isSubmitting} 
+    />
+  );
 }

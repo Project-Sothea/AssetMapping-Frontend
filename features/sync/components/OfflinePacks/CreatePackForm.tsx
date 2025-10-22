@@ -93,7 +93,7 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
             <TextInput
               placeholder="Lat"
               style={styles.inputHalf}
-              keyboardType="numeric"
+              keyboardType="numbers-and-punctuation"
               onChangeText={handleChange('maxLat')}
               onBlur={handleBlur('maxLat')}
               value={String(values.maxLat)}
@@ -101,7 +101,7 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
             <TextInput
               placeholder="Lng"
               style={styles.inputHalf}
-              keyboardType="numeric"
+              keyboardType="numbers-and-punctuation"
               onChangeText={handleChange('maxLng')}
               onBlur={handleBlur('maxLng')}
               value={String(values.maxLng)}
@@ -113,7 +113,7 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
             <TextInput
               placeholder="Lat"
               style={styles.inputHalf}
-              keyboardType="numeric"
+              keyboardType="numbers-and-punctuation"
               onChangeText={handleChange('minLat')}
               onBlur={handleBlur('minLat')}
               value={String(values.minLat)}
@@ -121,7 +121,7 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
             <TextInput
               placeholder="Lng"
               style={styles.inputHalf}
-              keyboardType="numeric"
+              keyboardType="numbers-and-punctuation"
               onChangeText={handleChange('minLng')}
               onBlur={handleBlur('minLng')}
               value={String(values.minLng)}
@@ -147,10 +147,22 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
+    padding: 16,
     gap: 6,
     backgroundColor: 'white',
     borderRadius: 16,
+    // subtle card shadow (iOS + Android)
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#111827',
   },
   input: {
     borderWidth: 1,
@@ -158,14 +170,17 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 6,
     marginBottom: 6,
+    backgroundColor: '#fff'
   },
   inputHalf: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 8,
-    marginHorizontal: 5,
+    //marginHorizontal: 5,
     borderRadius: 6,
+    marginBottom: 6,
+    backgroundColor: '#fff'
   },
   row: {
     flexDirection: 'row',
@@ -180,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
     borderRadius: 5,
     overflow: 'hidden',
-    marginVertical: 8,
+    //marginVertical: 8,
   },
   progressBar: {
     height: '100%',
@@ -189,12 +204,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     color: '#333',
-    marginTop: 4,
-  },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#111827',
+    marginTop: 6,
   },
 });
