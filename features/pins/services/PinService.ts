@@ -34,33 +34,6 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
   }
 }
 
-/**
- * Update only the updatedAt timestamp on a pin (touch)
- *
- * NOTE: This sets the local device time (new Date().toISOString()) immediately so
- * the UI can reflect recent activity while offline. The timestamp will be synced
- * to the server when the queued sync operation runs; if you require server-authoritative
- * timestamps, update the timestamp to the server value after a successful sync.
- */
-export async function touchPin(id: string): Promise<void> {
-  try {
-    console.debug(`[PinService] touchPin: attempting to touch pin ${id}`);
-    const existing = await getPinById(id);
-    if (!existing) {
-      throw new Error(`Pin ${id} not found`);
-    }
-
-    const updatedAt = new Date().toISOString();
-    const updated = await updatePinDb({ ...existing, updatedAt });
-    console.debug(`[PinService] touchPin: updated pin ${id} updatedAt=${updatedAt}`, updated);
-    return;
-  } catch (err) {
-    // Surface helpful diagnostic info but don't crash the caller
-    console.warn(`[PinService] touchPin: failed to touch pin ${id}`, err);
-    throw err;
-  }
-}
-
 export async function deletePin(id: string): Promise<void> {
   const existing = await getPinById(id);
   if (!existing) throw new Error(`Pin ${id} not found`);

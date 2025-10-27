@@ -1,7 +1,7 @@
 import { createFormDb, updateFormDb, softDeleteFormDb, getFormById } from './formRepository';
 import { prepareFormForInsertion } from './formProcessing';
 import { enqueueForm } from '~/services/sync/queue';
-import { touchPin } from '~/features/pins/services/PinService';
+import { updatePin } from '~/features/pins/services/PinService';
 import { Form } from '~/db/schema';
 
 export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
@@ -10,13 +10,13 @@ export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
   // touch parent pin so its updatedAt reflects new form activity
   if (prepared.pinId) {
     try {
-      // touchPin sets the local device time immediately (so UI updates while offline)
-      // The updatedAt value will be synced/reconciled with the server when the
-      // queued sync operation completes.
-      console.debug(`[FormService] createForm: touching pin ${prepared.pinId} for new form ${prepared.id}`);
-      await touchPin(prepared.pinId);
+      // Update the parent pin's updatedAt using updatePin so the repository
+      // and sync queue logic runs consistently (this also enqueues the pin update).
+      const updatedAt = new Date().toISOString();
+      console.debug(`[FormService] createForm: updating pin ${prepared.pinId} updatedAt=${updatedAt} for new form ${prepared.id}`);
+      await updatePin(prepared.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] createForm: failed to touch pin ${prepared.pinId} for form ${prepared.id}`, err);
+      console.warn(`[FormService] createForm: failed to update pin ${prepared.pinId} for form ${prepared.id}`, err);
     }
   }
   await enqueueForm('create', prepared);
@@ -41,13 +41,11 @@ export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<
   // touch parent pin so its updatedAt reflects updated form activity
   if (updated.pinId) {
     try {
-      // touchPin sets the local device time immediately (so UI updates while offline)
-      // The updatedAt value will be synced/reconciled with the server when the
-      // queued sync operation completes.
-      console.debug(`[FormService] updateForm: touching pin ${updated.pinId} for updated form ${updated.id}`);
-      await touchPin(updated.pinId);
+      const updatedAt = new Date().toISOString();
+      console.debug(`[FormService] updateForm: updating pin ${updated.pinId} updatedAt=${updatedAt} for form ${updated.id}`);
+      await updatePin(updated.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] updateForm: failed to touch pin ${updated.pinId} for form ${updated.id}`, err);
+      console.warn(`[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`, err);
     }
   }
   await enqueueForm('update', updated);
