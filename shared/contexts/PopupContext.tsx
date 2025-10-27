@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
-import { Animated, View, Text, StyleSheet } from 'react-native';
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import { Animated, Text, StyleSheet } from 'react-native';
 
 interface PopupState {
   message: string;
@@ -24,10 +24,12 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [popup, setPopup] = useState<PopupState | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const showPopup = useCallback(
-    (message: string, color: string) => {
-      setPopup({ message, color });
+  const showPopup = useCallback((message: string, color: string) => {
+    setPopup({ message, color });
+  }, []);
 
+  useEffect(() => {
+    if (popup) {
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -42,9 +44,8 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }).start(() => setPopup(null));
         }, 1500);
       });
-    },
-    [fadeAnim]
-  );
+    }
+  }, [popup, fadeAnim]);
 
   return (
     <PopupContext.Provider value={{ showPopup }}>

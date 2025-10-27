@@ -1,1 +1,1 @@
-export { createPin, updatePin, deletePin } from './pinService';
+export { createPin, updatePin, deletePin } from './PinService';
