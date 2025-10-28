@@ -11,6 +11,8 @@ import HealthSection from '../Form/HealthSection';
 import { parseArrayFields } from '~/db/utils';
 
 const validationSchema = Yup.object().shape({
+  // Name is optional but allowed
+  name: Yup.string().nullable(),
   village: Yup.string().nullable().required('Required'),
   villageId: Yup.string().nullable().required('Required'),
   pinId: Yup.string().nullable(),
@@ -29,6 +31,8 @@ export default function Form({ onSubmit, pinId, initialData }: FormProps) {
   const mergedInitialValues = React.useMemo(() => {
     const normalizedInitialData = initialData ? parseArrayFields(initialData) : {};
     return {
+      // Optional user-provided name for the form
+      name: '',
       pinId: pinId,
       village: '',
       villageId: '',

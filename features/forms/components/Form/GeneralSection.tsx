@@ -11,6 +11,16 @@ export default function GeneralSection({
 }: any) {
   return (
     <View style={{ gap: 12 }}>
+      <Text style={styles.question}>Form name</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('name')}
+        onBlur={handleBlur('name')}
+        value={values.name}
+        placeholder="e.g. 2025 December"
+      />
+      {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
+
       <Text style={styles.heading}>General</Text>
 
       <Text style={styles.question}>Which village are you from?*</Text>

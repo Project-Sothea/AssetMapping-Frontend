@@ -93,6 +93,7 @@ export function sanitizeFormForDb(form: any): any {
     version: form.version ?? 1,
     pinId: nullIfEmpty(form.pinId),
     villageId: nullIfEmpty(form.villageId),
+    name: nullIfEmpty(form.name),
     village: nullIfEmpty(form.village),
 
     // Text fields

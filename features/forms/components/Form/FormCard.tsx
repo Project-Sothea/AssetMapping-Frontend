@@ -15,7 +15,11 @@ export const FormCard = ({ form, onEdit, onDelete }: FormCardProps) => {
 
   return (
     <View style={[styles.card, { borderLeftColor: borderColor }]}>
-      <Text style={styles.villageText}>{form.village}</Text>
+      {form.name ? (
+        <Text style={styles.nameText}>{form.name}</Text>
+      ) : (
+        <Text style={styles.villageText}>{form.village}</Text>
+      )}
       <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
       {form.updatedAt && (
         <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
@@ -47,6 +51,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
     color: '#2c3e50',
+  },
+  nameText: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#111827',
   },
   dateText: {
     fontSize: 14,

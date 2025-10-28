@@ -130,6 +130,7 @@ export function buildCommonFormFields(
     // Relations
     pinId: textType('pinId'), // Foreign key
     villageId: textType('villageId'),
+    name: textType('name'),
     village: textType('village'),
 
     // Health Assessment Fields (text fields) - camelCase
