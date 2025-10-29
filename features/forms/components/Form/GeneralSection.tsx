@@ -11,15 +11,18 @@ export default function GeneralSection({
 }: any) {
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.question}>Form name</Text>
-      <TextInput
-        style={styles.input}
-        onChangeText={handleChange('name')}
-        onBlur={handleBlur('name')}
-        value={values.name}
-        placeholder="e.g. 2025 December"
-      />
-      {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
+      <View style={styles.headerCard}>
+        <Text style={styles.headerTitle}>Form name</Text>
+        <TextInput
+          style={styles.inputTitle}        
+          onChangeText={handleChange('name')}
+          onBlur={handleBlur('name')}
+          value={values.name}
+          placeholder="e.g. 2025 December"
+        />
+        {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
+        <Text style={styles.helperText}>This name uniquely identifies the form across exports and downloads.</Text>
+    </View>
 
       <Text style={styles.heading}>General</Text>
 
@@ -66,6 +69,36 @@ export default function GeneralSection({
 }
 
 const styles = StyleSheet.create({
+  headerCard: {                      
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    // subtle card shadow
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    gap: 6,
+  },
+  headerTitle: {                
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  inputTitle: {        
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    minHeight: 48,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  helperText: {            
+    fontSize: 12,
+    color: '#6B7280',
+  },
   heading: {
     fontWeight: 'bold',
     fontSize: 20,
