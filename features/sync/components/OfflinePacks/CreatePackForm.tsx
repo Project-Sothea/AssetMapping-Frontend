@@ -147,16 +147,10 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    padding: 0,
     gap: 6,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    // subtle card shadow (iOS + Android)
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
   },
   sectionHeader: {
     fontSize: 16,

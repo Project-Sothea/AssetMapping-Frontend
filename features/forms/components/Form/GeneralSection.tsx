@@ -69,21 +69,14 @@ export default function GeneralSection({
 }
 
 const styles = StyleSheet.create({
-  headerCard: {                      
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    // subtle card shadow
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  headerCard: {  
+    marginTop: 2,                    
+    marginBottom: 2,
     gap: 6,
   },
   headerTitle: {                
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
   },
   inputTitle: {        
