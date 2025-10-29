@@ -114,7 +114,8 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}
           useSuspense>
           <QueryProvider>
-            <SyncInitializer />
+            {/* Only initialize sync after migrations are complete */}
+            {migrationStatus === 'done' && <SyncInitializer />}
             <SafeAreaProvider>
               <PopupProvider>
                 <Stack>
