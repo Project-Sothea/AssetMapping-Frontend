@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 10,
   },
   error: {
     color: 'red',
