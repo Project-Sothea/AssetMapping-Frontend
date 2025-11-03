@@ -35,16 +35,6 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPopup({ message, color });
   }, []);
 
-  const hidePopup = useCallback(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setPopup(null);
-    });
-  }, [fadeAnim]);
-
   useEffect(() => {
     if (popup) {
       // Reset animation value
@@ -58,7 +48,13 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }).start(() => {
         // Set timeout to hide popup after 1.5 seconds
         timeoutRef.current = setTimeout(() => {
-          hidePopup();
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }).start(() => {
+            setPopup(null);
+          });
         }, 1500);
       });
     }
@@ -70,7 +66,8 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         timeoutRef.current = null;
       }
     };
-  }, [popup, fadeAnim, hidePopup]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [popup]); // fadeAnim is a ref and doesn't change, so it's safe to exclude
 
   return (
     <PopupContext.Provider value={{ showPopup }}>

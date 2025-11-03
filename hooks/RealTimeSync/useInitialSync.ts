@@ -37,13 +37,25 @@ export function useInitialSync(): InitialSyncState {
         // Show non-blocking notification
         showPopup('Syncing data...', '#3498db');
 
-        // Process any pending local operations (outbox)
+        // Add a small delay to ensure database is ready
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Process any pending local operations (outbox) - do this first
+        console.log('📤 Processing pending operations...');
         await processQueue();
 
+        // Small delay between operations to prevent database locks
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Pull all pins from server
+        console.log('📍 Pulling pins from server...');
         await pullAllPins();
 
+        // Small delay between operations
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         // Pull all forms from server
+        console.log('📋 Pulling forms from server...');
         await pullAllForms();
 
         console.log('✅ Initial data sync completed successfully');
