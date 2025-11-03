@@ -1,0 +1,13 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_URL_KEY = 'api_url';
+
+export const getApiUrl = async (): Promise<string | null> => {
+  const storedUrl = await AsyncStorage.getItem(API_URL_KEY);
+  return storedUrl || null;
+};
+
+export const setApiUrl = async (url: string): Promise<void> => {
+  const trimmedUrl = url.trim(); // Trim whitespace
+  await AsyncStorage.setItem(API_URL_KEY, trimmedUrl);
+};

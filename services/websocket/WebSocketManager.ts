@@ -14,6 +14,7 @@
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 import { safeJsonParse } from '~/shared/utils/parsing';
+import { getApiUrl } from '~/services/apiUrl';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
 type MessageHandler = (message: any) => void;
@@ -21,7 +22,6 @@ type MessageHandler = (message: any) => void;
 class WebSocketManager {
   private ws: WebSocket | null = null;
   private userId: string | null = null;
-  private apiUrl: string;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private pingStartTime: number | null = null;
@@ -47,13 +47,13 @@ class WebSocketManager {
   private readonly maxReconnectAttempts = 10;
 
   constructor() {
-    this.apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+    // apiUrl is now fetched dynamically
   }
 
   /**
    * Connect to WebSocket server
    */
-  public connect(userId: string): void {
+  public async connect(userId: string): Promise<void> {
     if (this.userId === userId && this.isConnected()) {
       console.log('✓ Already connected to WebSocket');
       return;
@@ -62,7 +62,7 @@ class WebSocketManager {
     this.userId = userId;
     this.disconnect(); // Clean up any existing connection
     this.updateStatus({ status: 'connecting', reconnectAttempts: 0 });
-    this.createConnection();
+    await this.createConnection();
   }
 
   /**
@@ -144,14 +144,24 @@ class WebSocketManager {
   /**
    * Create WebSocket connection
    */
-  private createConnection(): void {
+  private async createConnection(): Promise<void> {
     if (!this.userId) {
       console.error('Cannot connect: No user ID provided');
       return;
     }
 
     try {
-      const wsUrl = this.apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+      const apiUrl = await getApiUrl();
+      if (!apiUrl) {
+        console.error('Cannot connect: No API URL configured');
+        this.updateStatus({
+          status: 'error',
+          lastError: 'API URL not configured. Please set the backend API URL in the app settings.',
+        });
+        return;
+      }
+
+      const wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
       const url = `${wsUrl}/ws/notifications?userId=${this.userId}`;
 
       console.log('🔌 Connecting to WebSocket:', url);
@@ -280,9 +290,9 @@ class WebSocketManager {
       reconnectAttempts: this.status.reconnectAttempts + 1,
     });
 
-    this.reconnectTimeout = setTimeout(() => {
+    this.reconnectTimeout = setTimeout(async () => {
       if (this.userId) {
-        this.createConnection();
+        await this.createConnection();
       }
     }, delay);
   }

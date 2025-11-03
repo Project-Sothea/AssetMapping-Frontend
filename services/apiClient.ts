@@ -1,3 +1,5 @@
+import { getApiUrl } from './apiUrl';
+
 // API Request types
 export interface SyncItemRequest {
   idempotencyKey: string;
@@ -54,15 +56,24 @@ export interface ValidationResponse {
 }
 
 class ApiClient {
-  private baseUrl: string;
+  private baseUrl: string | null = null;
 
-  constructor(baseUrl: string = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000') {
-    this.baseUrl = baseUrl;
+  private async getBaseUrl(): Promise<string> {
+    if (!this.baseUrl) {
+      this.baseUrl = await getApiUrl();
+      if (!this.baseUrl) {
+        throw new Error(
+          'API URL not configured. Please set the backend API URL in the app settings.'
+        );
+      }
+    }
+    return this.baseUrl;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.baseUrl}${endpoint}`;
+      const baseUrl = await this.getBaseUrl();
+      const url = `${baseUrl}${endpoint}`;
       const response = await fetch(url, {
         ...options,
         headers: {

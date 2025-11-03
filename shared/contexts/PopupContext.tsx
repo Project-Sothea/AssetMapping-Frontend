@@ -23,29 +23,48 @@ export const usePopup = () => {
 export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [popup, setPopup] = useState<PopupState | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const hideTimeoutRef = useRef<number | null>(null);
 
   const showPopup = useCallback((message: string, color: string) => {
+    // Clear any existing timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
     setPopup({ message, color });
   }, []);
 
   useEffect(() => {
     if (popup) {
+      // Reset animation value
       fadeAnim.setValue(0);
+
+      // Start fade in animation
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => setPopup(null));
-        }, 1500);
-      });
+      }).start();
+
+      // Schedule hide after delay
+      hideTimeoutRef.current = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setPopup(null);
+        });
+      }, 1700); // 200ms fade in + 1500ms display
     }
-  }, [popup, fadeAnim]);
+
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, [popup]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <PopupContext.Provider value={{ showPopup }}>

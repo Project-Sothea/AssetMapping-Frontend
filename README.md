@@ -9,8 +9,7 @@ React Native (Expo) app for offline-first asset mapping with Mapbox integration.
 npm install
 
 # Configure environment
-# Add backend API URL to .env:
-# EXPO_PUBLIC_API_URL=http://localhost:3000
+# The backend API URL is configured in-app via the Download tab
 
 # Start development server
 npm start
@@ -103,8 +102,8 @@ Create `.env` file:
 # Required
 EXPO_PUBLIC_MAPBOX_KEY=your_mapbox_token
 
-# For database management (optional)
-SUPABASE_DB_URL=postgresql://user:pass@host:6543/database
+# Optional - Backend API URL is configured in-app
+# SUPABASE_DB_URL=postgresql://user:pass@host:6543/database
 ```
 
 Get Mapbox token: https://account.mapbox.com/access-tokens/  
