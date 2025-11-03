@@ -23,10 +23,27 @@ export const usePopup = () => {
 export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [popup, setPopup] = useState<PopupState | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showPopup = useCallback((message: string, color: string) => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setPopup({ message, color });
   }, []);
+
+  const hidePopup = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setPopup(null);
+    });
+  }, [fadeAnim]);
 
   useEffect(() => {
     if (popup) {
@@ -36,16 +53,21 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         duration: 200,
         useNativeDriver: true,
       }).start(() => {
-        setTimeout(() => {
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => setPopup(null));
+        // Set timeout to hide popup after 1.5 seconds
+        timeoutRef.current = setTimeout(() => {
+          hidePopup();
         }, 1500);
       });
     }
-  }, [popup, fadeAnim]);
+
+    // Cleanup timeout on unmount or when popup changes
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [popup, fadeAnim, hidePopup]);
 
   return (
     <PopupContext.Provider value={{ showPopup }}>

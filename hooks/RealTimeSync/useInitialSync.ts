@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { pullAllPins, pullAllForms } from '~/services/sync/pullUpdates';
 import { processQueue } from '~/services/sync/queue';
+import { usePopup } from '~/shared/contexts/PopupContext';
 
 interface InitialSyncState {
   isLoading: boolean;
@@ -25,6 +26,7 @@ export function useInitialSync(): InitialSyncState {
     error: null,
     completed: false,
   });
+  const { showPopup } = usePopup();
 
   useEffect(() => {
     const performInitialSync = async () => {
@@ -32,7 +34,9 @@ export function useInitialSync(): InitialSyncState {
         setState({ isLoading: true, error: null, completed: false });
         console.log('🚀 Starting initial data sync...');
 
-        //Problem: If the user has offline changes, then would there be race conditions if he pulls the initial sync immediately? or will the websocket just send his changes a second time
+        // Show non-blocking notification
+        showPopup('Syncing data...', '#3498db');
+
         // Process any pending local operations (outbox)
         await processQueue();
 
@@ -44,16 +48,22 @@ export function useInitialSync(): InitialSyncState {
 
         console.log('✅ Initial data sync completed successfully');
         setState({ isLoading: false, error: null, completed: true });
+
+        // Show success notification
+        showPopup('Data synced!', '#27ae60');
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error during initial sync';
         console.error('❌ Initial data sync failed:', error);
         setState({ isLoading: false, error: errorMessage, completed: false });
+
+        // Show error notification but don't block the app
+        showPopup('Sync failed - check connection', '#e74c3c');
       }
     };
 
     performInitialSync();
-  }, []);
+  }, [showPopup]);
 
   return state;
 }
