@@ -6,7 +6,6 @@ import {
   Alert,
   ScrollView,
   TextInput,
-  Button,
 } from 'react-native';
 import { ScreenWrapper } from '~/shared/components/ui/ScreenWrapper';
 import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
@@ -56,7 +55,9 @@ export default function Home() {
             onChangeText={setApiUrlState}
           />
           <Spacer />
-          <Button title="Save API URL" onPress={saveApiUrl} />
+          <TouchableOpacity style={styles.saveButton} onPress={saveApiUrl}>
+            <Text style={styles.saveButtonText}>Save API URL</Text>
+          </TouchableOpacity>
           {!apiUrl && (
             <>
               <Spacer />
@@ -214,5 +215,17 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 13,
     color: '#6B7280',
+  },
+  saveButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
