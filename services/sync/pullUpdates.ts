@@ -10,6 +10,8 @@ import { pins, forms } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
 import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
 import { eq } from 'drizzle-orm';
+import { parseJsonArray } from '~/shared/utils/parsing';
+import { ImageManager } from '~/services/images/ImageManager';
 
 /**
  * Pull a specific pin from backend and update local database
@@ -33,8 +35,33 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
       return;
     }
 
-    // Update local database
-    const sanitized = sanitizePinForDb(pinData);
+    // Download remote images to local storage if available
+    let localImagePaths: string[] = [];
+    const remoteImageUrls = parseJsonArray(pinData.images as string | string[] | null | undefined);
+
+    if (remoteImageUrls.length > 0) {
+      console.log(`📥 Downloading ${remoteImageUrls.length} remote images for pin ${pinId}`);
+
+      try {
+        const result = await ImageManager.saveImages(pinId, remoteImageUrls);
+        localImagePaths = result.success;
+
+        if (result.fail.length > 0) {
+          console.warn(`⚠️ Failed to download ${result.fail.length} images`);
+        }
+
+        console.log(`✅ Downloaded ${localImagePaths.length} images to local storage`);
+      } catch (downloadError) {
+        console.error(`❌ Error downloading images for pin ${pinId}:`, downloadError);
+        // Continue with saving pin data even if image download fails
+      }
+    }
+
+    // Update local database with downloaded local paths
+    const sanitized = sanitizePinForDb({
+      ...pinData,
+      localImages: localImagePaths.length > 0 ? localImagePaths : pinData.localImages,
+    });
 
     // Check if pin exists locally
     const existing = await db.select().from(pins).where(eq(pins.id, pinId)).limit(1);
@@ -42,11 +69,13 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
     if (existing.length > 0) {
       // Update existing pin
       await db.update(pins).set(sanitized).where(eq(pins.id, pinId));
-      console.log(`✅ Updated local pin: ${pinId}`);
+      console.log(`✅ Updated local pin: ${pinId} with ${localImagePaths.length} local images`);
     } else {
       // Insert new pin
       await db.insert(pins).values(sanitized);
-      console.log(`✅ Inserted new local pin: ${pinId}`);
+      console.log(
+        `✅ Inserted new local pin: ${pinId} with ${localImagePaths.length} local images`
+      );
     }
   } catch (error) {
     console.error(`❌ Failed to pull pin update: ${error}`);
@@ -99,7 +128,7 @@ export async function pullFormUpdate(formId: string): Promise<void> {
 
 /**
  * Pull all pins from backend and sync to local database
- * Issue: the local image URIs pulled do not exist in the device
+ * Downloads remote images to device storage
  */
 export async function pullAllPins(): Promise<void> {
   try {
@@ -111,18 +140,58 @@ export async function pullAllPins(): Promise<void> {
       throw new Error(response.error || 'Failed to fetch pins');
     }
 
-    for (const pinData of response.data) {
-      const sanitized = sanitizePinForDb(pinData);
-      const existing = await db.select().from(pins).where(eq(pins.id, sanitized.id)).limit(1);
+    let successCount = 0;
+    let imageDownloadCount = 0;
 
-      if (existing.length > 0) {
-        await db.update(pins).set(sanitized).where(eq(pins.id, sanitized.id));
-      } else {
-        await db.insert(pins).values(sanitized);
+    for (const pinData of response.data) {
+      try {
+        // Download remote images to local storage if available
+        let localImagePaths: string[] = [];
+        const remoteImageUrls = parseJsonArray(
+          pinData.images as string | string[] | null | undefined
+        );
+
+        if (remoteImageUrls.length > 0) {
+          console.log(`📥 Downloading ${remoteImageUrls.length} images for pin ${pinData.id}`);
+
+          try {
+            const result = await ImageManager.saveImages(String(pinData.id), remoteImageUrls);
+            localImagePaths = result.success;
+            imageDownloadCount += localImagePaths.length;
+
+            if (result.fail.length > 0) {
+              console.warn(
+                `⚠️ Failed to download ${result.fail.length} images for pin ${pinData.id}`
+              );
+            }
+          } catch (downloadError) {
+            console.error(`❌ Error downloading images for pin ${pinData.id}:`, downloadError);
+            // Continue with saving pin data even if image download fails
+          }
+        }
+
+        const sanitized = sanitizePinForDb({
+          ...pinData,
+          localImages: localImagePaths.length > 0 ? localImagePaths : pinData.localImages,
+        });
+
+        const existing = await db.select().from(pins).where(eq(pins.id, sanitized.id)).limit(1);
+
+        if (existing.length > 0) {
+          await db.update(pins).set(sanitized).where(eq(pins.id, sanitized.id));
+        } else {
+          await db.insert(pins).values(sanitized);
+        }
+
+        successCount++;
+      } catch (pinError) {
+        console.error(`❌ Failed to process pin ${pinData.id}:`, pinError);
+        // Continue with other pins
       }
     }
 
-    console.log(`✅ Synced ${response.data.length} pins to local database`);
+    console.log(`✅ Synced ${successCount}/${response.data.length} pins to local database`);
+    console.log(`✅ Downloaded ${imageDownloadCount} images to local storage`);
   } catch (error) {
     console.error(`❌ Failed to pull all pins: ${error}`);
     throw error;
