@@ -27,20 +27,9 @@ function SyncInitializer() {
 
   useRealTimeSync(deviceId);
 
-  // Show loading indicator during initial sync
+  // Don't block UI - just log status
   if (initialSyncLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#fff',
-        }}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10, fontSize: 16 }}>Syncing data...</Text>
-      </View>
-    );
+    console.log('🔄 Initial sync in progress...');
   }
 
   // Show error if initial sync failed, but still allow app to continue
@@ -114,10 +103,10 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}
           useSuspense>
           <QueryProvider>
-            {/* Only initialize sync after migrations are complete */}
-            {migrationStatus === 'done' && <SyncInitializer />}
             <SafeAreaProvider>
               <PopupProvider>
+                {/* Only initialize sync after migrations are complete */}
+                {migrationStatus === 'done' && <SyncInitializer />}
                 <Stack>
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen

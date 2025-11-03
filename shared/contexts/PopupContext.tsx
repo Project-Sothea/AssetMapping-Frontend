@@ -23,17 +23,27 @@ export const usePopup = () => {
 export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [popup, setPopup] = useState<PopupState | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const hideTimeoutRef = useRef<number | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showPopup = useCallback((message: string, color: string) => {
     // Clear any existing timeout
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
     setPopup({ message, color });
   }, []);
+
+  const hidePopup = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setPopup(null);
+    });
+  }, [fadeAnim]);
 
   useEffect(() => {
     if (popup) {
@@ -45,26 +55,22 @@ export const PopupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
-      }).start();
-
-      // Schedule hide after delay
-      hideTimeoutRef.current = setTimeout(() => {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => {
-          setPopup(null);
-        });
-      }, 1700); // 200ms fade in + 1500ms display
+      }).start(() => {
+        // Set timeout to hide popup after 1.5 seconds
+        timeoutRef.current = setTimeout(() => {
+          hidePopup();
+        }, 1500);
+      });
     }
 
+    // Cleanup timeout on unmount or when popup changes
     return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
-  }, [popup]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [popup, fadeAnim, hidePopup]);
 
   return (
     <PopupContext.Provider value={{ showPopup }}>
