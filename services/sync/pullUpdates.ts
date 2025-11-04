@@ -2,7 +2,7 @@
  * Pull Updates from Backend
  *
  * Fetches updated entities from backend and saves to local SQLite database
- * Used when WebSocket notifications indicate remote changes
+ * Downloads remote images to local storage for offline access
  */
 
 import { db } from '~/services/drizzleDb';
@@ -10,11 +10,12 @@ import { pins, forms } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
 import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
 import { eq } from 'drizzle-orm';
-import { parseJsonArray } from '~/shared/utils/parsing';
 import { ImageManager } from '~/services/images/ImageManager';
+import { parseJsonArray } from '~/shared/utils/parsing';
 
 /**
  * Pull a specific pin from backend and update local database
+ * Downloads remote images to local storage for offline access
  */
 export async function pullPinUpdate(pinId: string): Promise<void> {
   try {
@@ -35,32 +36,29 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
       return;
     }
 
-    // Download remote images to local storage if available
+    // Download remote images to local storage for offline access
+    const remoteUrls = parseJsonArray(pinData.images as string);
     let localImagePaths: string[] = [];
-    const remoteImageUrls = parseJsonArray(pinData.images as string | string[] | null | undefined);
 
-    if (remoteImageUrls.length > 0) {
-      console.log(`📥 Downloading ${remoteImageUrls.length} remote images for pin ${pinId}`);
-
+    if (remoteUrls.length > 0) {
+      console.log(`📥 Downloading ${remoteUrls.length} images for offline use...`);
       try {
-        const result = await ImageManager.saveImages(pinId, remoteImageUrls);
+        const result = await ImageManager.saveImages(pinId, remoteUrls);
         localImagePaths = result.success;
-
+        console.log(`✅ Downloaded ${result.success.length} images successfully`);
         if (result.fail.length > 0) {
           console.warn(`⚠️ Failed to download ${result.fail.length} images`);
         }
-
-        console.log(`✅ Downloaded ${localImagePaths.length} images to local storage`);
-      } catch (downloadError) {
-        console.error(`❌ Error downloading images for pin ${pinId}:`, downloadError);
-        // Continue with saving pin data even if image download fails
+      } catch (error) {
+        console.error('❌ Failed to download images:', error);
+        // Continue with pin sync even if images fail
       }
     }
 
-    // Update local database with downloaded local paths
     const sanitized = sanitizePinForDb({
       ...pinData,
-      localImages: localImagePaths.length > 0 ? localImagePaths : pinData.localImages,
+      localImages:
+        localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
     });
 
     // Check if pin exists locally
@@ -69,13 +67,11 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
     if (existing.length > 0) {
       // Update existing pin
       await db.update(pins).set(sanitized).where(eq(pins.id, pinId));
-      console.log(`✅ Updated local pin: ${pinId} with ${localImagePaths.length} local images`);
+      console.log(`✅ Updated local pin: ${pinId}`);
     } else {
       // Insert new pin
       await db.insert(pins).values(sanitized);
-      console.log(
-        `✅ Inserted new local pin: ${pinId} with ${localImagePaths.length} local images`
-      );
+      console.log(`✅ Inserted new local pin: ${pinId}`);
     }
   } catch (error) {
     console.error(`❌ Failed to pull pin update: ${error}`);
@@ -128,7 +124,7 @@ export async function pullFormUpdate(formId: string): Promise<void> {
 
 /**
  * Pull all pins from backend and sync to local database
- * Downloads remote images to device storage
+ * Downloads remote images to local storage for offline access
  */
 export async function pullAllPins(): Promise<void> {
   try {
@@ -141,38 +137,30 @@ export async function pullAllPins(): Promise<void> {
     }
 
     let successCount = 0;
-    let imageDownloadCount = 0;
 
     for (const pinData of response.data) {
       try {
-        // Download remote images to local storage if available
+        // Download remote images to local storage for offline access
+        const remoteUrls = parseJsonArray(pinData.images as string);
         let localImagePaths: string[] = [];
-        const remoteImageUrls = parseJsonArray(
-          pinData.images as string | string[] | null | undefined
-        );
 
-        if (remoteImageUrls.length > 0) {
-          console.log(`📥 Downloading ${remoteImageUrls.length} images for pin ${pinData.id}`);
-
+        if (remoteUrls.length > 0) {
           try {
-            const result = await ImageManager.saveImages(String(pinData.id), remoteImageUrls);
+            const result = await ImageManager.saveImages(pinData.id as string, remoteUrls);
             localImagePaths = result.success;
-            imageDownloadCount += localImagePaths.length;
-
             if (result.fail.length > 0) {
-              console.warn(
-                `⚠️ Failed to download ${result.fail.length} images for pin ${pinData.id}`
-              );
+              console.warn(`⚠️ Pin ${pinData.id}: Failed to download ${result.fail.length} images`);
             }
-          } catch (downloadError) {
-            console.error(`❌ Error downloading images for pin ${pinData.id}:`, downloadError);
-            // Continue with saving pin data even if image download fails
+          } catch (error) {
+            console.error(`❌ Pin ${pinData.id}: Failed to download images:`, error);
+            // Continue with pin sync even if images fail
           }
         }
 
         const sanitized = sanitizePinForDb({
           ...pinData,
-          localImages: localImagePaths.length > 0 ? localImagePaths : pinData.localImages,
+          localImages:
+            localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
         });
 
         const existing = await db.select().from(pins).where(eq(pins.id, sanitized.id)).limit(1);
@@ -191,7 +179,6 @@ export async function pullAllPins(): Promise<void> {
     }
 
     console.log(`✅ Synced ${successCount}/${response.data.length} pins to local database`);
-    console.log(`✅ Downloaded ${imageDownloadCount} images to local storage`);
   } catch (error) {
     console.error(`❌ Failed to pull all pins: ${error}`);
     throw error;

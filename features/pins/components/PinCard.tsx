@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { parseJsonArray } from '~/shared/utils/parsing';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
+import { getImageUrisWithFallback } from '~/services/images/imageStrategy';
 
 type PinCardProps = {
   pin: Pin;
@@ -24,10 +24,11 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   // Dynamic accent color based on synced status
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
-  // Parse local images
-  const imageURIs: string[] = useMemo(() => {
-    return parseJsonArray(pin.localImages);
-  }, [pin.localImages]);
+  // Get image URIs with fallback (remote first, then local)
+  const imageURIs = useMemo(
+    () => getImageUrisWithFallback(pin.images, pin.localImages),
+    [pin.images, pin.localImages]
+  );
 
   return (
     <TouchableOpacity style={styles.card} onPress={handleViewForms} activeOpacity={0.7}>
@@ -56,7 +57,14 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
             style={styles.imageScroll}
             contentContainerStyle={styles.imageScrollContent}>
             {imageURIs.map((uri, index) => (
-              <Image key={index} source={{ uri }} style={styles.thumbnail} />
+              <Image
+                key={index}
+                source={{ uri, cache: 'force-cache' }}
+                style={styles.thumbnail}
+                onError={(e) =>
+                  console.error(`❌ PinCard image ${index} failed:`, uri, e.nativeEvent.error)
+                }
+              />
             ))}
           </ScrollView>
         )}

@@ -10,34 +10,6 @@ export function isRemoteUri(uri: string): boolean {
 }
 
 /**
- * Ensure a URI has the proper file:// scheme
- * Handles various URI formats and normalizes them
- *
- * @param uri - The URI to normalize
- * @returns Normalized URI with proper scheme
- */
-export function normalizeFileUri(uri: string): string {
-  if (!uri) return uri;
-
-  // Already has a scheme - return as is
-  if (
-    uri.startsWith('file://') ||
-    uri.startsWith('content://') ||
-    uri.startsWith('http://') ||
-    uri.startsWith('https://')
-  ) {
-    return uri;
-  }
-
-  // Absolute path without scheme - add file:// prefix
-  if (uri.startsWith('/')) {
-    return `file://${uri}`;
-  }
-
-  return uri;
-}
-
-/**
  * Generate a unique filename for an image
  * @returns Unique filename with .jpg extension (e.g., "uuid-v4.jpg")
  */
@@ -56,13 +28,6 @@ export function extractFilename(uri: string): string {
 }
 
 /**
- * Extract filenames from multiple URIs
- */
-export function extractFilenames(uris: string[]): string[] {
-  return uris.map((uri) => extractFilename(uri)).filter(Boolean);
-}
-
-/**
  * Parse localImages field (JSON string or array) into array of URIs
  */
 export function parseImageUris(localImages: string | string[] | undefined | null): string[] {
@@ -77,15 +42,4 @@ export function areUrisEqual(uris1: string[], uris2: string[]): boolean {
   const sorted1 = [...uris1].sort();
   const sorted2 = [...uris2].sort();
   return JSON.stringify(sorted1) === JSON.stringify(sorted2);
-}
-
-/**
- * Calculate differences between two URI arrays
- * Returns what to add and what to remove to transform array1 into array2
- */
-export function calculateUriDifferences(existingUris: string[], newUris: string[]) {
-  const toDelete = existingUris.filter((uri) => !newUris.includes(uri));
-  const toAdd = newUris.filter((uri) => !existingUris.includes(uri));
-
-  return { toDelete, toAdd };
 }

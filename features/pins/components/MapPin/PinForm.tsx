@@ -43,6 +43,9 @@ type PinFormProps = {
 };
 
 export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
+  console.log('📋 PinForm - Received initialValues:', initialValues);
+  console.log('📋 PinForm - localImages:', initialValues.localImages);
+
   const appendNewImage = async (setFieldValue: any, images: string[] | null) => {
     const { data, error } = await ImageManager.ImageManager.pick();
     const safeImages = Array.isArray(images) ? images : [];
@@ -99,34 +102,41 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                 style={{ marginBottom: 8 }}>
                 {values.localImages &&
                   values.localImages.length > 0 &&
-                  values.localImages.map((image, idx) => (
-                    <View
-                      key={`image-${idx}-${image.substring(0, 10)}`}
-                      style={{ position: 'relative', marginRight: 8 }}>
-                      <Image
-                        source={{ uri: image }}
-                        style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
-                      />
-                      <Pressable
-                        onPress={() => {
-                          const newImages = values.localImages.filter((_, i) => i !== idx);
-                          // Always set to array, even if empty
-                          setFieldValue('localImages', newImages.length > 0 ? newImages : []);
-                          console.log('Removed image, remaining:', newImages.length);
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          right: 8,
-                          backgroundColor: 'white',
-                          borderRadius: 12,
-                          padding: 2,
-                          zIndex: 1,
-                        }}>
-                        <MaterialIcons name="cancel" size={20} color="red" />
-                      </Pressable>
-                    </View>
-                  ))}
+                  values.localImages.map((image, idx) => {
+                    console.log(`🖼️ PinForm - Rendering image ${idx}:`, image);
+                    return (
+                      <View
+                        key={`image-${idx}-${image.substring(0, 10)}`}
+                        style={{ position: 'relative', marginRight: 8 }}>
+                        <Image
+                          source={{ uri: image }}
+                          style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
+                          onError={(e) =>
+                            console.error(`❌ Image ${idx} failed to load:`, e.nativeEvent.error)
+                          }
+                          onLoad={() => console.log(`✅ Image ${idx} loaded successfully`)}
+                        />
+                        <Pressable
+                          onPress={() => {
+                            const newImages = values.localImages.filter((_, i) => i !== idx);
+                            // Always set to array, even if empty
+                            setFieldValue('localImages', newImages.length > 0 ? newImages : []);
+                            console.log('Removed image, remaining:', newImages.length);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 8,
+                            backgroundColor: 'white',
+                            borderRadius: 12,
+                            padding: 2,
+                            zIndex: 1,
+                          }}>
+                          <MaterialIcons name="cancel" size={20} color="red" />
+                        </Pressable>
+                      </View>
+                    );
+                  })}
               </ScrollView>
               <View style={styles.buttonRow}>
                 <TouchableOpacity

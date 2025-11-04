@@ -50,53 +50,63 @@ export async function updatePinImages(existingPin: Pin, updates: Partial<Pin>): 
   // Images have changed - process the update
   const updatedPin = { ...existingPin, ...updates };
 
-  // Handle complete removal
-  if (existingUris.length === 0 && newUris.length === 0) {
-    console.log('deleting: ', existingUris);
+  // Handle complete removal - clear both local and remote images
+  if (newUris.length === 0) {
+    console.log('Removing all images, deleting: ', existingUris);
     await ImageManager.deleteImages(existingUris);
-    return { ...updatedPin, localImages: '[]', images: null };
+    return { ...updatedPin, localImages: '[]', images: '[]' }; // Empty array, not null
   }
 
   // Handle incremental update (add/remove specific images)
-  const finalUris = await processIncrementalImageUpdate(updatedPin.id, existingUris, newUris);
+  const { finalLocalUris, finalRemoteUrls } = await processIncrementalImageUpdate(
+    updatedPin.id,
+    existingUris,
+    newUris,
+    parseImageUris(existingPin.images)
+  );
 
-  return { ...updatedPin, localImages: JSON.stringify(finalUris), images: null };
+  return {
+    ...updatedPin,
+    localImages: JSON.stringify(finalLocalUris),
+    images: JSON.stringify(finalRemoteUrls),
+  };
 }
 
 // ========== Helper Functions ==========
 /**
  * Process incremental image update (delete removed, keep existing, add new)
+ * Also tracks which remote URLs should be kept after deletions
  */
 async function processIncrementalImageUpdate(
   updatedPinId: string,
-  existingUris: string[],
-  newUris: string[]
-): Promise<string[]> {
-  // Calculate what changed
-  const urisToDelete = existingUris.filter((uri) => !newUris.includes(uri));
-  const urisToAdd = newUris.filter((uri) => !existingUris.includes(uri));
+  existingLocalUris: string[],
+  newLocalUris: string[],
+  existingRemoteUrls: string[]
+): Promise<{ finalLocalUris: string[]; finalRemoteUrls: string[] }> {
+  // Calculate what changed in local images
+  const localUrisToDelete = existingLocalUris.filter((uri) => !newLocalUris.includes(uri));
+  const localUrisToAdd = newLocalUris.filter((uri) => !existingLocalUris.includes(uri));
 
-  // Delete removed images
-  if (urisToDelete.length > 0) {
+  // Delete removed images from local storage
+  if (localUrisToDelete.length > 0) {
     try {
-      // const filenames = extractFilenames(urisToDelete);
-      await ImageManager.deleteImages(urisToDelete);
-      console.log('  ✓ Deleted:', urisToDelete);
+      await ImageManager.deleteImages(localUrisToDelete);
+      console.log('  ✓ Deleted:', localUrisToDelete);
     } catch (error) {
       console.error('  ✗ Delete failed:', error);
       // Continue - deletion failure shouldn't break the update
     }
   }
 
-  // Keep images that weren't deleted
-  const keptUris = existingUris.filter((uri) => !urisToDelete.includes(uri));
-  let finalUris = [...keptUris];
+  // Keep local images that weren't deleted
+  const keptLocalUris = existingLocalUris.filter((uri) => !localUrisToDelete.includes(uri));
+  let finalLocalUris = [...keptLocalUris];
 
-  // Save new images
-  if (urisToAdd.length > 0) {
+  // Save new images to local storage
+  if (localUrisToAdd.length > 0) {
     try {
-      const { success: savedUris } = await ImageManager.saveImages(updatedPinId, urisToAdd);
-      finalUris = [...finalUris, ...savedUris];
+      const { success: savedUris } = await ImageManager.saveImages(updatedPinId, localUrisToAdd);
+      finalLocalUris = [...finalLocalUris, ...savedUris];
       console.log('  ✓ Added:', savedUris);
     } catch (error) {
       console.error('  ✗ Save failed:', error);
@@ -104,6 +114,21 @@ async function processIncrementalImageUpdate(
     }
   }
 
-  console.log('  ✅ Final:', finalUris);
-  return finalUris;
+  // Also update remote URLs - remove URLs at the same positions as deleted local images
+  // Map each existing local URI to its index, then determine which remote URLs to keep
+  const deletedIndices = new Set<number>();
+  existingLocalUris.forEach((uri, index) => {
+    if (localUrisToDelete.includes(uri)) {
+      deletedIndices.add(index);
+    }
+  });
+
+  // Keep remote URLs whose corresponding local image wasn't deleted
+  const finalRemoteUrls = existingRemoteUrls.filter((_, index) => !deletedIndices.has(index));
+
+  console.log('  ✅ Final local:', finalLocalUris);
+  console.log('  ✅ Final remote:', finalRemoteUrls);
+  console.log('  📍 Deleted indices:', Array.from(deletedIndices));
+
+  return { finalLocalUris, finalRemoteUrls };
 }

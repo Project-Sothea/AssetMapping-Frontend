@@ -8,6 +8,7 @@ import Spacer from '~/shared/components/ui/Spacer';
 import { PinForm, PinFormValues } from './PinForm';
 import { MaterialIcons } from '@expo/vector-icons';
 import { parseJsonArray } from '~/shared/utils/parsing';
+import { normalizeFileUri } from '~/services/images/imageStrategy';
 
 type PinDetailsProps = {
   pin: Pin;
@@ -18,15 +19,30 @@ type PinDetailsProps = {
 //helper
 const intoPinFormValues = (pin: Pin): PinFormValues => {
   const parsedLocalImages = parseJsonArray(pin.localImages);
+  const parsedRemoteImages = parseJsonArray(pin.images);
+
+  console.log('🔍 PinDetails - Raw localImages from DB:', pin.localImages);
+  console.log('🔍 PinDetails - Raw images (remote) from DB:', pin.images);
+  console.log('🔍 PinDetails - Parsed localImages:', parsedLocalImages);
+  console.log('🔍 PinDetails - Parsed remote images:', parsedRemoteImages);
+
+  // Normalize local file URIs to ensure file:// scheme for display
+  const normalizedLocalImages = parsedLocalImages.map(normalizeFileUri);
+
+  // IMPORTANT: Only use localImages for the form
+  // Remote images are for DISPLAY only (in PinDetailsDisplay)
+  // The form works with local files - user can add/remove from there
+  // If pin was synced from backend with no local files, form starts empty
+  console.log('🔍 PinDetails - Form will use localImages only:', normalizedLocalImages);
 
   return {
     id: pin.id,
     name: pin.name,
-    cityVillage: pin.cityVillage, // Schema is now camelCase after migration
+    cityVillage: pin.cityVillage,
     address: pin.address,
     description: pin.description,
     type: pin.type,
-    localImages: parsedLocalImages,
+    localImages: normalizedLocalImages, // ONLY local files
     lat: pin.lat,
     lng: pin.lng,
   };

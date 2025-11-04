@@ -17,8 +17,24 @@ export async function copyFile(from: string, to: string): Promise<void> {
 }
 
 export async function downloadFile(from: string, to: string): Promise<void> {
+  console.log(`⬇️  Downloading: ${from}`);
+  console.log(`   → Saving to: ${to}`);
+
   const res = await FileSystem.downloadAsync(from, to);
-  if (res.status !== 200) throw new Error(`Download failed: HTTP ${res.status}`);
+
+  if (res.status !== 200) {
+    console.error(`   ✗ Download failed: HTTP ${res.status}`);
+    throw new Error(`Download failed: HTTP ${res.status}`);
+  }
+
+  // Verify the file was actually saved
+  const fileInfo = await FileSystem.getInfoAsync(to);
+  if (!fileInfo.exists) {
+    console.error(`   ✗ File not found after download: ${to}`);
+    throw new Error(`File not found after download: ${to}`);
+  }
+
+  console.log(`   ✓ Downloaded successfully (${fileInfo.size} bytes)`);
 }
 
 /**

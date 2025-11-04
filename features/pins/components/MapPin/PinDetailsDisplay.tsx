@@ -2,8 +2,8 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'rea
 import { useState, useMemo } from 'react';
 import { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
-import { parseJsonArray } from '~/shared/utils/parsing';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
+import { getImageUrisWithFallback } from '~/services/images/imageStrategy';
 
 type PinDetailsProps = { pin: Pin };
 
@@ -14,9 +14,11 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
   // Check sync status from operations table
   const isSynced = usePinQueueStatus(pin.id);
 
-  const imageURIs: string[] = useMemo(() => {
-    return parseJsonArray(pin.localImages);
-  }, [pin.localImages]);
+  // Get image URIs with fallback (remote first, then local)
+  const imageURIs = useMemo(
+    () => getImageUrisWithFallback(pin.images, pin.localImages),
+    [pin.images, pin.localImages]
+  );
 
   const openImage = (index: number) => {
     setActiveIndex(index);
@@ -47,7 +49,13 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
               key={i}
               onPress={() => openImage(i)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Image source={{ uri }} style={styles.image} />
+              <Image
+                source={{ uri, cache: 'force-cache' }}
+                style={styles.image}
+                onError={(e) =>
+                  console.error(`❌ Image ${i} failed to load:`, uri, e.nativeEvent.error)
+                }
+              />
             </TouchableOpacity>
           ))}
         </ScrollView>

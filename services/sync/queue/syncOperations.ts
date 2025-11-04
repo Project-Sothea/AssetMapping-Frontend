@@ -24,9 +24,9 @@ export async function syncPin(operation: Operation, data: any): Promise<void> {
   // Handle create/update operations with image upload
   const { remoteUrls, validLocalUris } = await validateAndUploadImages(data.id, data.localImages);
 
-  await syncPinToBackend(operation, data, remoteUrls);
+  const syncedData = await syncPinToBackend(operation, data, remoteUrls);
 
-  await updateLocalPinAfterSync(data.id, remoteUrls, validLocalUris);
+  await updateLocalPinAfterSync(data.id, remoteUrls, validLocalUris, syncedData);
 }
 
 /**
@@ -68,15 +68,20 @@ export async function syncForm(operation: Operation, data: any): Promise<void> {
     throw new Error(response.error || 'Sync failed');
   }
 
-  // Mark form as synced in local DB (skip for delete operations)
+  // Mark form as synced in local DB and update version from backend (skip for delete operations)
   if (operation !== 'delete') {
-    await db
-      .update(forms)
-      .set({
-        lastSyncedAt: new Date().toISOString(),
-        status: 'synced',
-      })
-      .where(eq(forms.id, data.id));
+    const updates: any = {
+      lastSyncedAt: new Date().toISOString(),
+      status: 'synced',
+    };
+
+    // Update version from backend response to stay in sync
+    if (response.data && 'version' in response.data) {
+      updates.version = response.data.version;
+      console.log(`✅ Updated local form version to ${response.data.version}`);
+    }
+
+    await db.update(forms).set(updates).where(eq(forms.id, data.id));
   }
 }
 
@@ -102,13 +107,14 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
 
 /**
  * Push pin data to backend
+ * Returns the synced pin data from backend (includes updated version)
  */
 async function syncPinToBackend(
   operation: Operation,
   data: any,
   remoteUrls: string[]
-): Promise<void> {
-  const { lastSyncedAt, lastFailedSyncAt, status, failureReason, ...rest } = data;
+): Promise<any> {
+  const { lastSyncedAt, lastFailedSyncAt, status, failureReason, localImages, ...rest } = data;
 
   const payload: any = {
     ...rest,
@@ -116,10 +122,14 @@ async function syncPinToBackend(
     updatedAt: rest.updatedAt || new Date().toISOString(),
   };
 
-  // Include remote image URLs if available
+  // Handle images field:
+  // - If we have new uploads (remoteUrls), use those
+  // - Otherwise, use the existing images field from the pin (this includes deletions!)
+  // - This ensures deleted images are properly synced to backend
   if (remoteUrls.length > 0) {
     payload.images = JSON.stringify(remoteUrls);
-  } else if (rest.images) {
+  } else if (rest.images !== undefined) {
+    // Include images even if empty array - this tells backend about deletions
     payload.images = rest.images;
   }
 
@@ -148,30 +158,43 @@ async function syncPinToBackend(
     // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
+
+  // Return the synced data from backend (includes updated version)
+  return response.data;
 }
 
 /**
  * Update local database after successful sync
+ * Updates version from backend to keep local and remote in sync
  */
 async function updateLocalPinAfterSync(
   pinId: string,
   remoteUrls: string[],
-  validLocalUris: string[]
+  validLocalUris: string[],
+  syncedData?: any
 ): Promise<void> {
   const updates: any = {
     lastSyncedAt: new Date().toISOString(),
     status: 'synced',
   };
 
+  // Update version from backend response to stay in sync
+  if (syncedData && 'version' in syncedData) {
+    updates.version = syncedData.version;
+    console.log(`✅ Updated local version to ${syncedData.version}`);
+  }
+
   // Update remote image URLs if we uploaded any
   if (remoteUrls.length > 0) {
     updates.images = JSON.stringify(remoteUrls);
+    console.log(`✅ Uploaded ${remoteUrls.length} images to backend`);
   }
 
-  // Clean up localImages to remove deleted/invalid files
+  // KEEP localImages for offline access
+  // These local files are still on disk and provide fast offline access
   if (validLocalUris.length > 0) {
     updates.localImages = JSON.stringify(validLocalUris);
-    console.log(`Cleaned up localImages: ${validLocalUris.length} valid files`);
+    console.log(`✅ Keeping ${validLocalUris.length} local images for offline access`);
   }
 
   await db.update(pins).set(updates).where(eq(pins.id, pinId));
