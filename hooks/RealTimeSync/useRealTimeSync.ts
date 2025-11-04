@@ -56,7 +56,14 @@ export function useRealTimeSync(userId: string | undefined) {
     }
 
     // Connect to WebSocket
-    webSocketManager.connect(userId);
+    const connectWebSocket = async () => {
+      try {
+        await webSocketManager.connect(userId);
+      } catch (error) {
+        console.error('Failed to connect to WebSocket:', error);
+      }
+    };
+    connectWebSocket();
 
     // Subscribe to incoming messages
     const unsubscribe = webSocketManager.onMessage((message: NotificationMessage) => {
