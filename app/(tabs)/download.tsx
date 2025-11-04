@@ -16,12 +16,16 @@ import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePa
 import PremadePacks from '~/features/sync/components/OfflinePacks/PremadePacks';
 import { useState, useEffect } from 'react';
 import { getApiUrl, setApiUrl } from '~/services/apiUrl';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
+import { reconnectAndSync } from '~/services/sync/syncService';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
   const { mutateAsync: deletePackMutation } = useDeletePack();
   const { data: packs } = useFetchPacks();
   const [apiUrl, setApiUrlState] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const loadApiUrl = async () => {
@@ -36,8 +40,27 @@ export default function Home() {
       Alert.alert('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
       return;
     }
-    await setApiUrl(apiUrl);
-    Alert.alert('Saved', 'API URL updated successfully');
+
+    try {
+      setIsSyncing(true);
+
+      // Save the new API URL
+      await setApiUrl(apiUrl);
+
+      // Use the centralized reconnect and sync service
+      const deviceId = getDeviceId();
+      await reconnectAndSync(apiUrl, deviceId, webSocketManager);
+
+      Alert.alert('Success', 'API URL updated and data synced successfully!');
+    } catch (error) {
+      console.error('❌ Failed to connect or sync:', error);
+      Alert.alert(
+        'Sync Failed',
+        'API URL was saved, but failed to sync data. Please check your connection and try again.'
+      );
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -55,8 +78,13 @@ export default function Home() {
             onChangeText={setApiUrlState}
           />
           <Spacer />
-          <TouchableOpacity style={styles.saveButton} onPress={saveApiUrl}>
-            <Text style={styles.saveButtonText}>Save API URL</Text>
+          <TouchableOpacity
+            style={[styles.saveButton, isSyncing && styles.saveButtonDisabled]}
+            onPress={saveApiUrl}
+            disabled={isSyncing}>
+            <Text style={styles.saveButtonText}>
+              {isSyncing ? 'Connecting & Syncing...' : 'Save API URL'}
+            </Text>
           </TouchableOpacity>
           {!apiUrl && (
             <>
@@ -222,6 +250,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#94A3B8',
+    opacity: 0.7,
   },
   saveButtonText: {
     color: 'white',

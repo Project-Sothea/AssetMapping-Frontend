@@ -6,8 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { pullAllPins, pullAllForms } from '~/services/sync/pullUpdates';
-import { processQueue } from '~/services/sync/queue';
+import { performFullSync } from '~/services/sync/syncService';
 import { usePopup } from '~/shared/contexts/PopupContext';
 
 interface InitialSyncState {
@@ -29,36 +28,16 @@ export function useInitialSync(): InitialSyncState {
   const { showPopup } = usePopup();
 
   useEffect(() => {
-    const performInitialSync = async () => {
+    const performInitialSyncWithNotifications = async () => {
       try {
         setState({ isLoading: true, error: null, completed: false });
-        console.log('🚀 Starting initial data sync...');
 
         // Show non-blocking notification
         showPopup('Syncing data...', '#3498db');
 
-        // Add a small delay to ensure database is ready
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Use the centralized sync service
+        await performFullSync();
 
-        // Process any pending local operations (outbox) - do this first
-        console.log('📤 Processing pending operations...');
-        await processQueue();
-
-        // Small delay between operations to prevent database locks
-        await new Promise((resolve) => setTimeout(resolve, 200));
-
-        // Pull all pins from server
-        console.log('📍 Pulling pins from server...');
-        await pullAllPins();
-
-        // Small delay between operations
-        await new Promise((resolve) => setTimeout(resolve, 200));
-
-        // Pull all forms from server
-        console.log('📋 Pulling forms from server...');
-        await pullAllForms();
-
-        console.log('✅ Initial data sync completed successfully');
         setState({ isLoading: false, error: null, completed: true });
 
         // Show success notification
@@ -74,7 +53,7 @@ export function useInitialSync(): InitialSyncState {
       }
     };
 
-    performInitialSync();
+    performInitialSyncWithNotifications();
   }, [showPopup]);
 
   return state;

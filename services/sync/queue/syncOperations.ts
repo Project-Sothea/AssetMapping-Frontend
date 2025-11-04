@@ -44,13 +44,27 @@ export async function syncForm(operation: Operation, data: any): Promise<void> {
         ? { id: data.id }
         : {
             ...rest,
+            version: rest.version, // Include version for conflict detection
             updatedAt: rest.updatedAt || new Date().toISOString(),
           },
     deviceId: 'mobile-app',
     timestamp: new Date().toISOString(),
   });
 
+  // Handle version conflicts - pull latest data
   if (!response.success) {
+    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
+      console.warn(`⚠️ Version conflict for form ${data.id} - pulling latest from server`);
+
+      // Pull latest data from server (will overwrite local changes)
+      const { pullFormUpdate } = await import('../pullUpdates');
+      await pullFormUpdate(data.id);
+
+      console.log(`✅ Replaced local form ${data.id} with server version (Last-Write-Wins)`);
+      return; // Success - conflict resolved by accepting server data
+    }
+
+    // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
 
@@ -98,6 +112,7 @@ async function syncPinToBackend(
 
   const payload: any = {
     ...rest,
+    version: rest.version, // Include version for conflict detection
     updatedAt: rest.updatedAt || new Date().toISOString(),
   };
 
@@ -117,7 +132,20 @@ async function syncPinToBackend(
     timestamp: new Date().toISOString(),
   });
 
+  // Handle version conflicts - pull latest data
   if (!response.success) {
+    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
+      console.warn(`⚠️ Version conflict for pin ${data.id} - pulling latest from server`);
+
+      // Pull latest data from server (will overwrite local changes)
+      const { pullPinUpdate } = await import('../pullUpdates');
+      await pullPinUpdate(data.id);
+
+      console.log(`✅ Replaced local pin ${data.id} with server version (Last-Write-Wins)`);
+      return; // Success - conflict resolved by accepting server data
+    }
+
+    // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
 }
