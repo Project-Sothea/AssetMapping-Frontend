@@ -1,5 +1,4 @@
 import Map from '~/features/pins/components/Map';
-import { ScreenWrapper } from '~/shared/components/ui/ScreenWrapper';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useMemo } from 'react';
 
@@ -34,9 +33,5 @@ export default function Home() {
     }, [initialCoords, router])
   );
 
-  return (
-    <ScreenWrapper>
-      <Map initialCoords={initialCoords} initialPinId={initialPinId} />
-    </ScreenWrapper>
-  );
+  return <Map initialCoords={initialCoords} initialPinId={initialPinId} />;
 }

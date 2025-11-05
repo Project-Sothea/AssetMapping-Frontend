@@ -22,6 +22,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
+import { ReconnectButton } from '~/shared/components/ReconnectButton';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -244,6 +245,9 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
       <TouchableOpacity style={styles.refreshButton} onPress={refreshMap}>
         <MaterialIcons name="refresh" color="black" size={30} style={styles.refreshText} />
       </TouchableOpacity>
+      <View style={styles.reconnectButton}>
+        <ReconnectButton />
+      </View>
     </View>
   );
 }
@@ -255,7 +259,7 @@ const styles = StyleSheet.create({
     right: 10,
     backgroundColor: '#fff',
     borderRadius: 25,
-    padding: 10,
+    padding: 12, // Increased padding to match reconnect button size
     elevation: 3, // Android shadow
     shadowColor: '#000', // iOS shadow
     shadowOpacity: 0.2,
@@ -264,5 +268,18 @@ const styles = StyleSheet.create({
   },
   refreshText: {
     fontSize: 18,
+  },
+  reconnectButton: {
+    position: 'absolute',
+    bottom: 70, // Position above the refresh button
+    right: 10,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    padding: 2, // Reduced padding to account for ReconnectButton's internal padding
+    elevation: 3, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
   },
 });

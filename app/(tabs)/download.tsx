@@ -6,8 +6,8 @@ import {
   Alert,
   ScrollView,
   TextInput,
+  ImageBackground,
 } from 'react-native';
-import { ScreenWrapper } from '~/shared/components/ui/ScreenWrapper';
 import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
 import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
@@ -19,6 +19,10 @@ import { getApiUrl, setApiUrl } from '~/services/apiUrl';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { reconnectAndSync } from '~/services/sync/syncService';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
+
+// Import your background image
+// Place your image in assets folder, e.g., assets/download-background.png
+const backgroundImage = require('~/assets/download-background.png');
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
@@ -64,7 +68,11 @@ export default function Home() {
   };
 
   return (
-    <ScreenWrapper>
+    <ImageBackground
+      source={backgroundImage}
+      style={styles.background}
+      resizeMode="cover"
+      imageStyle={styles.backgroundImage}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Spacer />
         {/* API URL Input Card */}
@@ -158,11 +166,16 @@ export default function Home() {
           )}
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </ImageBackground>
   );
 }
-
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  backgroundImage: {
+    opacity: 1, // Adjust opacity so content is readable
+  },
   // ScrollView padding + spacing so the first card sits lower
   scrollContent: {
     paddingHorizontal: 16,

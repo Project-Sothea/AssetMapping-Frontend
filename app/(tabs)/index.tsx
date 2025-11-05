@@ -1,9 +1,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Stack, useRouter, useFocusEffect } from 'expo-router';
+import { ImageBackground, StyleSheet } from 'react-native';
 import { SearchBar } from '~/shared/components/ui/SearchBar';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import { Pin } from '~/db/schema';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
+
+// Import your background image
+// Place your image in assets folder, e.g., assets/home-background.png
+const backgroundImage = require('~/assets/home-background.png');
 
 export default function Home() {
   const { data: pins = [] } = useFetchLocalPins(); // live reactive pins
@@ -43,13 +48,28 @@ export default function Home() {
   return (
     <>
       <Stack.Screen options={{ title: 'Home' }} />
-      <SearchBar
-        placeholder="Find pin..."
-        query={query}
-        onQueryChange={setQuery}
-        results={filteredPins}
-        onNavigateToMap={handleNavigateToMap}
-      />
+      <ImageBackground
+        source={backgroundImage} // Uncomment when you add your image
+        style={styles.background}
+        resizeMode="cover"
+        imageStyle={styles.backgroundImage}>
+        <SearchBar
+          placeholder="Find pin..."
+          query={query}
+          onQueryChange={setQuery}
+          results={filteredPins}
+          onNavigateToMap={handleNavigateToMap}
+        />
+      </ImageBackground>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  backgroundImage: {
+    opacity: 0.4, // Adjust opacity so content is readable
+  },
+});

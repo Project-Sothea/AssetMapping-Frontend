@@ -4,7 +4,6 @@ import * as Yup from 'yup';
 import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
-import Spacer from '~/shared/components/ui/Spacer';
 import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
 
 interface Props {
@@ -87,7 +86,6 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
           />
           {touched.name && errors.name && <Text style={styles.error}>{errors.name}</Text>}
 
-
           <Text>Top Right [lat, lng]</Text>
           <View style={styles.row}>
             <TextInput
@@ -127,14 +125,13 @@ export const CreatePackForm = ({ onSubmit, progress }: Props) => {
               value={String(values.minLng)}
             />
           </View>
-          <Spacer />
           <IdempotentButton
             title="Create Pack"
             onPress={() => {
               handleSubmit();
             }}
+            style={styles.createButton}
           />
-          <Spacer />
           <View style={styles.progressContainer}>
             <View style={[styles.progressBar, { width: `${progress}%` }]} />
           </View>
@@ -164,7 +161,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 6,
     marginBottom: 6,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   },
   inputHalf: {
     flex: 1,
@@ -174,7 +171,7 @@ const styles = StyleSheet.create({
     //marginHorizontal: 5,
     borderRadius: 6,
     marginBottom: 6,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   },
   row: {
     flexDirection: 'row',
@@ -184,6 +181,10 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     fontSize: 12,
+  },
+  createButton: {
+    marginTop: 8,
+    marginBottom: 8,
   },
   progressContainer: {
     height: 10,

@@ -40,7 +40,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: 'transparent', // Changed to transparent so background image shows through
+  },
   searchInput: {
     backgroundColor: '#fff',
     borderRadius: 24,
