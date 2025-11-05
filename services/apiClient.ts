@@ -165,9 +165,17 @@ class ApiClient {
     return this.request<Record<string, unknown>[]>('/api/pins', { method: 'GET' }, 120000);
   }
 
+  async fetchPin(pinId: string): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.request<Record<string, unknown>>(`/api/pins/${pinId}`, { method: 'GET' }, 30000);
+  }
+
   async fetchForms(): Promise<ApiResponse<Record<string, unknown>[]>> {
     // Longer timeout for bulk data fetch (2 minutes)
     return this.request<Record<string, unknown>[]>('/api/forms', { method: 'GET' }, 120000);
+  }
+
+  async fetchForm(formId: string): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.request<Record<string, unknown>>(`/api/forms/${formId}`, { method: 'GET' }, 30000);
   }
 
   // Image API methods

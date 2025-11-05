@@ -21,20 +21,14 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
   try {
     console.log(`🔄 Pulling pin update from backend: ${pinId}`);
 
-    // Fetch all pins from backend (API doesn't have single pin endpoint yet)
-    const response = await apiClient.fetchPins();
+    // Fetch single pin from backend (optimized - no longer fetches all pins!)
+    const response = await apiClient.fetchPin(pinId);
 
     if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch pins');
+      throw new Error(response.error || 'Failed to fetch pin');
     }
 
-    // Find the specific pin
-    const pinData = response.data.find((p: any) => p.id === pinId);
-
-    if (!pinData) {
-      console.warn(`⚠️ Pin ${pinId} not found in backend response`);
-      return;
-    }
+    const pinData = response.data;
 
     // Download remote images to local storage for offline access
     const remoteUrls = parseJsonArray(pinData.images as string);
@@ -86,20 +80,14 @@ export async function pullFormUpdate(formId: string): Promise<void> {
   try {
     console.log(`🔄 Pulling form update from backend: ${formId}`);
 
-    // Fetch all forms from backend
-    const response = await apiClient.fetchForms();
+    // Fetch single form from backend (optimized - no longer fetches all forms!)
+    const response = await apiClient.fetchForm(formId);
 
     if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch forms');
+      throw new Error(response.error || 'Failed to fetch form');
     }
 
-    // Find the specific form
-    const formData = response.data.find((f: any) => f.id === formId);
-
-    if (!formData) {
-      console.warn(`⚠️ Form ${formId} not found in backend response`);
-      return;
-    }
+    const formData = response.data;
 
     // Update local database
     const sanitized = sanitizeFormForDb(formData);

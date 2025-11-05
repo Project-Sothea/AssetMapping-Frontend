@@ -82,11 +82,24 @@ export function useRealTimeSync(userId: string | undefined) {
         case 'pin':
           console.log('📍 Pin update:', message.action, message.aggregateId);
 
-          // Pull updated pin data from backend and save to local database
-          if (message.aggregateId) {
+          // Handle deleted pins differently - just invalidate cache, don't try to pull
+          if (message.action === 'deleted') {
+            console.log('🗑️  Pin deleted, invalidating cache');
+            queryClient.invalidateQueries({
+              queryKey: ['pins'],
+              refetchType: 'active',
+            });
+          } else if (message.aggregateId) {
+            // Pull updated pin data from backend and save to local database
             pullPinUpdate(message.aggregateId)
               .then(() => {
                 console.log('✅ Pin data synced from backend to local DB');
+
+                // Invalidate React Query cache so UI updates from SQLite
+                queryClient.invalidateQueries({
+                  queryKey: ['pins'],
+                  refetchType: 'active', // Only refetch if component is mounted
+                });
               })
               .catch((err: any) => {
                 console.warn('⚠️ Failed to pull pin update:', err);
@@ -106,11 +119,24 @@ export function useRealTimeSync(userId: string | undefined) {
         case 'form':
           console.log('📋 Form update:', message.action, message.aggregateId);
 
-          // Pull updated form data from backend and save to local database
-          if (message.aggregateId) {
+          // Handle deleted forms differently - just invalidate cache, don't try to pull
+          if (message.action === 'deleted') {
+            console.log('🗑️  Form deleted, invalidating cache');
+            queryClient.invalidateQueries({
+              queryKey: ['forms'],
+              refetchType: 'active',
+            });
+          } else if (message.aggregateId) {
+            // Pull updated form data from backend and save to local database
             pullFormUpdate(message.aggregateId)
               .then(() => {
                 console.log('✅ Form data synced from backend to local DB');
+
+                // Invalidate React Query cache so UI updates from SQLite
+                queryClient.invalidateQueries({
+                  queryKey: ['forms'],
+                  refetchType: 'active', // Only refetch if component is mounted
+                });
               })
               .catch((err: any) => {
                 console.warn('⚠️ Failed to pull form update:', err);
