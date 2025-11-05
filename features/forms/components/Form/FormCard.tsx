@@ -1,7 +1,7 @@
 import { Text, StyleSheet, Pressable } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Form as FormType } from '~/db/schema';
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
+import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type FormCardProps = {
   form: FormType;
@@ -21,7 +21,7 @@ export const FormCard = ({ form, onPress, onDelete }: FormCardProps) => {
   );
 
   return (
-    <Swipeable renderRightActions={renderRightActions}>
+    <SwipeableCard renderRightActions={renderRightActions}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
@@ -39,7 +39,7 @@ export const FormCard = ({ form, onPress, onDelete }: FormCardProps) => {
           <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
         )}
       </Pressable>
-    </Swipeable>
+    </SwipeableCard>
   );
 };
 

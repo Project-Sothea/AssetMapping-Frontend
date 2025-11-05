@@ -8,6 +8,7 @@ type SearchBarProps = {
   onQueryChange: (text: string) => void;
   results: Pin[];
   placeholder?: string;
+  onNavigateToMap?: (pin: Pin) => void;
 };
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -15,6 +16,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onQueryChange,
   results,
   placeholder = 'Search...',
+  onNavigateToMap,
 }) => {
   return (
     <View style={styles.container}>
@@ -29,7 +31,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <FlatList
         data={results}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <PinCard pin={item} />}
+        renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={onNavigateToMap} />}
         contentContainerStyle={{ paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
       />

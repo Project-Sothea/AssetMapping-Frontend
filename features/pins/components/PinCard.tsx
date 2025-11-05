@@ -5,12 +5,15 @@ import { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
+import { MaterialIcons } from '@expo/vector-icons';
+import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type PinCardProps = {
   pin: Pin;
+  onNavigateToMap?: (pin: Pin) => void;
 };
 
-export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
+export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const router = useRouter();
   const { data: forms = [] } = useFetchForms(pin.id);
 
@@ -24,37 +27,53 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
     router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
   };
 
-  return (
-    <TouchableOpacity style={styles.card} onPress={handleViewForms} activeOpacity={0.7}>
-      <View style={[styles.accent, { backgroundColor: accentColor }]} />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name}>{pin.name}</Text>
-          <View
-            style={[
-              styles.formCountBadge,
-              { backgroundColor: forms.length === 0 ? '#E5E7EB' : '#4F46E5' },
-            ]}>
-            <Text
-              style={[styles.formCountText, { color: forms.length === 0 ? '#9CA3AF' : '#fff' }]}>
-              {forms.length}
-            </Text>
-          </View>
-        </View>
-        {pin.description && <Text style={styles.description}>{pin.description}</Text>}
+  const renderRightActions = () => {
+    if (!pin.lat || !pin.lng || !onNavigateToMap) return null;
 
-        {/* Display images using FallbackImageList */}
-        {(pin.localImages || pin.images) && (
-          <FallbackImageList
-            localImages={pin.localImages}
-            remoteImages={pin.images}
-            entityId={pin.id}
-            imageStyle={styles.thumbnail}
-            containerStyle={styles.imageScroll}
-          />
-        )}
-      </View>
-    </TouchableOpacity>
+    return (
+      <TouchableOpacity
+        style={styles.mapAction}
+        onPress={() => onNavigateToMap(pin)}
+        activeOpacity={0.7}>
+        <MaterialIcons name="directions" size={24} color="#fff" />
+        <Text style={styles.mapActionText}>Open Map</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <SwipeableCard renderRightActions={renderRightActions}>
+      <TouchableOpacity style={styles.card} onPress={handleViewForms} activeOpacity={0.7}>
+        <View style={[styles.accent, { backgroundColor: accentColor }]} />
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.name}>{pin.name}</Text>
+            <View
+              style={[
+                styles.formCountBadge,
+                { backgroundColor: forms.length === 0 ? '#E5E7EB' : '#4F46E5' },
+              ]}>
+              <Text
+                style={[styles.formCountText, { color: forms.length === 0 ? '#9CA3AF' : '#fff' }]}>
+                {forms.length}
+              </Text>
+            </View>
+          </View>
+          {pin.description && <Text style={styles.description}>{pin.description}</Text>}
+
+          {/* Display images using FallbackImageList */}
+          {(pin.localImages || pin.images) && (
+            <FallbackImageList
+              localImages={pin.localImages}
+              remoteImages={pin.images}
+              entityId={pin.id}
+              imageStyle={styles.thumbnail}
+              containerStyle={styles.imageScroll}
+            />
+          )}
+        </View>
+      </TouchableOpacity>
+    </SwipeableCard>
   );
 };
 
@@ -114,12 +133,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   imageScroll: {
-    marginBottom: 0,
+    marginBottom: 12,
   },
   thumbnail: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 8,
+  },
+  mapAction: {
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 14,
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    minWidth: 100,
+  },
+  mapActionText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
   },
 });

@@ -10,7 +10,7 @@ import {
 } from '@rnmapbox/maps';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './MapPin/PinFormModal';
@@ -25,9 +25,15 @@ import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
-export default function Map() {
+type MapProps = {
+  initialCoords?: { lat: number; lng: number };
+  initialPinId?: string;
+};
+
+export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
   const { data: pins } = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
+  const cameraRef = useRef<Camera>(null);
 
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
@@ -38,6 +44,24 @@ export default function Map() {
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
+
+  // Open initial pin and center camera if provided
+  useEffect(() => {
+    if (initialCoords) {
+      // Add a small delay to ensure camera ref is ready
+      const timer = setTimeout(() => {
+        if (cameraRef.current) {
+          cameraRef.current.setCamera({
+            centerCoordinate: [initialCoords.lng, initialCoords.lat],
+            zoomLevel: 18,
+            animationDuration: 1000,
+          });
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [initialCoords, initialPinId]);
 
   const refreshMap = () => {
     setMapKey((k) => k + 1); // force remount
@@ -121,7 +145,19 @@ export default function Map() {
         compassEnabled
         scaleBarEnabled
         onLongPress={handleDropPin}>
-        <Camera followUserLocation followZoomLevel={16} />
+        <Camera
+          ref={cameraRef}
+          followUserLocation={!initialCoords}
+          followZoomLevel={!initialCoords ? 18 : undefined}
+          defaultSettings={
+            initialCoords
+              ? {
+                  centerCoordinate: [initialCoords.lng, initialCoords.lat],
+                  zoomLevel: 18,
+                }
+              : undefined
+          }
+        />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
 
         {pins && (
