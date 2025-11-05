@@ -113,12 +113,30 @@ export const SyncStatusBar = () => {
     }
   };
 
-  // Construct status display
-  const getStatusColor = () => {
-    if (isSyncing) return '#3498db'; // Blue for syncing
-    if (queueFailed > 0) return '#e74c3c'; // Red for failed
-    if (queuePending > 0) return '#f39c12'; // Orange for pending
-    return '#27ae60'; // Green for synced
+  // Construct status display with 3D styling
+  const getStatusStyle = () => {
+    if (isSyncing) {
+      return {
+        backgroundColor: '#3498db',
+        shadowColor: '#2980b9',
+      };
+    }
+    if (queueFailed > 0) {
+      return {
+        backgroundColor: '#e74c3c',
+        shadowColor: '#c0392b',
+      };
+    }
+    if (queuePending > 0) {
+      return {
+        backgroundColor: '#f39c12',
+        shadowColor: '#d68910',
+      };
+    }
+    return {
+      backgroundColor: '#27ae60',
+      shadowColor: '#229954',
+    };
   };
 
   const getStatusText = () => {
@@ -128,7 +146,7 @@ export const SyncStatusBar = () => {
     return 'Synced';
   };
 
-  const statusColor = getStatusColor();
+  const statusStyle = getStatusStyle();
   const displayText = getStatusText();
 
   return (
@@ -140,12 +158,13 @@ export const SyncStatusBar = () => {
           style={({ pressed }) => [
             styles.button,
             {
-              borderColor: statusColor,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-              backgroundColor: pressed ? '#f0f0f0' : 'white',
+              backgroundColor: statusStyle.backgroundColor,
+              shadowColor: statusStyle.shadowColor,
+              transform: [{ scale: pressed ? 0.95 : 1 }],
+              shadowOpacity: pressed ? 0.3 : 0.5,
             },
           ]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>{displayText}</Text>
+          <Text style={styles.statusText}>{displayText}</Text>
         </Pressable>
       </View>
     </View>
@@ -153,7 +172,12 @@ export const SyncStatusBar = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' }, // idk if shld remove flex:1... ugh
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -10,
+  },
   buttonWrapper: {
     position: 'relative',
     flexDirection: 'row',
@@ -161,16 +185,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   button: {
-    paddingVertical: 6, // reduced paddings so wldnt look so fat
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    borderWidth: 2,
-    backgroundColor: 'white',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
   },
-  statusText: { fontSize: 14, fontWeight: '600' },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: 'white',
+    letterSpacing: 0.3,
+  },
 });
