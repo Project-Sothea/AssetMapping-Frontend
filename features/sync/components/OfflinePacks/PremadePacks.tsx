@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 8,
+    marginBottom: 16,
     color: '#111827',
   },
 
@@ -92,13 +92,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    marginBottom: 16
   },
   cell: {
     flexBasis: '48%', // two per row
     flexGrow: 1,
   },
 
-  spacer: { height: 8 },
+  spacer: { height: 0 },
 
   progressContainer: {
     height: 8,
