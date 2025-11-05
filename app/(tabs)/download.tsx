@@ -19,13 +19,11 @@ import { getApiUrl, setApiUrl } from '~/services/apiUrl';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { reconnectAndSync } from '~/services/sync/syncService';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
-import { useWebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
   const { mutateAsync: deletePackMutation } = useDeletePack();
   const { data: packs } = useFetchPacks();
-  const { isConnected } = useWebSocketStatus();
   const [apiUrl, setApiUrlState] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -43,15 +41,11 @@ export default function Home() {
       return;
     }
 
-    setIsSyncing(true);
-
     try {
+      setIsSyncing(true);
+
       // Save the new API URL
       await setApiUrl(apiUrl);
-      
-      // Small delay to ensure AsyncStorage has persisted the new URL
-      // before apiClient tries to fetch it in healthCheck()
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Use the centralized reconnect and sync service
       const deviceId = getDeviceId();
@@ -60,13 +54,9 @@ export default function Home() {
       Alert.alert('Success', 'API URL updated and data synced successfully!');
     } catch (error) {
       console.error('❌ Failed to connect or sync:', error);
-      
-      // Parse error message
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
       Alert.alert(
-        'Connection Failed',
-        `Could not connect to backend: ${errorMessage}\n\nPlease check:\n• API URL is correct\n• Backend server is running\n• Device has internet connection`
+        'Sync Failed',
+        'API URL was saved, but failed to sync data. Please check your connection and try again.'
       );
     } finally {
       setIsSyncing(false);
@@ -89,17 +79,11 @@ export default function Home() {
           />
           <Spacer />
           <TouchableOpacity
-            style={[
-              styles.saveButton, 
-              isSyncing && styles.saveButtonDisabled,
-              !isConnected && !isSyncing && styles.saveButtonError
-            ]}
+            style={[styles.saveButton, isSyncing && styles.saveButtonDisabled]}
             onPress={saveApiUrl}
             disabled={isSyncing}>
             <Text style={styles.saveButtonText}>
-              {isSyncing ? 'Connecting & Syncing...' : 
-               !isConnected ? '❌ Reconnect' :
-               '✓ Save API URL'}
+              {isSyncing ? 'Connecting & Syncing...' : 'Save API URL'}
             </Text>
           </TouchableOpacity>
           {!apiUrl && (
@@ -270,9 +254,6 @@ const styles = StyleSheet.create({
   saveButtonDisabled: {
     backgroundColor: '#94A3B8',
     opacity: 0.7,
-  },
-  saveButtonError: {
-    backgroundColor: '#DC2626',
   },
   saveButtonText: {
     color: 'white',
