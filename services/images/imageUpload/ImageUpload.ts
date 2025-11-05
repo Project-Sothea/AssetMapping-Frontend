@@ -52,9 +52,15 @@ async function prepareSignedUpload(
   uri: string,
   index: number
 ): Promise<SignedUploadData> {
+  console.log(`  [${index + 1}] Preparing upload for: ${uri}`);
+
   const filename = extractFilename(uri) || `image_${index}_${Date.now()}.jpg`;
   const blob = await fetchImageBlob(uri);
+
+  console.log(`  [${index + 1}] Got blob (${blob.size} bytes), requesting signed URL...`);
   const { uploadUrl, publicUrl } = await getSignedUrl(entityId, filename, blob.size);
+
+  console.log(`  [${index + 1}] Signed URL received`);
 
   return {
     localUri: uri,
@@ -107,11 +113,16 @@ async function getSignedUrl(
  * Upload all images to their signed URLs
  */
 async function uploadAllImages(signedData: SignedUploadData[]): Promise<string[]> {
-  return Promise.all(
-    signedData.map(({ signedUrl, publicUrl, blob }) =>
-      uploadSingleImage(signedUrl, publicUrl, blob)
+  console.log(`⬆️  Starting upload of ${signedData.length} images to storage...`);
+
+  const results = await Promise.all(
+    signedData.map(({ signedUrl, publicUrl, blob }, index) =>
+      uploadSingleImage(signedUrl, publicUrl, blob, index)
     )
   );
+
+  console.log(`✅ All ${results.length} images uploaded successfully`);
+  return results;
 }
 
 /**
@@ -120,17 +131,40 @@ async function uploadAllImages(signedData: SignedUploadData[]): Promise<string[]
 async function uploadSingleImage(
   signedUrl: string,
   publicUrl: string,
-  blob: Blob
+  blob: Blob,
+  index: number
 ): Promise<string> {
-  const response = await fetch(signedUrl, {
-    method: 'PUT',
-    body: blob,
-    headers: { 'Content-Type': 'image/jpeg' },
-  });
+  console.log(`  [${index + 1}] Uploading ${(blob.size / 1024).toFixed(1)}KB to storage...`);
 
-  if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status}`);
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for image upload
+
+  try {
+    const response = await fetch(signedUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': 'image/jpeg' },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+
+    console.log(`  [${index + 1}] ✓ Upload complete`);
+    return publicUrl;
+  } catch (error) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`  [${index + 1}] ⏱️ Upload timed out after 60s`);
+      throw new Error('Image upload timed out. Please check your internet connection.');
+    }
+
+    console.error(`  [${index + 1}] ❌ Upload failed:`, error);
+    throw error;
   }
-
-  return publicUrl;
 }

@@ -53,7 +53,12 @@ export function useInitialSync(): InitialSyncState {
       }
     };
 
-    performInitialSyncWithNotifications();
+    // Delay sync to avoid scheduling updates during render
+    const timeoutId = setTimeout(() => {
+      performInitialSyncWithNotifications();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [showPopup]);
 
   return state;

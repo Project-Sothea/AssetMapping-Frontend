@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
-import { getImageUrisWithFallback } from '~/services/images/imageStrategy';
+import { FallbackImageList } from '~/shared/components/FallbackImageList';
 
 type PinCardProps = {
   pin: Pin;
@@ -17,18 +17,12 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
   // Check sync status from operations table
   const isSynced = usePinQueueStatus(pin.id);
 
-  const handleViewForms = () => {
-    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
-  };
-
   // Dynamic accent color based on synced status
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
-  // Get image URIs with fallback (remote first, then local)
-  const imageURIs = useMemo(
-    () => getImageUrisWithFallback(pin.images, pin.localImages),
-    [pin.images, pin.localImages]
-  );
+  const handleViewForms = () => {
+    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
+  };
 
   return (
     <TouchableOpacity style={styles.card} onPress={handleViewForms} activeOpacity={0.7}>
@@ -49,24 +43,15 @@ export const PinCard: React.FC<PinCardProps> = ({ pin }) => {
         </View>
         {pin.description && <Text style={styles.description}>{pin.description}</Text>}
 
-        {/* Display images if any */}
-        {imageURIs.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.imageScroll}
-            contentContainerStyle={styles.imageScrollContent}>
-            {imageURIs.map((uri, index) => (
-              <Image
-                key={index}
-                source={{ uri, cache: 'force-cache' }}
-                style={styles.thumbnail}
-                onError={(e) =>
-                  console.error(`❌ PinCard image ${index} failed:`, uri, e.nativeEvent.error)
-                }
-              />
-            ))}
-          </ScrollView>
+        {/* Display images using FallbackImageList */}
+        {(pin.localImages || pin.images) && (
+          <FallbackImageList
+            localImages={pin.localImages}
+            remoteImages={pin.images}
+            entityId={pin.id}
+            imageStyle={styles.thumbnail}
+            containerStyle={styles.imageScroll}
+          />
         )}
       </View>
     </TouchableOpacity>
@@ -129,16 +114,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   imageScroll: {
-    marginBottom: 12,
-  },
-  imageScrollContent: {
-    paddingRight: 8,
+    marginBottom: 0,
   },
   thumbnail: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 8,
-    backgroundColor: '#f3f3f3',
   },
 });

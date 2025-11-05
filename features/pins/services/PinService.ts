@@ -27,7 +27,7 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
     // Queue for background sync to backend
     await enqueuePin('update', saved);
 
-    return updated;
+    return saved;
   } catch (error) {
     console.error('❌ Failed to update pin:', error);
     throw error;

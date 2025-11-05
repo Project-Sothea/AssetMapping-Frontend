@@ -23,6 +23,7 @@ const PinFormSchema = Yup.object().shape({
   lat: Yup.number().nullable().required('Latitude is required'),
   lng: Yup.number().nullable().required('Longitude is required'),
   localImages: Yup.array().of(Yup.string()).nullable(),
+  version: Yup.number().nullable(),
 });
 
 export type PinFormValues = {
@@ -35,6 +36,7 @@ export type PinFormValues = {
   id: string;
   lat: number | null;
   lng: number | null;
+  version: number; // Include version for conflict detection
 };
 
 type PinFormProps = {

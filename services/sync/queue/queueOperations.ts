@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { eq } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
 import { syncQueue } from '~/db/schema';
 import { syncPin, syncForm } from './syncOperations';
@@ -19,6 +19,7 @@ export async function processOperation(op: any): Promise<void> {
 
 /**
  * Enqueues a new operation into the sync queue for later processing.
+ * If a pending/failed operation already exists for the same entity, updates it instead.
  * @param params - The operation details including type, entity, and payload.
  * @returns The unique operation ID.
  */
@@ -29,12 +30,56 @@ export async function enqueue(params: {
   payload: any;
 }): Promise<string> {
   try {
-    const operationId = uuidv4();
     const timestamp = new Date().toISOString();
 
     // Sanitize payload to ensure it's SQLite-safe
     const sanitizedPayload = sanitizeForDb(params.payload);
     const payloadString = JSON.stringify(sanitizedPayload);
+
+    // Check if there's an existing pending/failed operation for this entity
+    const existing = await db
+      .select()
+      .from(syncQueue)
+      .where(
+        and(
+          eq(syncQueue.entityId, params.entityId),
+          eq(syncQueue.entityType, params.entityType),
+          or(eq(syncQueue.status, 'pending'), eq(syncQueue.status, 'failed'))
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing operation with new payload and operation type
+      const existingOp = existing[0];
+      console.log('🔄 Updating existing queue entry:', {
+        id: existingOp.id.slice(0, 8),
+        oldOperation: existingOp.operation,
+        newOperation: params.operation,
+        entityId: params.entityId.slice(0, 8),
+      });
+
+      await db
+        .update(syncQueue)
+        .set({
+          operation: params.operation,
+          payload: payloadString,
+          status: 'pending', // Reset to pending
+          attempts: 0, // Reset attempts
+          lastError: null, // Clear error
+          sequenceNumber: Date.now(), // Update sequence for proper ordering
+          idempotencyKey: `${params.entityType}-${params.entityId}-${timestamp}`,
+        })
+        .where(eq(syncQueue.id, existingOp.id));
+
+      console.log(
+        `✅ Updated queue entry ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
+      );
+      return existingOp.id;
+    }
+
+    // No existing operation - create new one
+    const operationId = uuidv4();
 
     console.log('🔍 Enqueueing:', {
       id: operationId.slice(0, 8),

@@ -45,6 +45,7 @@ const intoPinFormValues = (pin: Pin): PinFormValues => {
     localImages: normalizedLocalImages, // ONLY local files
     lat: pin.lat,
     lng: pin.lng,
+    version: pin.version, // Include version for conflict detection
   };
 };
 

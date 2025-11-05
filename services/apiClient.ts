@@ -70,28 +70,53 @@ class ApiClient {
     return this.baseUrl;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    timeoutMs: number = 30000
+  ): Promise<ApiResponse<T>> {
     try {
       const baseUrl = await this.getBaseUrl();
       const url = `${baseUrl}${endpoint}`;
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        return {
-          success: false,
-          error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-        };
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          return {
+            success: false,
+            error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+
+        const data = await response.json();
+        return data as ApiResponse<T>;
+      } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error(`API request timed out after ${timeoutMs / 1000}s:`, endpoint);
+          return {
+            success: false,
+            error: 'Request timed out. Please check your internet connection.',
+          };
+        }
+        throw error;
       }
-
-      const data = await response.json();
-      return data as ApiResponse<T>;
     } catch (error) {
       console.error('API request failed:', error);
       return {
@@ -122,23 +147,27 @@ class ApiClient {
   }
 
   async batchSync(items: SyncItemRequest[]): Promise<ApiResponse<BatchSyncResponse>> {
-    return this.request<BatchSyncResponse>('/api/sync/batch', {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-    });
+    // Longer timeout for batch operations - 5 seconds per item, minimum 30s, max 2 minutes
+    const timeoutMs = Math.min(Math.max(items.length * 5000, 30000), 120000);
+    return this.request<BatchSyncResponse>(
+      '/api/sync/batch',
+      {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      },
+      timeoutMs
+    );
   }
 
   // Fetch API methods
   async fetchPins(): Promise<ApiResponse<Record<string, unknown>[]>> {
-    return this.request<Record<string, unknown>[]>('/api/pins', {
-      method: 'GET',
-    });
+    // Longer timeout for bulk data fetch (2 minutes)
+    return this.request<Record<string, unknown>[]>('/api/pins', { method: 'GET' }, 120000);
   }
 
   async fetchForms(): Promise<ApiResponse<Record<string, unknown>[]>> {
-    return this.request<Record<string, unknown>[]>('/api/forms', {
-      method: 'GET',
-    });
+    // Longer timeout for bulk data fetch (2 minutes)
+    return this.request<Record<string, unknown>[]>('/api/forms', { method: 'GET' }, 120000);
   }
 
   // Image API methods

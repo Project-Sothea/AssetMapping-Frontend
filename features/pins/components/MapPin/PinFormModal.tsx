@@ -21,6 +21,7 @@ export const PinFormModal = ({ visible, onClose, onSubmit, coords }: PinFormModa
     id: uuidv4(),
     lat: coords.lat,
     lng: coords.lng,
+    version: 1, // New pins start at version 1
   };
 
   return (

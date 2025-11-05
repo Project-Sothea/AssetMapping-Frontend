@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useState, useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
 import { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
-import { getImageUrisWithFallback } from '~/services/images/imageStrategy';
+import { FallbackImageList } from '~/shared/components/FallbackImageList';
 
 type PinDetailsProps = { pin: Pin };
 
@@ -13,12 +13,6 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
 
   // Check sync status from operations table
   const isSynced = usePinQueueStatus(pin.id);
-
-  // Get image URIs with fallback (remote first, then local)
-  const imageURIs = useMemo(
-    () => getImageUrisWithFallback(pin.images, pin.localImages),
-    [pin.images, pin.localImages]
-  );
 
   const openImage = (index: number) => {
     setActiveIndex(index);
@@ -36,29 +30,15 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
         </View>
       </View>
 
-      {imageURIs.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={140} // image width 130 + marginRight 10
-          decelerationRate="fast"
-          contentContainerStyle={{ paddingHorizontal: 8 }}
-          style={styles.imageScroll}>
-          {imageURIs.map((uri, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => openImage(i)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Image
-                source={{ uri, cache: 'force-cache' }}
-                style={styles.image}
-                onError={(e) =>
-                  console.error(`❌ Image ${i} failed to load:`, uri, e.nativeEvent.error)
-                }
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {(pin.localImages || pin.images) && (
+        <FallbackImageList
+          localImages={pin.localImages}
+          remoteImages={pin.images}
+          entityId={pin.id}
+          imageStyle={styles.image}
+          containerStyle={styles.imageScroll}
+          onImagePress={openImage}
+        />
       )}
 
       <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
@@ -73,7 +53,9 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       {modalVisible && (
         <ImageModal
           visible={modalVisible}
-          images={imageURIs}
+          localImages={pin.localImages}
+          remoteImages={pin.images}
+          entityId={pin.id}
           initialIndex={activeIndex}
           onClose={() => setModalVisible(false)}
         />
