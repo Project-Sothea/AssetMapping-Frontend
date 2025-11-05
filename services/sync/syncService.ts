@@ -5,8 +5,9 @@
  * Provides a single responsibility point for sync operations.
  */
 
-import { pullAllPins, pullAllForms } from './pullUpdates';
+import { pullAllPins, pullAllForms, pullPinsSince, pullFormsSince } from './pullUpdates';
 import { processQueue } from './queue';
+import { getLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 
 /**
  * Performs a full bidirectional sync:
@@ -39,7 +40,58 @@ export async function performFullSync(): Promise<void> {
   console.log('📋 Pulling forms from server...');
   await pullAllForms();
 
+  // Update last sync timestamp
+  await updateLastSyncTimestamp();
+
   console.log('✅ Full data sync completed successfully');
+}
+
+/**
+ * Performs an incremental sync (only fetches data updated since last sync):
+ * 1. Push pending local changes to server
+ * 2. Pull only updated data from server since last sync
+ *
+ * @throws Error if sync fails
+ */
+export async function performIncrementalSync(): Promise<void> {
+  console.log('🔄 Starting incremental data sync...');
+
+  // Add a small delay to ensure database is ready
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Get last sync timestamp
+  const lastSyncTimestamp = await getLastSyncTimestamp();
+
+  if (lastSyncTimestamp === 0) {
+    console.log('⚠️ No previous sync found, performing full sync instead');
+    await performFullSync();
+    return;
+  }
+
+  console.log(`📅 Last sync: ${new Date(lastSyncTimestamp).toISOString()}`);
+
+  // Process any pending local operations (outbox) - do this first
+  console.log('📤 Processing pending operations...');
+  await processQueue();
+
+  // Small delay between operations to prevent database locks
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
+  // Pull pins updated since last sync
+  console.log('📍 Pulling updated pins from server...');
+  await pullPinsSince(lastSyncTimestamp);
+
+  // Small delay between operations
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
+  // Pull forms updated since last sync
+  console.log('📋 Pulling updated forms from server...');
+  await pullFormsSince(lastSyncTimestamp);
+
+  // Update last sync timestamp
+  await updateLastSyncTimestamp();
+
+  console.log('✅ Incremental data sync completed successfully');
 }
 
 /**

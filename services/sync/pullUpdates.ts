@@ -13,60 +13,144 @@ import { eq } from 'drizzle-orm';
 import { ImageManager } from '~/services/images/ImageManager';
 import { parseJsonArray } from '~/shared/utils/parsing';
 
+// --- Types ---
+type EntityType = 'pin' | 'form';
+
+interface ProcessResult {
+  successCount: number;
+  totalCount: number;
+}
+
+// --- Core Processing Functions ---
+
+/**
+ * Helper: Process and save a single pin to local database
+ * Downloads remote images to local storage for offline access
+ */
+async function processPinData(pinData: Record<string, unknown>): Promise<void> {
+  const pinId = pinData.id as string;
+
+  const remoteUrls = parseJsonArray(pinData.images as string);
+  const localImagePaths = await ImageManager.downloadRemoteImages(pinId, remoteUrls);
+
+  const sanitized = sanitizePinForDb({
+    ...pinData,
+    localImages: localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
+  });
+
+  await upsertEntity(pins, sanitized, pinId);
+}
+
+/**
+ * Helper: Process and save a single form to local database
+ */
+async function processFormData(formData: Record<string, unknown>): Promise<void> {
+  const sanitized = sanitizeFormForDb(formData);
+  await upsertEntity(forms, sanitized, sanitized.id);
+}
+
+/**
+ * Generic upsert helper - insert or update entity
+ */
+async function upsertEntity<T extends { id: string }>(
+  table: typeof pins | typeof forms,
+  data: T,
+  id: string
+): Promise<void> {
+  const existing = await db.select().from(table).where(eq(table.id, id)).limit(1);
+
+  if (existing.length > 0) {
+    await db.update(table).set(data).where(eq(table.id, id));
+  } else {
+    await db.insert(table).values(data);
+  }
+}
+
+/**
+ * Process multiple entities with error handling
+ */
+async function processBatch<T extends Record<string, unknown>>(
+  entityType: EntityType,
+  data: T[],
+  processor: (item: T) => Promise<void>
+): Promise<ProcessResult> {
+  let successCount = 0;
+
+  for (const item of data) {
+    try {
+      await processor(item);
+      successCount++;
+    } catch (error) {
+      console.error(`❌ Failed to process ${entityType} ${item.id}:`, error);
+    }
+  }
+
+  return { successCount, totalCount: data.length };
+}
+
+/**
+ * Generic fetch and process handler for multiple entities
+ */
+async function fetchAndProcess<T extends Record<string, unknown>>(
+  entityType: EntityType,
+  fetcher: () => Promise<{ success: boolean; data?: T[]; error?: string }>,
+  processor: (item: T) => Promise<void>,
+  operation: string
+): Promise<void> {
+  console.log(`🔄 ${operation}`);
+
+  const response = await fetcher();
+
+  if (!response.success || !response.data) {
+    throw new Error(response.error || `Failed to fetch ${entityType}s`);
+  }
+
+  if (response.data.length === 0) {
+    console.log(`✅ No new ${entityType} updates`);
+    return;
+  }
+
+  const result = await processBatch(entityType, response.data, processor);
+  console.log(
+    `✅ Synced ${result.successCount}/${result.totalCount} ${entityType}s to local database`
+  );
+}
+
+/**
+ * Generic fetch and process handler for single entity
+ */
+async function fetchAndProcessSingle<T extends Record<string, unknown>>(
+  entityType: EntityType,
+  fetcher: () => Promise<{ success: boolean; data?: T; error?: string }>,
+  processor: (item: T) => Promise<void>,
+  operation: string
+): Promise<void> {
+  console.log(`🔄 ${operation}`);
+
+  const response = await fetcher();
+
+  if (!response.success || !response.data) {
+    throw new Error(response.error || `Failed to fetch ${entityType}`);
+  }
+
+  await processor(response.data);
+  console.log(`✅ Synced ${entityType} to local database`);
+}
+
+// --- Public API ---
+
 /**
  * Pull a specific pin from backend and update local database
- * Downloads remote images to local storage for offline access
  */
 export async function pullPinUpdate(pinId: string): Promise<void> {
   try {
-    console.log(`🔄 Pulling pin update from backend: ${pinId}`);
-
-    // Fetch single pin from backend (optimized - no longer fetches all pins!)
-    const response = await apiClient.fetchPin(pinId);
-
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch pin');
-    }
-
-    const pinData = response.data;
-
-    // Download remote images to local storage for offline access
-    const remoteUrls = parseJsonArray(pinData.images as string);
-    let localImagePaths: string[] = [];
-
-    if (remoteUrls.length > 0) {
-      console.log(`📥 Downloading ${remoteUrls.length} images for offline use...`);
-      try {
-        const result = await ImageManager.saveImages(pinId, remoteUrls);
-        localImagePaths = result.success;
-        console.log(`✅ Downloaded ${result.success.length} images successfully`);
-        if (result.fail.length > 0) {
-          console.warn(`⚠️ Failed to download ${result.fail.length} images`);
-        }
-      } catch (error) {
-        console.error('❌ Failed to download images:', error);
-        // Continue with pin sync even if images fail
-      }
-    }
-
-    const sanitized = sanitizePinForDb({
-      ...pinData,
-      localImages:
-        localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
-    });
-
-    // Check if pin exists locally
-    const existing = await db.select().from(pins).where(eq(pins.id, pinId)).limit(1);
-
-    if (existing.length > 0) {
-      // Update existing pin
-      await db.update(pins).set(sanitized).where(eq(pins.id, pinId));
-      console.log(`✅ Updated local pin: ${pinId}`);
-    } else {
-      // Insert new pin
-      await db.insert(pins).values(sanitized);
-      console.log(`✅ Inserted new local pin: ${pinId}`);
-    }
+    await fetchAndProcessSingle(
+      'pin',
+      () => apiClient.fetchPin(pinId),
+      processPinData,
+      `Pulling pin update from backend: ${pinId}`
+    );
+    console.log(`✅ Updated local pin: ${pinId}`);
   } catch (error) {
     console.error(`❌ Failed to pull pin update: ${error}`);
     throw error;
@@ -78,32 +162,13 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
  */
 export async function pullFormUpdate(formId: string): Promise<void> {
   try {
-    console.log(`🔄 Pulling form update from backend: ${formId}`);
-
-    // Fetch single form from backend (optimized - no longer fetches all forms!)
-    const response = await apiClient.fetchForm(formId);
-
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch form');
-    }
-
-    const formData = response.data;
-
-    // Update local database
-    const sanitized = sanitizeFormForDb(formData);
-
-    // Check if form exists locally
-    const existing = await db.select().from(forms).where(eq(forms.id, formId)).limit(1);
-
-    if (existing.length > 0) {
-      // Update existing form
-      await db.update(forms).set(sanitized).where(eq(forms.id, formId));
-      console.log(`✅ Updated local form: ${formId}`);
-    } else {
-      // Insert new form
-      await db.insert(forms).values(sanitized);
-      console.log(`✅ Inserted new local form: ${formId}`);
-    }
+    await fetchAndProcessSingle(
+      'form',
+      () => apiClient.fetchForm(formId),
+      processFormData,
+      `Pulling form update from backend: ${formId}`
+    );
+    console.log(`✅ Updated local form: ${formId}`);
   } catch (error) {
     console.error(`❌ Failed to pull form update: ${error}`);
     throw error;
@@ -112,61 +177,15 @@ export async function pullFormUpdate(formId: string): Promise<void> {
 
 /**
  * Pull all pins from backend and sync to local database
- * Downloads remote images to local storage for offline access
  */
 export async function pullAllPins(): Promise<void> {
   try {
-    console.log('🔄 Pulling all pins from backend');
-
-    const response = await apiClient.fetchPins();
-
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch pins');
-    }
-
-    let successCount = 0;
-
-    for (const pinData of response.data) {
-      try {
-        // Download remote images to local storage for offline access
-        const remoteUrls = parseJsonArray(pinData.images as string);
-        let localImagePaths: string[] = [];
-
-        if (remoteUrls.length > 0) {
-          try {
-            const result = await ImageManager.saveImages(pinData.id as string, remoteUrls);
-            localImagePaths = result.success;
-            if (result.fail.length > 0) {
-              console.warn(`⚠️ Pin ${pinData.id}: Failed to download ${result.fail.length} images`);
-            }
-          } catch (error) {
-            console.error(`❌ Pin ${pinData.id}: Failed to download images:`, error);
-            // Continue with pin sync even if images fail
-          }
-        }
-
-        const sanitized = sanitizePinForDb({
-          ...pinData,
-          localImages:
-            localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
-        });
-
-        const existing = await db.select().from(pins).where(eq(pins.id, sanitized.id)).limit(1);
-
-        if (existing.length > 0) {
-          await db.update(pins).set(sanitized).where(eq(pins.id, sanitized.id));
-        } else {
-          await db.insert(pins).values(sanitized);
-        }
-
-        successCount++;
-      } catch (pinError) {
-        console.error(`❌ Failed to process pin ${pinData.id}:`, pinError);
-        // Continue with other pins
-      }
-    }
-
-    console.log(`✅ Synced ${successCount}/${response.data.length} pins to local database`);
+    await fetchAndProcess(
+      'pin',
+      () => apiClient.fetchPins(),
+      processPinData,
+      'Pulling all pins from backend'
+    );
   } catch (error) {
     console.error(`❌ Failed to pull all pins: ${error}`);
     throw error;
@@ -178,28 +197,48 @@ export async function pullAllPins(): Promise<void> {
  */
 export async function pullAllForms(): Promise<void> {
   try {
-    console.log('🔄 Pulling all forms from backend');
-
-    const response = await apiClient.fetchForms();
-
-    if (!response.success || !response.data) {
-      throw new Error(response.error || 'Failed to fetch forms');
-    }
-
-    for (const formData of response.data) {
-      const sanitized = sanitizeFormForDb(formData);
-      const existing = await db.select().from(forms).where(eq(forms.id, sanitized.id)).limit(1);
-
-      if (existing.length > 0) {
-        await db.update(forms).set(sanitized).where(eq(forms.id, sanitized.id));
-      } else {
-        await db.insert(forms).values(sanitized);
-      }
-    }
-
-    console.log(`✅ Synced ${response.data.length} forms to local database`);
+    await fetchAndProcess(
+      'form',
+      () => apiClient.fetchForms(),
+      processFormData,
+      'Pulling all forms from backend'
+    );
   } catch (error) {
     console.error(`❌ Failed to pull all forms: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Pull pins updated since a specific timestamp (incremental sync)
+ */
+export async function pullPinsSince(timestamp: number): Promise<void> {
+  try {
+    await fetchAndProcess(
+      'pin',
+      () => apiClient.fetchPinsSince(timestamp),
+      processPinData,
+      `Pulling pins updated since ${new Date(timestamp).toISOString()}`
+    );
+  } catch (error) {
+    console.error(`❌ Failed to pull pins since timestamp: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Pull forms updated since a specific timestamp (incremental sync)
+ */
+export async function pullFormsSince(timestamp: number): Promise<void> {
+  try {
+    await fetchAndProcess(
+      'form',
+      () => apiClient.fetchFormsSince(timestamp),
+      processFormData,
+      `Pulling forms updated since ${new Date(timestamp).toISOString()}`
+    );
+  } catch (error) {
+    console.error(`❌ Failed to pull forms since timestamp: ${error}`);
     throw error;
   }
 }

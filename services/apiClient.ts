@@ -169,6 +169,15 @@ class ApiClient {
     return this.request<Record<string, unknown>>(`/api/pins/${pinId}`, { method: 'GET' }, 30000);
   }
 
+  async fetchPinsSince(timestamp: number): Promise<ApiResponse<Record<string, unknown>[]>> {
+    // Longer timeout for bulk data fetch (2 minutes)
+    return this.request<Record<string, unknown>[]>(
+      `/api/pins/since/${timestamp}`,
+      { method: 'GET' },
+      120000
+    );
+  }
+
   async fetchForms(): Promise<ApiResponse<Record<string, unknown>[]>> {
     // Longer timeout for bulk data fetch (2 minutes)
     return this.request<Record<string, unknown>[]>('/api/forms', { method: 'GET' }, 120000);
@@ -176,6 +185,15 @@ class ApiClient {
 
   async fetchForm(formId: string): Promise<ApiResponse<Record<string, unknown>>> {
     return this.request<Record<string, unknown>>(`/api/forms/${formId}`, { method: 'GET' }, 30000);
+  }
+
+  async fetchFormsSince(timestamp: number): Promise<ApiResponse<Record<string, unknown>[]>> {
+    // Longer timeout for bulk data fetch (2 minutes)
+    return this.request<Record<string, unknown>[]>(
+      `/api/forms/since/${timestamp}`,
+      { method: 'GET' },
+      120000
+    );
   }
 
   // Image API methods

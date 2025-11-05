@@ -187,6 +187,8 @@ class WebSocketManager {
   private handleOpen(): void {
     console.log('✓ WebSocket connected');
 
+    const wasReconnecting = this.status.status === 'reconnecting';
+
     this.updateStatus({
       status: 'connected',
       isConnected: true,
@@ -194,6 +196,12 @@ class WebSocketManager {
       lastError: null,
       lastConnectedAt: new Date(),
     });
+
+    // If this was a reconnection, trigger incremental sync
+    if (wasReconnecting) {
+      console.log('🔄 Reconnected - triggering incremental sync');
+      this.triggerReconnectSync();
+    }
 
     // Start ping/pong health check
     this.startPingInterval();
@@ -323,6 +331,21 @@ class WebSocketManager {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+  }
+
+  /**
+   * Trigger incremental sync after reconnection
+   * Runs async without blocking WebSocket operations
+   */
+  private async triggerReconnectSync(): Promise<void> {
+    try {
+      // Dynamic import to avoid circular dependency
+      const { performIncrementalSync } = await import('~/services/sync/syncService');
+      await performIncrementalSync();
+    } catch (error) {
+      console.error('Failed to perform incremental sync after reconnect:', error);
+      // Don't throw - sync failure shouldn't break WebSocket
     }
   }
 
