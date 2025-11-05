@@ -25,7 +25,7 @@ export default function FormScreen() {
     setModalVisible(false);
   };
 
-  const handleFormEdit = (form: FormType) => {
+  const handleFormPress = (form: FormType) => {
     setSelectedForm(form);
     setModalVisible(true);
   };
@@ -82,7 +82,12 @@ export default function FormScreen() {
 
       <View style={styles.formsList}>
         {forms?.map((form) => (
-          <FormCard key={form.id} form={form} onEdit={handleFormEdit} onDelete={handleFormDelete} />
+          <FormCard
+            key={form.id}
+            form={form}
+            onPress={handleFormPress}
+            onDelete={handleFormDelete}
+          />
         ))}
       </View>
 

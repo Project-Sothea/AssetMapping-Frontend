@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import QueryProvider from '~/providers/QueryProvider';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect, useState } from 'react';
@@ -85,7 +86,7 @@ export default function RootLayout() {
   }, [success]);
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       {migrationStatus === 'loading' && (
         <View style={{ backgroundColor: '#fffae6', padding: 8 }}>
           <Text>Database migration in progress...</Text>
@@ -126,6 +127,6 @@ export default function RootLayout() {
           </QueryProvider>
         </SQLiteProvider>
       </Suspense>
-    </>
+    </GestureHandlerRootView>
   );
 }

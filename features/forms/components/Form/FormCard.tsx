@@ -1,35 +1,45 @@
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { Text, StyleSheet, Pressable } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Form as FormType } from '~/db/schema';
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 
 type FormCardProps = {
   form: FormType;
-  onEdit: (form: FormType) => void;
+  onPress: (form: FormType) => void;
   onDelete: (formId: string) => void;
 };
 
-export const FormCard = ({ form, onEdit, onDelete }: FormCardProps) => {
+export const FormCard = ({ form, onPress, onDelete }: FormCardProps) => {
   // Determine border color based on sync status from operations table
   const isSynced = useFormQueueStatus(form.id);
   const borderColor = isSynced ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced
 
+  const renderRightActions = () => (
+    <Pressable style={styles.deleteAction} onPress={() => onDelete(form.id)}>
+      <Text style={styles.deleteText}>Delete</Text>
+    </Pressable>
+  );
+
   return (
-    <View style={[styles.card, { borderLeftColor: borderColor }]}>
-      {form.name ? (
-        <Text style={styles.nameText}>{form.name}</Text>
-      ) : (
-        <Text style={styles.villageText}>{form.village}</Text>
-      )}
-      <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
-      {form.updatedAt && (
-        <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
-      )}
-      <View style={styles.buttonsRow}>
-        <Button title="View" color="#3498db" onPress={() => onEdit(form)} />
-        <View style={{ width: 10 }} />
-        <Button title="Delete" color="#e74c3c" onPress={() => onDelete(form.id)} />
-      </View>
-    </View>
+    <Swipeable renderRightActions={renderRightActions}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          { borderLeftColor: borderColor },
+          pressed && styles.cardPressed,
+        ]}
+        onPress={() => onPress(form)}>
+        {form.name ? (
+          <Text style={styles.nameText}>{form.name}</Text>
+        ) : (
+          <Text style={styles.villageText}>{form.village}</Text>
+        )}
+        <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
+        {form.updatedAt && (
+          <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
+        )}
+      </Pressable>
+    </Swipeable>
   );
 };
 
@@ -45,6 +55,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderLeftWidth: 5, // accent for status
+  },
+  cardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   villageText: {
     fontSize: 16,
@@ -63,9 +77,18 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginBottom: 4,
   },
-  buttonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginTop: 8,
+  deleteAction: {
+    backgroundColor: '#e74c3c',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  deleteText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
