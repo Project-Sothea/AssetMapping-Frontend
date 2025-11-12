@@ -11,7 +11,6 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import migrations from '../drizzle/sqlite/migrations';
 import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
-import { migrateAddVersionColumn } from '~/db/migrations/add_version_column';
 import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 import { PopupProvider } from '~/shared/contexts/PopupContext';
@@ -69,13 +68,6 @@ export default function RootLayout() {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           console.log('🔄 Running version column migration...');
-          const result = await migrateAddVersionColumn(DATABASE_NAME);
-
-          if (result.success) {
-            console.log('✅ Version migration complete!');
-          } else if (result.reason === 'tables_not_created') {
-            console.log('ℹ️  Tables not ready yet, version columns will be added in schema');
-          }
         } catch (err) {
           console.error('❌ Version migration failed:', err);
           // Migration is idempotent, so failure is not critical
