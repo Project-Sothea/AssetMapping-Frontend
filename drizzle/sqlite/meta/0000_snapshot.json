@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "943cf3f0-09c8-4e01-84d1-2d32254d99be",
+  "id": "90d4a8c6-108d-4459-a8dc-b620b7b68106",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "forms": {
@@ -37,6 +37,14 @@
           "notNull": false,
           "autoincrement": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
         "pinId": {
           "name": "pinId",
           "type": "text",
@@ -46,6 +54,13 @@
         },
         "villageId": {
           "name": "villageId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -391,6 +406,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
         },
         "lat": {
           "name": "lat",
