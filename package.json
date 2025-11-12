@@ -42,8 +42,8 @@
     "expo-system-ui": "~5.0.10",
     "expo-web-browser": "~14.2.0",
     "formik": "^2.4.6",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "^2.29.1",
     "react-native-get-random-values": "^1.11.0",
@@ -53,12 +53,13 @@
     "react-native-svg": "15.11.2",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.20.0",
+    "react-test-renderer": "^19.2.0",
     "uuid": "^11.1.0",
     "yup": "^1.6.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@react-native-community/cli": "^18.0.0",
+    "@react-native-community/cli": "^20.0.2",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.0.10",
@@ -89,6 +90,11 @@
       "^db/(.*)$": "<rootDir>/db/$1",
       "^drizzle/(.*)$": "<rootDir>/drizzle/$1"
     }
+  },
+  "overrides": {
+    "esbuild": "^0.25.0",
+    "@esbuild-kit/core-utils": "3.3.2",
+    "@esbuild-kit/esm-loader": "2.6.5"
   },
   "private": true
 }
