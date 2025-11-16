@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { createForm } from '../services';
-import { Form } from '~/db/schema';
+import { Form } from '~/db/types';
 
 export const useCreateForm = () => {
   const mutation = useMutation({

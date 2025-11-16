@@ -2,7 +2,7 @@ import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Button } from '~/shared/components/ui/Button';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pin } from '~/db/schema';
+import { Pin } from '~/db/types';
 import PinDetailsDisplay from './PinDetailsDisplay';
 import Spacer from '~/shared/components/ui/Spacer';
 import { PinForm, PinFormValues } from './PinForm';

@@ -58,13 +58,3 @@ export const forms = sqliteTable('forms', {
 export const syncQueue = sqliteTable('sync_queue', {
   ...buildSyncQueueFields(text, integer),
 });
-
-// Export types for use in repositories
-export type Pin = typeof pins.$inferSelect;
-export type InsertPin = typeof pins.$inferInsert;
-
-export type Form = typeof forms.$inferSelect;
-export type InsertForm = typeof forms.$inferInsert;
-
-export type SyncQueueItem = typeof syncQueue.$inferSelect;
-export type InsertSyncQueueItem = typeof syncQueue.$inferInsert;

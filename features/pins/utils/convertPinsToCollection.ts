@@ -1,6 +1,6 @@
 import { featureCollection, point } from '@turf/helpers';
 import type { FeatureCollection, Point } from 'geojson';
-import { Pin } from '~/db/schema';
+import { Pin } from '~/db/types';
 
 // Utility function to convert pins array to point collection
 export const convertPinsToPointCollection = (pins: Pin[]): FeatureCollection<Point> => {

@@ -5,7 +5,7 @@ import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
 import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
-import { Form as FormType } from '~/db/schema';
+import { Form } from '~/db/types';
 import { FormCard } from '~/features/forms/components/Form/FormCard';
 import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
@@ -13,7 +13,7 @@ import { ErrorHandler } from '~/shared/utils/errorHandling';
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const { data: forms } = useFetchForms(pinId);
-  const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
+  const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const { createFormAsync } = useCreateForm();
@@ -25,7 +25,7 @@ export default function FormScreen() {
     setModalVisible(false);
   };
 
-  const handleFormPress = (form: FormType) => {
+  const handleFormPress = (form: Form) => {
     setSelectedForm(form);
     setModalVisible(true);
   };

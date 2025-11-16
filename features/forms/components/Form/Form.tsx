@@ -4,7 +4,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
-import { Form as FormType } from '~/db/schema';
+import { Form } from '~/db/types';
 import GeneralSection from '../Form/GeneralSection';
 import WaterSection from '../Form/WaterSection';
 import HealthSection from '../Form/HealthSection';
@@ -24,10 +24,10 @@ type FormProps = {
   onSubmit: (values: any) => void;
   pinId: string;
   formId?: string;
-  initialData: Partial<FormType> | null;
+  initialData: Partial<Form> | null;
 };
 
-export default function Form({ onSubmit, pinId, initialData }: FormProps) {
+export default function FormScreen({ onSubmit, pinId, initialData }: FormProps) {
   const mergedInitialValues = React.useMemo(() => {
     const normalizedInitialData = initialData ? parseArrayFields(initialData) : {};
     return {

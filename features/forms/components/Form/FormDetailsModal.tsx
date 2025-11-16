@@ -1,11 +1,11 @@
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-import Form from './Form';
-import { Form as FormType } from '~/db/schema';
+import FormScreen from './Form';
+import { Form } from '~/db/types';
 
 type PinDetailsModalProps = {
   visible: boolean;
   pinId: string;
-  selectedForm: FormType | null;
+  selectedForm: Form | null;
   onClose: () => void;
   onSubmit: (values: any) => void;
 };
@@ -22,7 +22,7 @@ export const FormDetailsModal = ({
       title={selectedForm ? 'Edit Form' : 'Create Form'}
       visible={visible}
       onClose={onClose}>
-      <Form
+      <FormScreen
         onSubmit={onSubmit}
         pinId={pinId}
         formId={selectedForm?.id}

@@ -1,11 +1,11 @@
 import { Text, StyleSheet, Pressable } from 'react-native';
-import { Form as FormType } from '~/db/schema';
+import { Form } from '~/db/types';
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type FormCardProps = {
-  form: FormType;
-  onPress: (form: FormType) => void;
+  form: Form;
+  onPress: (form: Form) => void;
   onDelete: (formId: string) => void;
 };
 

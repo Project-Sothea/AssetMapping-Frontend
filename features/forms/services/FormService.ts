@@ -2,7 +2,7 @@ import { createFormDb, updateFormDb, softDeleteFormDb, getFormById } from './for
 import { prepareFormForInsertion } from './formProcessing';
 import { enqueueForm } from '~/services/sync/queue';
 import { updatePin } from '~/features/pins/services/PinService';
-import { Form } from '~/db/schema';
+import { Form } from '~/db/types';
 
 export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
   const prepared = await prepareFormForInsertion(values);
