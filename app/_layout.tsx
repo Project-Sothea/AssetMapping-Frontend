@@ -2,23 +2,14 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import QueryProvider from '~/providers/QueryProvider';
-import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense, useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
-import * as SQLite from 'expo-sqlite';
-import { pins } from '~/db/schema';
-import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import migrations from '../drizzle/sqlite/migrations';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 import { PopupProvider } from '~/shared/contexts/PopupContext';
 import { useInitialSync } from '~/hooks/RealTimeSync/useInitialSync';
-
-export const DATABASE_NAME = 'local.db';
-const expoDB = SQLite.openDatabaseSync(DATABASE_NAME);
-export const db = drizzle(expoDB, { schema: { pins } });
+import { expoDb, useRunMigrations } from '~/services/drizzleDb';
+import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
 
 // Helper component to initialize real-time sync and initial data sync
 function SyncInitializer() {
@@ -41,12 +32,11 @@ function SyncInitializer() {
 }
 
 export default function RootLayout() {
-  const { success, error } = useMigrations(db, migrations);
+  const { success, error } = useRunMigrations();
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'loading' | 'error' | 'done'>(
     'idle'
   );
-  useDrizzleStudio(expoDB);
-
+  useDrizzleStudio(expoDb);
   useEffect(() => {
     if (error) {
       setMigrationStatus('error');
@@ -91,10 +81,6 @@ export default function RootLayout() {
       )}
 
       <Suspense fallback={<ActivityIndicator size={'large'} />}>
-        <SQLiteProvider
-          databaseName={DATABASE_NAME}
-          options={{ enableChangeListener: true }}
-          useSuspense>
           <QueryProvider>
             <SafeAreaProvider>
               <PopupProvider>
@@ -117,7 +103,6 @@ export default function RootLayout() {
               </PopupProvider>
             </SafeAreaProvider>
           </QueryProvider>
-        </SQLiteProvider>
       </Suspense>
     </GestureHandlerRootView>
   );
