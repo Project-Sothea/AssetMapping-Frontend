@@ -5,9 +5,9 @@ import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
 import type { Form } from '~/db/types';
-import GeneralSection from '../Form/GeneralSection';
-import WaterSection from '../Form/WaterSection';
-import HealthSection from '../Form/HealthSection';
+import GeneralSection from './GeneralSection';
+import WaterSection from './WaterSection';
+import HealthSection from './HealthSection';
 import { parseArrayFields } from '~/db/utils';
 
 const validationSchema = Yup.object().shape({
@@ -27,7 +27,7 @@ type FormProps = {
   initialData: Partial<Form> | null;
 };
 
-export default function FormScreen({ onSubmit, pinId, initialData }: FormProps) {
+export default function FormEditor({ onSubmit, pinId, initialData }: FormProps) {
   const mergedInitialValues = React.useMemo(() => {
     const normalizedInitialData = initialData ? parseArrayFields(initialData) : {};
     return {

@@ -6,7 +6,6 @@
  */
 
 import { parseArrayFields as sharedParseArrayFields } from '~/shared/utils/parsing';
-import type { Form } from './types';
 
 /**
  * Parse JSON string arrays back to arrays when reading from SQLite.
@@ -85,7 +84,7 @@ export function sanitizePinForDb(pin: any): any {
  * Sanitize Form for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizeFormForDb(form: Form): any {
+export function sanitizeFormForDb(form: any): any {
   return {
     id: form.id,
     createdAt: form.createdAt ?? new Date().toISOString(),
