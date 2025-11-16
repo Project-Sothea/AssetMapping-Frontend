@@ -3,7 +3,7 @@ import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { ImageBackground, StyleSheet } from 'react-native';
 import { SearchBar } from '~/shared/components/ui/SearchBar';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
-import { Pin } from '~/db/types';
+import type { Pin } from '~/db/types';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 
 // Import your background image

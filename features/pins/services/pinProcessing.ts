@@ -1,6 +1,6 @@
 import { ImageManager } from '~/services/images/ImageManager';
 import { parseImageUris, areUrisEqual } from '~/services/images/utils/uriUtils';
-import { Pin } from '~/db/types';
+import type { Pin } from '~/db/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function preparePinForInsertion(pin: Omit<Pin, 'id'>): Promise<Pin> {

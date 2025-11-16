@@ -1,4 +1,4 @@
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function prepareFormForInsertion(form: Omit<Form, 'id'>): Promise<Form> {

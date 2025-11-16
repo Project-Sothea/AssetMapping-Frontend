@@ -1,6 +1,6 @@
 import { db } from '~/services/drizzleDb';
 import { forms } from '~/db/schema';
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 import { eq } from 'drizzle-orm';
 import { sanitizeFormForDb } from '~/db/utils';
 

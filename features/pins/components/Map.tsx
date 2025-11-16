@@ -17,7 +17,7 @@ import { PinFormModal } from './MapPin/PinFormModal';
 import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
-import { Pin } from '~/db/types';
+import type { Pin } from '~/db/types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';

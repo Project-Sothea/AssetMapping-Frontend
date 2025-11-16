@@ -1,7 +1,7 @@
 import { createPinDb, updatePinDb, softDeletePinDb, getPinById } from './pinRepository';
 import { preparePinForInsertion, savePinImages, updatePinImages } from './pinProcessing';
 import { enqueuePin } from '~/services/sync/queue';
-import { Pin } from '~/db/types';
+import type { Pin } from '~/db/types';
 
 export async function createPin(pin: Omit<Pin, 'id'>): Promise<Pin> {
   const prepared = await preparePinForInsertion(pin);

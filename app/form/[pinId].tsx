@@ -5,7 +5,7 @@ import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
 import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 import { FormCard } from '~/features/forms/components/Form/FormCard';
 import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';

@@ -1,6 +1,6 @@
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import FormScreen from './Form';
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 
 type PinDetailsModalProps = {
   visible: boolean;

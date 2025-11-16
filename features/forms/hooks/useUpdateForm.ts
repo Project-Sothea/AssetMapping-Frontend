@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { updateForm } from '../services';
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 
 export const useUpdateForm = () => {
   const mutation = useMutation({

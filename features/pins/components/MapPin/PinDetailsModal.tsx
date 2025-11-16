@@ -1,4 +1,4 @@
-import { Pin } from '~/db/types';
+import type { Pin } from '~/db/types';
 import PinDetails from './PinDetails';
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import { PinFormValues } from './PinForm';

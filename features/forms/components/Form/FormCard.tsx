@@ -1,5 +1,5 @@
 import { Text, StyleSheet, Pressable } from 'react-native';
-import { Form } from '~/db/types';
+import type { Form } from '~/db/types';
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
