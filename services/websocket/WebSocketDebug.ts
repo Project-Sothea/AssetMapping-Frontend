@@ -26,7 +26,7 @@ export function testWebSocketConnection(): void {
 /**
  * Send a test message through WebSocket
  */
-export function sendTestMessage(message: any): boolean {
+export function sendTestMessage(message: Record<string, unknown>): boolean {
   console.log('📤 Sending test message:', message);
   const sent = webSocketManager.send(message);
   console.log(sent ? '✓ Message sent' : '✗ Failed to send message');

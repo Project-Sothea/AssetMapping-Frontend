@@ -1,6 +1,6 @@
 import { db } from '~/services/drizzleDb';
 import { pins } from '~/db/schema';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { sanitizePinForDb } from '~/db/utils';
 import { eq } from 'drizzle-orm';
 

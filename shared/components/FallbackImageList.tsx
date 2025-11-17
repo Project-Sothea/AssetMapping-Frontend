@@ -1,5 +1,12 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, ImageStyle, StyleProp } from 'react-native';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ImageStyle,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { FallbackImage } from './FallbackImage';
 import { parseImageUris } from '~/services/images/utils/uriUtils';
 
@@ -8,7 +15,7 @@ type FallbackImageListProps = {
   remoteImages?: string | null;
   entityId: string;
   imageStyle?: StyleProp<ImageStyle>;
-  containerStyle?: StyleProp<any>;
+  containerStyle?: StyleProp<ViewStyle>;
   onImagePress?: (index: number) => void;
   horizontal?: boolean;
   maxImages?: number;

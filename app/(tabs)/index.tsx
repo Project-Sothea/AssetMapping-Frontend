@@ -3,12 +3,9 @@ import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { ImageBackground, StyleSheet } from 'react-native';
 import { SearchBar } from '~/shared/components/ui/SearchBar';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
-
-// Import your background image
-// Place your image in assets folder, e.g., assets/home-background.png
-const backgroundImage = require('~/assets/home-background.png');
+import backgroundImage from '~/assets/home-background.png';
 
 export default function Home() {
   const { data: pins = [] } = useFetchLocalPins(); // live reactive pins

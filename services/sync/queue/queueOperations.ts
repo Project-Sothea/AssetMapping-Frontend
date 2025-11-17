@@ -11,10 +11,14 @@ import { safeJsonParse } from '~/shared/utils/parsing';
  * Sync a queued operation to remote by syncing the entity (pin or form) based on its type and operation.
  * @param op - The operation object from the queue.
  */
-export async function processOperation(op: any): Promise<void> {
+export async function processOperation(op: {
+  entityType: string;
+  operation: string;
+  payload: string;
+}): Promise<void> {
   const payload = safeJsonParse(op.payload, {});
-  if (op.entityType === 'pin') await syncPin(op.operation, payload);
-  else await syncForm(op.operation, payload);
+  if (op.entityType === 'pin') await syncPin(op.operation as Operation, payload as any);
+  else await syncForm(op.operation as Operation, payload as any);
 }
 
 /**
@@ -27,7 +31,7 @@ export async function enqueue(params: {
   operation: Operation;
   entityType: EntityType;
   entityId: string;
-  payload: any;
+  payload: Record<string, unknown>;
 }): Promise<string> {
   try {
     const timestamp = new Date().toISOString();
@@ -109,14 +113,16 @@ export async function enqueue(params: {
       `✅ Queued ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
     );
     return operationId;
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Enqueue DB error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      operation: params.operation,
-      entityType: params.entityType,
-    });
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        operation: params.operation,
+        entityType: params.entityType,
+      });
+    }
     throw error;
   }
 }
@@ -137,7 +143,10 @@ export async function markCompleted(operationId: string): Promise<void> {
  * @param op - The operation object that failed.
  * @param error - The error that occurred.
  */
-export async function handleError(op: any, error: Error): Promise<void> {
+export async function handleError(
+  op: { id: string; attempts: number; maxAttempts: number },
+  error: Error
+): Promise<void> {
   const attempts = op.attempts + 1;
   const isRetriable = error.message.includes('network') || error.message.includes('timeout');
   const update = { attempts, lastError: error.message, lastAttemptAt: new Date().toISOString() };

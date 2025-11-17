@@ -1,13 +1,13 @@
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import FormEditor from './FormEditor';
-import type { Form } from '~/db/types';
+import type { Form, FormDB } from '~/db/schema';
 
 type PinDetailsModalProps = {
   visible: boolean;
   pinId: string;
-  selectedForm: Form | null;
+  selectedForm: FormDB | null;
   onClose: () => void;
-  onSubmit: (values: any) => void;
+  onSubmit: (values: Form) => void;
 };
 
 export const FormDetailsModal = ({

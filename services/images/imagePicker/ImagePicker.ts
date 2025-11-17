@@ -39,7 +39,7 @@ async function launchImagePicker(): Promise<ImagePickResult> {
       quality: 0.7,
     });
 
-    return processPickerResult(result);
+    return processPickerResult(result as { canceled?: boolean; assets?: { uri: string }[] });
   } catch (error) {
     return createErrorResult(
       error instanceof Error ? error.message : 'Unknown error during image picking'
@@ -50,7 +50,10 @@ async function launchImagePicker(): Promise<ImagePickResult> {
 /**
  * Process picker result
  */
-function processPickerResult(result: any): ImagePickResult {
+function processPickerResult(result: {
+  canceled?: boolean;
+  assets?: { uri: string }[];
+}): ImagePickResult {
   if (result.canceled || !result.assets || result.assets.length === 0) {
     return createErrorResult('No images selected or picker was canceled');
   }

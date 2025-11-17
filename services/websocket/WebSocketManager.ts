@@ -17,7 +17,7 @@ import { safeJsonParse } from '~/shared/utils/parsing';
 import { getApiUrl } from '~/services/apiUrl';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
-type MessageHandler = (message: any) => void;
+type MessageHandler = (message: Record<string, unknown>) => void;
 
 class WebSocketManager {
   private ws: WebSocket | null = null;
@@ -45,10 +45,6 @@ class WebSocketManager {
   private readonly baseReconnectDelay = 1000; // 1 second
   private readonly maxReconnectDelay = 30000; // 30 seconds
   private readonly maxReconnectAttempts = 10;
-
-  constructor() {
-    // apiUrl is now fetched dynamically
-  }
 
   /**
    * Connect to WebSocket server
@@ -126,7 +122,7 @@ class WebSocketManager {
   /**
    * Send a message through the WebSocket
    */
-  public send(message: any): boolean {
+  public send(message: Record<string, unknown>): boolean {
     if (!this.isConnected()) {
       console.warn('Cannot send message: WebSocket not connected');
       return false;

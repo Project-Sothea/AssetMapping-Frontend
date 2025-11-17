@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import { updateForm } from '../services';
-import type { Form } from '~/db/types';
+import type { FormDB } from '~/db/schema';
 
 export const useUpdateForm = () => {
   const mutation = useMutation({
-    mutationFn: ({ id, values }: { id: string; values: Omit<Form, 'id'> }) =>
+    mutationFn: ({ id, values }: { id: string; values: Omit<FormDB, 'id'> }) =>
       updateForm(id, values),
   });
 

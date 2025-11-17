@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';

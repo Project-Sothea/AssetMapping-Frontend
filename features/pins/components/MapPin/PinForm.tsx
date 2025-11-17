@@ -48,7 +48,10 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   console.log('📋 PinForm - Received initialValues:', initialValues);
   console.log('📋 PinForm - localImages:', initialValues.localImages);
 
-  const appendNewImage = async (setFieldValue: any, images: string[] | null) => {
+  const appendNewImage = async (
+    setFieldValue: (field: string, value: unknown) => void,
+    images: string[] | null
+  ) => {
     const { data, error } = await ImageManager.ImageManager.pick();
     const safeImages = Array.isArray(images) ? images : [];
     if (!error && data) {
@@ -84,13 +87,11 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                   style={styles.input}
                   onChangeText={handleChange(name)}
                   onBlur={handleBlur(name)}
-                  value={(values as any)[name]}
+                  value={(values[name as keyof PinFormValues] as string | null) ?? ''}
                   placeholder={`Enter ${label.toLowerCase()}`}
                 />
-                {touched.localImages && errors.localImages && Array.isArray(errors.localImages) && (
-                  <Text style={styles.error}>
-                    {(errors.localImages[0] as any)?.uri ?? 'Invalid image'}
-                  </Text>
+                {touched[name as keyof typeof touched] && errors[name as keyof typeof errors] && (
+                  <Text style={styles.error}>{String(errors[name as keyof typeof errors])}</Text>
                 )}
               </View>
             ))}

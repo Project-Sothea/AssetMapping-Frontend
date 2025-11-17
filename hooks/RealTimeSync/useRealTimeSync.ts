@@ -38,7 +38,7 @@ interface NotificationMessage {
   aggregateId?: string;
   version?: number;
   timestamp?: string;
-  payload?: any;
+  payload?: Record<string, unknown>;
   message?: string;
 }
 
@@ -66,13 +66,14 @@ export function useRealTimeSync(userId: string | undefined) {
     connectWebSocket();
 
     // Subscribe to incoming messages
-    const unsubscribe = webSocketManager.onMessage((message: NotificationMessage) => {
-      console.log('🔄 WebSocket notification received:', message);
+    const unsubscribe = webSocketManager.onMessage((message) => {
+      const notification = message as unknown as NotificationMessage;
+      console.log('🔄 WebSocket notification received:', notification);
 
       // Handle different message types
-      switch (message.type) {
+      switch (notification.type) {
         case 'welcome':
-          console.log('📨 Welcome:', message.message);
+          console.log('📨 Welcome:', notification.message);
           break;
 
         case 'pong':
@@ -80,18 +81,18 @@ export function useRealTimeSync(userId: string | undefined) {
           break;
 
         case 'pin':
-          console.log('📍 Pin update:', message.action, message.aggregateId);
+          console.log('📍 Pin update:', notification.action, notification.aggregateId);
 
           // Handle deleted pins differently - just invalidate cache, don't try to pull
-          if (message.action === 'deleted') {
+          if (notification.action === 'deleted') {
             console.log('🗑️  Pin deleted, invalidating cache');
             queryClient.invalidateQueries({
               queryKey: ['pins'],
               refetchType: 'active',
             });
-          } else if (message.aggregateId) {
+          } else if (notification.aggregateId) {
             // Pull updated pin data from backend and save to local database
-            pullPinUpdate(message.aggregateId)
+            pullPinUpdate(notification.aggregateId)
               .then(() => {
                 console.log('✅ Pin data synced from backend to local DB');
 
@@ -101,7 +102,7 @@ export function useRealTimeSync(userId: string | undefined) {
                   refetchType: 'active', // Only refetch if component is mounted
                 });
               })
-              .catch((err: any) => {
+              .catch((err) => {
                 console.warn('⚠️ Failed to pull pin update:', err);
               });
           }
@@ -111,24 +112,24 @@ export function useRealTimeSync(userId: string | undefined) {
             .then(() => {
               console.log('✅ Auto-sync completed after pin update');
             })
-            .catch((err: any) => {
+            .catch((err) => {
               console.warn('⚠️ Auto-sync failed after pin update:', err);
             });
           break;
 
         case 'form':
-          console.log('📋 Form update:', message.action, message.aggregateId);
+          console.log('📋 Form update:', notification.action, notification.aggregateId);
 
           // Handle deleted forms differently - just invalidate cache, don't try to pull
-          if (message.action === 'deleted') {
+          if (notification.action === 'deleted') {
             console.log('🗑️  Form deleted, invalidating cache');
             queryClient.invalidateQueries({
               queryKey: ['forms'],
               refetchType: 'active',
             });
-          } else if (message.aggregateId) {
+          } else if (notification.aggregateId) {
             // Pull updated form data from backend and save to local database
-            pullFormUpdate(message.aggregateId)
+            pullFormUpdate(notification.aggregateId)
               .then(() => {
                 console.log('✅ Form data synced from backend to local DB');
 
@@ -138,7 +139,7 @@ export function useRealTimeSync(userId: string | undefined) {
                   refetchType: 'active', // Only refetch if component is mounted
                 });
               })
-              .catch((err: any) => {
+              .catch((err) => {
                 console.warn('⚠️ Failed to pull form update:', err);
               });
           }
@@ -148,27 +149,27 @@ export function useRealTimeSync(userId: string | undefined) {
             .then(() => {
               console.log('✅ Auto-sync completed after form update');
             })
-            .catch((err: any) => {
+            .catch((err) => {
               console.warn('⚠️ Auto-sync failed after form update:', err);
             });
           break;
 
         case 'image':
-          console.log('🖼️  Image update:', message.action);
+          console.log('🖼️  Image update:', notification.action);
           // Refetch the entity that owns the image
-          if (message.payload?.entityType && message.payload?.entityId) {
+          if (notification.payload?.entityType && notification.payload?.entityId) {
             queryClient.invalidateQueries({
-              queryKey: [message.payload.entityType + 's', message.payload.entityId],
+              queryKey: [notification.payload.entityType + 's', notification.payload.entityId],
             });
           }
           break;
 
         case 'system':
-          console.log('🔔 System notification:', message.message);
+          console.log('🔔 System notification:', notification.message);
           break;
 
         default:
-          console.log('📨 Unknown notification:', message);
+          console.log('📨 Unknown notification:', notification);
       }
     });
 

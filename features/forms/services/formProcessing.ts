@@ -1,11 +1,11 @@
-import type { Form } from '~/db/types';
+import type { FormDB } from '~/db/schema';
 import { v4 as uuidv4 } from 'uuid';
 
-export async function prepareFormForInsertion(form: Omit<Form, 'id'>): Promise<Form> {
+export async function prepareFormForInsertion(form: Omit<FormDB, 'id'>): Promise<FormDB> {
   const formId = uuidv4();
   const timestamp = new Date().toISOString();
 
-  const formWithDefaults: Form = {
+  const formWithDefaults: FormDB = {
     ...form,
     id: formId,
     createdAt: form.createdAt || timestamp,

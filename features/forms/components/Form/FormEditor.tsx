@@ -4,7 +4,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
-import type { Form } from '~/db/types';
+import type { Form, FormDB } from '~/db/schema';
 import GeneralSection from './GeneralSection';
 import WaterSection from './WaterSection';
 import HealthSection from './HealthSection';
@@ -21,14 +21,14 @@ const validationSchema = Yup.object().shape({
 });
 
 type FormProps = {
-  onSubmit: (values: any) => void;
+  onSubmit: (values: Form) => void;
   pinId: string;
   formId?: string;
-  initialData: Partial<Form> | null;
+  initialData: Partial<FormDB> | null;
 };
 
 export default function FormEditor({ onSubmit, pinId, initialData }: FormProps) {
-  const mergedInitialValues = React.useMemo(() => {
+  const mergedInitialValues = React.useMemo((): Form => {
     const normalizedInitialData = initialData ? parseArrayFields(initialData) : {};
     return {
       // Optional user-provided name for the form
@@ -37,12 +37,12 @@ export default function FormEditor({ onSubmit, pinId, initialData }: FormProps) 
       village: '',
       villageId: '',
       canAttend: '',
-      longTermConditions: [] as string[],
+      longTermConditions: [],
       otherCondition: '',
       conditionDetails: '',
-      managementMethods: [] as string[],
+      managementMethods: [],
       otherManagement: '',
-      whatDoWhenSick: [] as string[],
+      whatDoWhenSick: [],
       otherSickAction: '',
       knowDoctor: '',
       ownTransport: '',
@@ -55,27 +55,27 @@ export default function FormEditor({ onSubmit, pinId, initialData }: FormProps) 
       diarrhoea: '',
       diarrhoeaAction: '',
       coldLookLike: '',
-      coldAction: [] as string[],
+      coldAction: [],
       mskInjury: '',
-      mskAction: [] as string[],
+      mskAction: [],
       hypertension: '',
-      hypertensionAction: [] as string[],
+      hypertensionAction: [],
       cholesterol: '',
-      cholesterolAction: [] as string[],
+      cholesterolAction: [],
       diabetes: '',
-      diabetesAction: [] as string[],
+      diabetesAction: [],
       handBeforeMeal: '',
       handAfterToilet: '',
       eatCleanFood: '',
       otherLearning: '',
-      waterSources: [] as string[],
+      waterSources: [],
       otherWaterSource: '',
-      unsafeWater: [] as string[],
+      unsafeWater: [],
       knowWaterFilters: '',
-      notUsingWaterFilter: [] as string[],
+      notUsingWaterFilter: [],
       otherWaterFilterReason: '',
       ...normalizedInitialData,
-    };
+    } as Form;
   }, [initialData, pinId]);
 
   return (
@@ -99,8 +99,6 @@ export default function FormEditor({ onSubmit, pinId, initialData }: FormProps) 
             values={values}
             setFieldValue={setFieldValue}
             handleChange={handleChange}
-            errors={errors}
-            touched={touched}
           />
 
           <WaterSection values={values} setFieldValue={setFieldValue} handleChange={handleChange} />

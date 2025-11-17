@@ -1,8 +1,16 @@
 import { View, Text, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
+import type { FormikHandlers } from 'formik';
+import type { Form } from '~/db/schema';
 
-export default function WaterSection({ values, setFieldValue, handleChange }: any) {
+interface WaterSectionProps {
+  values: Form;
+  setFieldValue: (field: string, value: unknown) => void;
+  handleChange: FormikHandlers['handleChange'];
+}
+
+export default function WaterSection({ values, setFieldValue, handleChange }: WaterSectionProps) {
   return (
     <View style={{ gap: 12 }}>
       <Text style={styles.heading}>Water</Text>
@@ -14,7 +22,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherWaterSource"
-        otherValue={values.otherWaterSource}
+        otherValue={values.otherWaterSource ?? undefined}
         onOtherChange={handleChange('otherWaterSource')}
       />
 
@@ -44,7 +52,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: an
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherWaterFilterReason"
-        otherValue={values.otherWaterFilterReason}
+        otherValue={values.otherWaterFilterReason ?? undefined}
         onOtherChange={handleChange('otherWaterFilterReason')}
       />
     </View>

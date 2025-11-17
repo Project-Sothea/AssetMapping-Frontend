@@ -2,9 +2,9 @@ import { createFormDb, updateFormDb, softDeleteFormDb, getFormById } from './for
 import { prepareFormForInsertion } from './formProcessing';
 import { enqueueForm } from '~/services/sync/queue';
 import { updatePin } from '~/features/pins/services/PinService';
-import type { Form } from '~/db/types';
+import type { FormDB } from '~/db/schema';
 
-export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
+export async function createForm(values: Omit<FormDB, 'id'>): Promise<FormDB> {
   const prepared = await prepareFormForInsertion(values);
   await createFormDb(prepared);
   // touch parent pin so its updatedAt reflects new form activity
@@ -13,17 +13,22 @@ export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
       // Update the parent pin's updatedAt using updatePin so the repository
       // and sync queue logic runs consistently (this also enqueues the pin update).
       const updatedAt = new Date().toISOString();
-      console.debug(`[FormService] createForm: updating pin ${prepared.pinId} updatedAt=${updatedAt} for new form ${prepared.id}`);
+      console.debug(
+        `[FormService] createForm: updating pin ${prepared.pinId} updatedAt=${updatedAt} for new form ${prepared.id}`
+      );
       await updatePin(prepared.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] createForm: failed to update pin ${prepared.pinId} for form ${prepared.id}`, err);
+      console.warn(
+        `[FormService] createForm: failed to update pin ${prepared.pinId} for form ${prepared.id}`,
+        err
+      );
     }
   }
   await enqueueForm('create', prepared);
   return prepared;
 }
 
-export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<Form> {
+export async function updateForm(id: string, values: Omit<FormDB, 'id'>): Promise<FormDB> {
   console.log('before: ');
   const existing = await getFormById(id);
   if (!existing) throw new Error(`Form ${id} not found`);
@@ -42,10 +47,15 @@ export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<
   if (updated.pinId) {
     try {
       const updatedAt = new Date().toISOString();
-      console.debug(`[FormService] updateForm: updating pin ${updated.pinId} updatedAt=${updatedAt} for form ${updated.id}`);
+      console.debug(
+        `[FormService] updateForm: updating pin ${updated.pinId} updatedAt=${updatedAt} for form ${updated.id}`
+      );
       await updatePin(updated.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`, err);
+      console.warn(
+        `[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`,
+        err
+      );
     }
   }
   await enqueueForm('update', updated);

@@ -5,7 +5,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
-import { pins, forms } from '~/db/schema';
+import { pins, forms, Form, Pin } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
 import { validateAndUploadImages } from '~/services/images';
 
@@ -14,7 +14,7 @@ type Operation = 'create' | 'update' | 'delete';
 /**
  * Sync pin to backend
  */
-export async function syncPin(operation: Operation, data: any): Promise<void> {
+export async function syncPin(operation: Operation, data: Pin): Promise<void> {
   // Handle delete operations
   if (operation === 'delete') {
     await deletePinOnBackend(data.id);
@@ -32,7 +32,7 @@ export async function syncPin(operation: Operation, data: any): Promise<void> {
 /**
  * Sync form to backend
  */
-export async function syncForm(operation: Operation, data: any): Promise<void> {
+export async function syncForm(operation: Operation, data: Form): Promise<void> {
   const { failureReason, status, lastSyncedAt, lastFailedSyncAt, ...rest } = data;
 
   const response = await apiClient.syncItem({
@@ -70,13 +70,13 @@ export async function syncForm(operation: Operation, data: any): Promise<void> {
 
   // Mark form as synced in local DB and update version from backend (skip for delete operations)
   if (operation !== 'delete') {
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       lastSyncedAt: new Date().toISOString(),
       status: 'synced',
     };
 
     // Update version from backend response to stay in sync
-    if (response.data && 'version' in response.data) {
+    if (response.data && typeof response.data === 'object' && 'version' in response.data) {
       updates.version = response.data.version;
       console.log(`✅ Updated local form version to ${response.data.version}`);
     }
@@ -111,12 +111,12 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
  */
 async function syncPinToBackend(
   operation: Operation,
-  data: any,
+  data: Pin,
   remoteUrls: string[]
-): Promise<any> {
+): Promise<Record<string, unknown> | undefined> {
   const { lastSyncedAt, lastFailedSyncAt, status, failureReason, localImages, ...rest } = data;
 
-  const payload: any = {
+  const payload: Record<string, unknown> = {
     ...rest,
     version: rest.version, // Include version for conflict detection
     updatedAt: rest.updatedAt || new Date().toISOString(),
@@ -171,15 +171,15 @@ async function updateLocalPinAfterSync(
   pinId: string,
   remoteUrls: string[],
   validLocalUris: string[],
-  syncedData?: any
+  syncedData?: Record<string, unknown>
 ): Promise<void> {
-  const updates: any = {
+  const updates: Record<string, unknown> = {
     lastSyncedAt: new Date().toISOString(),
     status: 'synced',
   };
 
   // Update version from backend response to stay in sync
-  if (syncedData && 'version' in syncedData) {
+  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
     updates.version = syncedData.version;
     console.log(`✅ Updated local version to ${syncedData.version}`);
   }

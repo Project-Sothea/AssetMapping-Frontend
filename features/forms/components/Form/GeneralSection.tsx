@@ -1,5 +1,16 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import RadioGroup from './RadioGroup';
+import type { FormikErrors, FormikTouched, FormikHandlers } from 'formik';
+import type { Form } from '~/db/schema';
+
+interface GeneralSectionProps {
+  values: Form;
+  setFieldValue: (field: string, value: unknown) => void;
+  handleChange: FormikHandlers['handleChange'];
+  handleBlur: FormikHandlers['handleBlur'];
+  errors: FormikErrors<Form>;
+  touched: FormikTouched<Form>;
+}
 
 export default function GeneralSection({
   values,
@@ -8,21 +19,23 @@ export default function GeneralSection({
   handleBlur,
   errors,
   touched,
-}: any) {
+}: GeneralSectionProps) {
   return (
     <View style={{ gap: 12 }}>
       <View style={styles.headerCard}>
         <Text style={styles.headerTitle}>Form name</Text>
         <TextInput
-          style={styles.inputTitle}        
+          style={styles.inputTitle}
           onChangeText={handleChange('name')}
           onBlur={handleBlur('name')}
-          value={values.name}
+          value={values.name as string}
           placeholder="e.g. 2025 December"
         />
         {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
-        <Text style={styles.helperText}>This name uniquely identifies the form across exports and downloads.</Text>
-    </View>
+        <Text style={styles.helperText}>
+          This name uniquely identifies the form across exports and downloads.
+        </Text>
+      </View>
 
       <Text style={styles.heading}>General</Text>
 
@@ -30,8 +43,8 @@ export default function GeneralSection({
       <RadioGroup
         name="village"
         options={[
-          { label: 'KS', value: 'KS' },
-          { label: 'SO', value: 'SO' },
+          { label: 'Krang Svat', value: 'KS' },
+          { label: 'Srae Ou', value: 'SO' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -44,7 +57,7 @@ export default function GeneralSection({
         style={styles.input}
         onChangeText={handleChange('villageId')}
         onBlur={handleBlur('villageId')}
-        value={values.villageId}
+        value={values.villageId as string}
         placeholder="e.g. A1, B2"
       />
       {errors.villageId && touched.villageId && (
@@ -69,17 +82,17 @@ export default function GeneralSection({
 }
 
 const styles = StyleSheet.create({
-  headerCard: {  
-    marginTop: 2,                    
+  headerCard: {
+    marginTop: 2,
     marginBottom: 2,
     gap: 6,
   },
-  headerTitle: {                
+  headerTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
   },
-  inputTitle: {        
+  inputTitle: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
     paddingHorizontal: 12,
@@ -88,7 +101,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
-  helperText: {            
+  helperText: {
     fontSize: 12,
     color: '#6B7280',
   },

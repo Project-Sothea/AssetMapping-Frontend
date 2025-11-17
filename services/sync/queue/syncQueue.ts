@@ -21,8 +21,11 @@ import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueSt
 /**
  * Queue a pin operation
  */
-export async function enqueuePin(operation: Operation, data: any): Promise<string> {
-  const id = data.id || uuidv4();
+export async function enqueuePin(
+  operation: Operation,
+  data: Record<string, unknown>
+): Promise<string> {
+  const id = (data.id as string) || uuidv4();
   const operationId = await enqueue({
     operation,
     entityType: 'pin',
@@ -36,8 +39,11 @@ export async function enqueuePin(operation: Operation, data: any): Promise<strin
 /**
  * Queue a form operation
  */
-export async function enqueueForm(operation: Operation, data: any): Promise<string> {
-  const id = data.id || uuidv4();
+export async function enqueueForm(
+  operation: Operation,
+  data: Record<string, unknown>
+): Promise<string> {
+  const id = (data.id as string) || uuidv4();
 
   // Ensure dates are properly serialized
   const cleanData = {
@@ -94,9 +100,10 @@ export async function processQueue(): Promise<void> {
         await processOperation(op);
         await markCompleted(op.id);
         console.log(`✅ ${op.operation} ${op.entityType} ${op.entityId.slice(0, 8)}`);
-      } catch (error: any) {
-        await handleError(op, error);
-        console.error(`❌ ${op.operation} ${op.entityType}: ${error.message}`);
+      } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        await handleError(op, errorObj);
+        console.error(`❌ ${op.operation} ${op.entityType}: ${errorObj.message}`);
       }
     }
   } finally {

@@ -5,7 +5,7 @@ import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
 import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
-import type { Form } from '~/db/types';
+import type { Form, FormDB } from '~/db/schema';
 import { FormCard } from '~/features/forms/components/Form/FormCard';
 import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
@@ -13,7 +13,7 @@ import { ErrorHandler } from '~/shared/utils/errorHandling';
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const { data: forms } = useFetchForms(pinId);
-  const [selectedForm, setSelectedForm] = useState<Form | null>(null);
+  const [selectedForm, setSelectedForm] = useState<FormDB | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const { createFormAsync } = useCreateForm();
@@ -25,7 +25,7 @@ export default function FormScreen() {
     setModalVisible(false);
   };
 
-  const handleFormPress = (form: Form) => {
+  const handleFormPress = (form: FormDB) => {
     setSelectedForm(form);
     setModalVisible(true);
   };
@@ -49,18 +49,18 @@ export default function FormScreen() {
     ]);
   };
 
-  const handleFormSubmit = async (values: any) => {
+  const handleFormSubmit = async (values: Form) => {
     try {
       if (selectedForm) {
         // Update existing form
-        await updateFormAsync({ id: selectedForm.id, values });
+        await updateFormAsync({ id: selectedForm.id, values: values as Omit<FormDB, 'id'> });
 
         Alert.alert('Form Updated!');
         setSelectedForm(null);
         setModalVisible(false);
       } else {
         // Create new form
-        await createFormAsync(values);
+        await createFormAsync(values as Omit<FormDB, 'id'>);
 
         Alert.alert('Form Created!');
         setSelectedForm(null);

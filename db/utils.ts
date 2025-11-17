@@ -6,6 +6,7 @@
  */
 
 import { parseArrayFields as sharedParseArrayFields } from '~/shared/utils/parsing';
+import type { Pin, Form, FormDB } from '~/db/schema';
 
 /**
  * Parse JSON string arrays back to arrays when reading from SQLite.
@@ -17,20 +18,20 @@ import { parseArrayFields as sharedParseArrayFields } from '~/shared/utils/parsi
  * parseArrayFields({ tags: '["a","b"]', name: 'test' })
  * // Returns: { tags: ['a', 'b'], name: 'test' }
  */
-export function parseArrayFields(value: any): typeof value {
+export function parseArrayFields<T>(value: T): T {
   return sharedParseArrayFields(value);
 }
 
 /**
  * Sanitize data for SQLite - remove undefined values and convert Dates
  */
-export function sanitizeForDb(obj: any): any {
+export function sanitizeForDb(obj: unknown): unknown {
   if (obj === null || obj === undefined) return null;
   if (typeof obj !== 'object') return obj;
   if (obj instanceof Date) return obj.toISOString();
   if (Array.isArray(obj)) return obj.map(sanitizeForDb);
 
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined) {
       sanitized[key] = sanitizeForDb(value);
@@ -42,12 +43,13 @@ export function sanitizeForDb(obj: any): any {
 /**
  * Helper: Convert empty strings to null
  */
-const nullIfEmpty = (v: any) => (v === undefined || v === '' ? null : v);
+const nullIfEmpty = (v: unknown): string | null =>
+  v === undefined || v === '' ? null : (v as string);
 
 /**
  * Helper: Ensure arrays are JSON strings for SQLite
  */
-function jsonifyArray(value: any) {
+function jsonifyArray(value: unknown): string {
   if (Array.isArray(value)) return JSON.stringify(value);
   if (value === undefined || value === null) return '[]';
   return typeof value === 'string' ? value : JSON.stringify([value]);
@@ -57,15 +59,17 @@ function jsonifyArray(value: any) {
  * Sanitize Pin for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizePinForDb(pin: any): any {
+export function sanitizePinForDb(
+  pin: Partial<Pin> & Record<string, unknown>
+): Omit<Pin, 'id'> & { id: string } {
   return {
-    id: pin.id,
+    id: pin.id as string,
     createdAt: pin.createdAt ?? new Date().toISOString(),
     updatedAt: pin.updatedAt ?? null,
     deletedAt: pin.deletedAt ?? null,
     version: pin.version ?? 1,
-    lat: pin.lat,
-    lng: pin.lng,
+    lat: pin.lat ?? null,
+    lng: pin.lng ?? null,
     type: nullIfEmpty(pin.type),
     name: nullIfEmpty(pin.name),
     address: nullIfEmpty(pin.address),
@@ -84,9 +88,11 @@ export function sanitizePinForDb(pin: any): any {
  * Sanitize Form for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizeFormForDb(form: any): any {
+export function sanitizeFormForDb(
+  form: Partial<Form> & Record<string, unknown>
+): Omit<FormDB, 'id'> & { id: string } {
   return {
-    id: form.id,
+    id: form.id as string,
     createdAt: form.createdAt ?? new Date().toISOString(),
     updatedAt: form.updatedAt ?? null,
     deletedAt: form.deletedAt ?? null,

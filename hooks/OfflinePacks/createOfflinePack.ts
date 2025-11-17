@@ -20,8 +20,10 @@ export const CreateOfflinePack = async (
       }
       setName(pack.metadata?.name ?? options.name);
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error('Offline pack error:', err);
-    Alert.alert('CreatePack Error', err.message ?? 'Pack already Created or invalid bounds');
+    const errorMessage =
+      err instanceof Error ? err.message : 'Pack already Created or invalid bounds';
+    Alert.alert('CreatePack Error', errorMessage);
   }
 };

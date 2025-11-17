@@ -1,6 +1,6 @@
 import { ImageManager } from '~/services/images/ImageManager';
 import { parseImageUris, areUrisEqual } from '~/services/images/utils/uriUtils';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function preparePinForInsertion(pin: Omit<Pin, 'id'>): Promise<Pin> {
@@ -14,8 +14,9 @@ export async function preparePinForInsertion(pin: Omit<Pin, 'id'>): Promise<Pin>
 }
 
 export async function savePinImages(pin: Pin): Promise<Pin> {
-  if (pin.localImages?.length) {
-    const { success: localURIs } = await ImageManager.saveImages(pin.id, pin.localImages);
+  const localImagesArray = pin.localImages ? JSON.parse(pin.localImages) : [];
+  if (localImagesArray.length > 0) {
+    const { success: localURIs } = await ImageManager.saveImages(pin.id, localImagesArray);
     return { ...pin, localImages: JSON.stringify(localURIs), images: null };
   }
   return { ...pin, localImages: '[]', images: null };

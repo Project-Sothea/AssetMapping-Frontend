@@ -8,6 +8,8 @@ import {
   ShapeSource,
   SymbolLayer,
 } from '@rnmapbox/maps';
+import type { OnPressEvent } from '@rnmapbox/maps/lib/typescript/src/types/OnPressEvent';
+import type { Feature, Geometry } from 'geojson';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
@@ -17,12 +19,13 @@ import { PinFormModal } from './MapPin/PinFormModal';
 import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
 import { PinDetailsModal } from './MapPin/PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
+import type { PinFormValues } from './MapPin/PinForm';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 
@@ -68,8 +71,11 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     setMapKey((k) => k + 1); // force remount
   };
 
-  const handleDropPin = async (e: any) => {
-    const [lng, lat] = (e.geometry as GeoJSON.Point).coordinates;
+  const handleDropPin = async (feature: Feature<Geometry>) => {
+    // Type guard to ensure it's a Point geometry
+    if (feature.geometry.type !== 'Point') return;
+
+    const [lng, lat] = feature.geometry.coordinates;
 
     if (lng && lat) {
       setDroppedCoords([lng, lat]);
@@ -77,14 +83,34 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   };
 
-  const handlePinSubmit = async (values: any) => {
+  const handlePinSubmit = async (values: PinFormValues) => {
     if (!values.lat || !values.lng) {
       Alert.alert('Error creating pin');
       return;
     }
 
     try {
-      await createPinAsync(values);
+      // Convert PinFormValues to Pin format (localImages array -> JSON string)
+      const pinData: Omit<Pin, 'id'> = {
+        name: values.name,
+        cityVillage: values.cityVillage,
+        address: values.address,
+        description: values.description,
+        type: values.type,
+        lat: values.lat,
+        lng: values.lng,
+        localImages: JSON.stringify(values.localImages || []),
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+        deletedAt: null,
+        version: 1,
+        images: null,
+        status: null,
+        failureReason: null,
+        lastSyncedAt: null,
+        lastFailedSyncAt: null,
+      };
+      await createPinAsync(pinData);
       Alert.alert('Pin Created!');
       setModalVisible(false);
       setDroppedCoords(null);
@@ -93,14 +119,35 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   };
 
-  const handlePinUpdate = async (values: any) => {
+  const handlePinUpdate = async (values: PinFormValues) => {
     if (!values.lat || !values.lng) {
       Alert.alert('Error updating pin');
       return;
     }
 
     try {
-      await updatePinAsync({ id: values.id, updates: values });
+      // Convert PinFormValues to Pin format (localImages array -> JSON string)
+      const pinData: Pin = {
+        id: values.id,
+        name: values.name,
+        cityVillage: values.cityVillage,
+        address: values.address,
+        description: values.description,
+        type: values.type,
+        lat: values.lat,
+        lng: values.lng,
+        localImages: JSON.stringify(values.localImages || []),
+        createdAt: new Date().toISOString(), // These will be overwritten by actual DB values
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        version: values.version,
+        images: null,
+        status: null,
+        failureReason: null,
+        lastSyncedAt: null,
+        lastFailedSyncAt: null,
+      };
+      await updatePinAsync({ id: values.id, updates: pinData });
       Alert.alert('Pin Updated!');
       setDetailsVisible(false);
       setDroppedCoords(null);
@@ -125,10 +172,10 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   };
 
-  const handleOpenPin = async (e: any) => {
-    const pressedFeature = e.features?.[0];
-    if (pressedFeature) {
-      const pinId = pressedFeature.properties?.id;
+  const handleOpenPin = async (event: OnPressEvent) => {
+    const pressedFeature = event.features[0];
+    if (pressedFeature?.properties) {
+      const pinId = pressedFeature.properties.id as string | undefined;
       if (!pinId) return;
 
       // Store pin ID - the modal will use live query to fetch and auto-update

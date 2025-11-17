@@ -1,14 +1,16 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
+import type { FormikHandlers } from 'formik';
+import type { Form } from '~/db/schema';
 
-export default function HealthSection({
-  values,
-  setFieldValue,
-  handleChange,
-  errors,
-  touched,
-}: any) {
+interface HealthSectionProps {
+  values: Form;
+  setFieldValue: (field: string, value: unknown) => void;
+  handleChange: FormikHandlers['handleChange'];
+}
+
+export default function HealthSection({ values, setFieldValue, handleChange }: HealthSectionProps) {
   return (
     <View style={{ gap: 12 }}>
       <Text style={styles.heading}>Health</Text>
@@ -29,14 +31,14 @@ export default function HealthSection({
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherCondition"
-        otherValue={values.otherCondition}
+        otherValue={values.otherCondition ?? undefined}
         onOtherChange={handleChange('otherCondition')}
       />
 
       <Text style={styles.question}>If yes, please specify.</Text>
       <TextInput
         style={styles.input}
-        value={values.conditionDetails}
+        value={values.conditionDetails ?? ''}
         onChangeText={handleChange('conditionDetails')}
         multiline
       />
@@ -54,7 +56,7 @@ export default function HealthSection({
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherManagement"
-        otherValue={values.otherManagement}
+        otherValue={values.otherManagement ?? undefined}
         onOtherChange={handleChange('otherManagement')}
       />
 
@@ -72,7 +74,7 @@ export default function HealthSection({
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherSickAction"
-        otherValue={values.otherSickAction}
+        otherValue={values.otherSickAction ?? undefined}
         onOtherChange={handleChange('otherSickAction')}
       />
 
@@ -110,7 +112,7 @@ export default function HealthSection({
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherBuyMedicine"
-        otherValue={values.otherBuyMedicine}
+        otherValue={values.otherBuyMedicine ?? undefined}
         onOtherChange={handleChange('otherBuyMedicine')}
       />
 
@@ -138,7 +140,7 @@ export default function HealthSection({
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherBrushTeeth"
-        otherValue={values.otherBrushTeeth}
+        otherValue={values.otherBrushTeeth ?? undefined}
         onOtherChange={handleChange('otherBrushTeeth')}
       />
 
@@ -148,7 +150,7 @@ export default function HealthSection({
       <TextInput
         style={styles.input}
         placeholder="Your answer"
-        value={values.haveToothbrush}
+        value={values.haveToothbrush ?? ''}
         onChangeText={handleChange('haveToothbrush')}
       />
 
@@ -380,7 +382,7 @@ export default function HealthSection({
       <TextInput
         style={styles.input}
         placeholder="Your answer"
-        value={values.otherLearning}
+        value={values.otherLearning ?? ''}
         onChangeText={handleChange('otherLearning')}
         multiline
       />

@@ -132,7 +132,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   }, [loadImage]);
 
   const handleError = useCallback(
-    (error: any) => {
+    (error: { nativeEvent?: { error?: string } }) => {
       console.error(
         '❌ FallbackImage: Image failed to load:',
         currentUri,
@@ -150,7 +150,8 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
 
       // Call the original onError handler if provided
       if (onError) {
-        onError(error);
+        // Don't call onError with incomplete event - just handle internally
+        console.warn('Image load error:', error.nativeEvent?.error);
       }
     },
     [currentUri, localUri, remoteUri, normalizeFileUri, onError]

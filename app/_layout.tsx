@@ -81,28 +81,28 @@ export default function RootLayout() {
       )}
 
       <Suspense fallback={<ActivityIndicator size={'large'} />}>
-          <QueryProvider>
-            <SafeAreaProvider>
-              <PopupProvider>
-                {/* Only initialize sync after migrations are complete */}
-                {migrationStatus === 'done' && <SyncInitializer />}
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="form/[pinId]"
-                    options={({ route }) => {
-                      const { pinName } = route.params as { pinName?: string };
-                      return {
-                        title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
-                        headerBackTitle: 'All forms',
-                        headerBackTitleVisible: false,
-                      };
-                    }}
-                  />
-                </Stack>
-              </PopupProvider>
-            </SafeAreaProvider>
-          </QueryProvider>
+        <QueryProvider>
+          <SafeAreaProvider>
+            <PopupProvider>
+              {/* Only initialize sync after migrations are complete */}
+              {migrationStatus === 'done' && <SyncInitializer />}
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="form/[pinId]"
+                  options={({ route }) => {
+                    const { pinName } = route.params as { pinName?: string };
+                    return {
+                      title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
+                      headerBackTitle: 'All forms',
+                      headerBackTitleVisible: false,
+                    };
+                  }}
+                />
+              </Stack>
+            </PopupProvider>
+          </SafeAreaProvider>
+        </QueryProvider>
       </Suspense>
     </GestureHandlerRootView>
   );

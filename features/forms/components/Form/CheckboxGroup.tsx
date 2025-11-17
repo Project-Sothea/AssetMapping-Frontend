@@ -1,11 +1,12 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
+import type { Form } from '~/db/schema';
 
 interface CheckboxGroupProps {
-  name: string;
+  name: keyof Form;
   options: string[];
-  values: any;
-  setFieldValue: (field: string, value: any) => void;
+  values: Form;
+  setFieldValue: (field: string, value: unknown) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;
@@ -25,7 +26,7 @@ export default function CheckboxGroup({
   onOtherChange,
 }: CheckboxGroupProps) {
   const handleCheckbox = (opt: string) => {
-    const currentArray: string[] = values[name] || [];
+    const currentArray = (Array.isArray(values[name]) ? values[name] : []) as string[];
     if (currentArray.includes(opt)) {
       setFieldValue(
         name,
@@ -41,14 +42,14 @@ export default function CheckboxGroup({
       {options.map((opt) => (
         <View key={opt} style={styles.checkboxContainer}>
           <Checkbox
-            value={(values[name] || []).includes(opt)}
+            value={(Array.isArray(values[name]) ? values[name] : []).includes(opt)}
             onValueChange={() => handleCheckbox(opt)}
             style={styles.checkbox}
           />
           <Text style={styles.label}>{opt}</Text>
         </View>
       ))}
-      {otherFieldName && values[name]?.includes('Other') && (
+      {otherFieldName && Array.isArray(values[name]) && values[name].includes('Other') && (
         <TextInput
           style={styles.input}
           placeholder="Please specify"

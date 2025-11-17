@@ -5,10 +5,7 @@ import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePa
 import PremadePacks from '~/features/sync/components/OfflinePacks/PremadePacks';
 import { ApiUrlConfiguration } from '~/features/sync/components/ApiUrlConfiguration';
 import { DownloadedPacksList } from '~/features/sync/components/DownloadedPacksList';
-
-// Import your background image
-// Place your image in assets folder, e.g., assets/download-background.png
-const backgroundImage = require('~/assets/download-background.png');
+import backgroundImage from '~/assets/download-background.png';
 
 export default function Home() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();

@@ -3,24 +3,30 @@
  * Simulates backend responses for testing
  */
 
-export function createMockApiClient(options: any = {}) {
+interface MockApiClientOptions {
+  syncItem?: Record<string, unknown>;
+  fetchPins?: Record<string, unknown>;
+  fetchForms?: Record<string, unknown>;
+}
+
+export function createMockApiClient(options: MockApiClientOptions = {}) {
   return {
     syncItem: jest.fn().mockResolvedValue({
       success: true,
       data: { version: 2, id: 'test-id' },
-      ...options.syncItem,
+      ...(options.syncItem ?? {}),
     }),
 
     fetchPins: jest.fn().mockResolvedValue({
       success: true,
       data: [],
-      ...options.fetchPins,
+      ...(options.fetchPins ?? {}),
     }),
 
     fetchForms: jest.fn().mockResolvedValue({
       success: true,
       data: [],
-      ...options.fetchForms,
+      ...(options.fetchForms ?? {}),
     }),
   };
 }
@@ -32,7 +38,7 @@ export function createConflictResponse() {
   };
 }
 
-export function createSuccessResponse(data: any) {
+export function createSuccessResponse(data: unknown) {
   return {
     success: true,
     data,

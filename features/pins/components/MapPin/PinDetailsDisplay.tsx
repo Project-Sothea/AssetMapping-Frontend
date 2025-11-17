@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useState } from 'react';
-import type { Pin } from '~/db/types';
+import type { Pin } from '~/db/schema';
 import { ImageModal } from './ImageModal';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';

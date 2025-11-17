@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-
-type RadioOption = { label: string; value: string };
+import type { Form } from '~/db/schema';
 
 interface RadioGroupProps {
-  name: string;
-  options: RadioOption[];
-  values: any;
-  setFieldValue: (field: string, value: any) => void;
+  name: keyof Form;
+  options: { label: string; value: string }[];
+  values: Form;
+  setFieldValue: (field: string, value: unknown) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;
