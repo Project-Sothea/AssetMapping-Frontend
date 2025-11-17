@@ -1,8 +1,8 @@
-import Map from '~/features/pins/components/Map';
+import Map from '~/features/map/components/Map';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useMemo } from 'react';
 
-export default function Home() {
+export default function MapScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const hasNavigatedRef = useRef(false);

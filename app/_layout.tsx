@@ -89,13 +89,11 @@ export default function RootLayout() {
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
-                  name="form/[pinId]"
+                  name="pin/[pinId]/forms"
                   options={({ route }) => {
                     const { pinName } = route.params as { pinName?: string };
                     return {
                       title: `${pinName ? `Forms of ${pinName}` : 'Forms'}`,
-                      headerBackTitle: 'All forms',
-                      headerBackTitleVisible: false,
                     };
                   }}
                 />

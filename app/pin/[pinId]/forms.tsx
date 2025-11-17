@@ -6,8 +6,8 @@ import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
 import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
 import type { Form, FormDB } from '~/db/schema';
-import { FormCard } from '~/features/forms/components/Form/FormCard';
-import { FormDetailsModal } from '~/features/forms/components/Form/FormDetailsModal';
+import { FormCard } from '~/features/forms/components/FormCard';
+import { FormDetailsModal } from '~/features/forms/components/FormDetailsModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {

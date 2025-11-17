@@ -24,7 +24,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   const handleViewForms = () => {
-    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
+    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
   };
 
   const renderRightActions = () => {

@@ -55,7 +55,7 @@ export default function PinDetails({ pin, onUpdate, onDelete }: PinDetailsProps)
   const [isEditing, setIsEditing] = useState(false);
 
   const handleViewForms = () => {
-    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
+    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
   };
 
   return (

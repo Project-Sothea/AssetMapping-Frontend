@@ -7,7 +7,7 @@ import { ApiUrlConfiguration } from '~/features/sync/components/ApiUrlConfigurat
 import { DownloadedPacksList } from '~/features/sync/components/DownloadedPacksList';
 import backgroundImage from '~/assets/download-background.png';
 
-export default function Home() {
+export default function DownloadScreen() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
 
   return (

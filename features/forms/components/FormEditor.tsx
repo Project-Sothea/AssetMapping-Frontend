@@ -5,9 +5,9 @@ import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
 import type { Form, FormDB } from '~/db/schema';
-import GeneralSection from './GeneralSection';
-import WaterSection from './WaterSection';
-import HealthSection from './HealthSection';
+import GeneralSection from './Form/GeneralSection';
+import WaterSection from './Form/WaterSection';
+import HealthSection from './Form/HealthSection';
 import { parseArrayFields } from '~/db/utils';
 
 const validationSchema = Yup.object().shape({

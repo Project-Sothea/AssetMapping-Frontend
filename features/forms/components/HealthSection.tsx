@@ -1,6 +1,6 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
-import RadioGroup from './RadioGroup';
+import RadioGroup from './Form/RadioGroup';
 import type { FormikHandlers } from 'formik';
 import type { Form } from '~/db/schema';
 

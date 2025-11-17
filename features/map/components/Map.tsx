@@ -15,9 +15,9 @@ import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
-import { PinFormModal } from './MapPin/PinFormModal';
+import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
-import { PinDetailsModal } from './MapPin/PinDetailsModal';
+import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
 import type { Pin } from '~/db/schema';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -25,7 +25,7 @@ import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
-import type { PinFormValues } from './MapPin/PinForm';
+import type { PinFormValues } from './PinForm';
 
 const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
 

@@ -1,5 +1,5 @@
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-import FormEditor from './FormEditor';
+import FormEditor from './Form/FormEditor';
 import type { Form, FormDB } from '~/db/schema';
 
 type PinDetailsModalProps = {
