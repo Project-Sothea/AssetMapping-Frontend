@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Image, ImageProps, ImageStyle, StyleProp, View } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { ImageManager } from '~/services/images/ImageManager';
+import { getImageUrl } from '~/services/images/utils/imageUrlUtils';
 
 type FallbackImageProps = Omit<ImageProps, 'source'> & {
   localUri?: string | null;
@@ -99,20 +100,24 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
       }
     }
 
-    // Step 2: Fall back to remote URL
+    // Step 2: Fall back to remote URL (convert relative path to full URL)
     if (remoteUri) {
-      console.log('🌐 FallbackImage: Using remote URL:', remoteUri);
-      setCurrentUri(remoteUri);
-      setIsLoading(false);
+      const fullRemoteUrl = await getImageUrl(remoteUri);
+      console.log('🌐 FallbackImage: Resolved remote URL:', fullRemoteUrl);
+      if (fullRemoteUrl) {
+        console.log('🌐 FallbackImage: Using remote URL:', fullRemoteUrl);
+        setCurrentUri(fullRemoteUrl);
+        setIsLoading(false);
 
-      // Step 3: ONLY download if localUri was never set (null/undefined)
-      // If localUri exists but file is missing, it means the file was deleted/corrupted
-      // In that case, just use remote without re-downloading to avoid filename conflicts
-      if (entityId && !localUri) {
-        console.log('📥 FallbackImage: No local copy exists, will download remote image');
-        downloadRemoteImageInBackground(remoteUri, entityId);
+        // Step 3: ONLY download if localUri was never set (null/undefined)
+        // If localUri exists but file is missing, it means the file was deleted/corrupted
+        // In that case, just use remote without re-downloading to avoid filename conflicts
+        if (entityId && !localUri) {
+          console.log('📥 FallbackImage: No local copy exists, will download remote image');
+          downloadRemoteImageInBackground(fullRemoteUrl, entityId);
+        }
+        return;
       }
-      return;
     }
 
     // No images available

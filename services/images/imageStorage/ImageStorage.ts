@@ -41,7 +41,14 @@ export async function deleteImages(filenames: string[]): Promise<Result> {
 
 // --- Internal helpers ---
 async function saveImage(imageUri: string, directory: string): Promise<string> {
-  const filename = generateUniqueFilename();
+  let filename;
+  if (isRemoteUri(imageUri)) {
+    // Use the filename from the remote URL
+    filename = imageUri.split('/').pop() || generateUniqueFilename();
+  } else {
+    // For local images, generate a new UUID filename
+    filename = generateUniqueFilename();
+  }
   const localUri = `${directory}${filename}`;
   await copyOrDownloadImage(imageUri, localUri);
   return localUri;

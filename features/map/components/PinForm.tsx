@@ -55,7 +55,16 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
     const { data, error } = await ImageManager.ImageManager.pick();
     const safeImages = Array.isArray(images) ? images : [];
     if (!error && data) {
-      setFieldValue('localImages', [...safeImages, data]);
+      // Copy picked image to canonical pin directory with UUID filename
+      // Use pin id from initialValues
+      const pinId = initialValues.id;
+      const { success: savedUris } = await ImageManager.ImageManager.saveImages(pinId, [data]);
+      if (savedUris && savedUris.length > 0) {
+        console.log('📥 Saved picked image to canonical directory:', savedUris[0]);
+        setFieldValue('localImages', [...safeImages, savedUris[0]]);
+      } else {
+        console.warn('Failed to save picked image to canonical directory');
+      }
     } else if (error) {
       console.warn(error.message);
     }

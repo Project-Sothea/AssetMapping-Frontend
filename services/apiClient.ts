@@ -42,13 +42,6 @@ export interface BatchSyncResponse {
   timestamp: string;
 }
 
-export interface SignedUrlData {
-  uploadUrl: string;
-  publicUrl: string;
-  token: string;
-  expiresAt: string;
-}
-
 export interface ValidationResponse {
   success: boolean;
   data: Record<string, unknown>;
@@ -84,12 +77,18 @@ class ApiClient {
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
+        // Don't set Content-Type for FormData - browser sets it with boundary
+        const headers: HeadersInit =
+          options.body instanceof FormData
+            ? { ...options.headers }
+            : {
+                'Content-Type': 'application/json',
+                ...options.headers,
+              };
+
         const response = await fetch(url, {
           ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
+          headers,
           signal: controller.signal,
         });
 
@@ -127,10 +126,14 @@ class ApiClient {
   }
 
   // Sync API methods
-  async syncItem(request: SyncItemRequest): Promise<ApiResponse<SyncItemResponse['data']>> {
+  async syncItem(
+    request: SyncItemRequest | FormData
+  ): Promise<ApiResponse<SyncItemResponse['data']>> {
+    const body = request instanceof FormData ? request : JSON.stringify(request);
+
     const response = await this.request<SyncItemResponse>('/api/sync/item', {
       method: 'POST',
-      body: JSON.stringify(request),
+      body,
     });
 
     if (response.success && response.data) {
@@ -194,32 +197,6 @@ class ApiClient {
       { method: 'GET' },
       120000
     );
-  }
-
-  // Image API methods
-  async getSignedUrl(request: {
-    entityType: 'pin' | 'form';
-    entityId: string;
-    filename: string;
-    contentType?: string;
-    sizeBytes?: number;
-  }): Promise<ApiResponse<SignedUrlData>> {
-    const response = await this.request<SignedUrlData>('/api/images/signed-url', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-
-    if (response.success && response.data) {
-      return {
-        success: true,
-        data: response.data,
-      };
-    }
-
-    return {
-      success: false,
-      error: response.error,
-    };
   }
 
   // Validation API methods

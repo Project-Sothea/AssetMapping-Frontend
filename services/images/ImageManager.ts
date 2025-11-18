@@ -3,15 +3,17 @@
  * Facade that provides a simple, high-level API for all image operations.
  */
 
-import { pickImage } from './imagePicker/ImagePicker';
+import { pickImage } from './ImagePicker';
 import * as ImageStorage from './imageStorage/ImageStorage';
-import { imageUpload } from './imageUpload/ImageUpload';
 
 /**
  * Download remote images for offline use with error handling and logging
  * Returns local file paths for successfully downloaded images
  */
-async function downloadRemoteImages(entityId: string, remoteUrls: string[]): Promise<string[]> {
+export async function downloadRemoteImages(
+  entityId: string,
+  remoteUrls: string[]
+): Promise<string[]> {
   if (remoteUrls.length === 0) {
     return [];
   }
@@ -37,7 +39,6 @@ export const ImageManager = {
   pick: pickImage,
   saveImages: ImageStorage.saveNewImages,
   deleteImages: ImageStorage.deleteImages,
-  uploadImages: imageUpload,
   downloadRemoteImages,
 };
 

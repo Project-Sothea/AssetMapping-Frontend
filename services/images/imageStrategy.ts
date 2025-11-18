@@ -26,35 +26,6 @@
  */
 
 /**
- * Get image URIs with intelligent fallback
- * Priority: Local files (if recent) > Remote URLs (if synced)
- */
-export function getImageUrisWithFallback(
-  remoteImages: string | string[] | null | undefined,
-  localImages: string | string[] | null | undefined
-): string[] {
-  const local = parseImages(localImages);
-  const remote = parseImages(remoteImages);
-
-  // Priority 1: Use local files if available (faster for own pins)
-  // These are files from camera/gallery before upload
-  if (local.length > 0) {
-    const normalized = local.map(normalizeFileUri);
-    console.log('🖼️ Using local images:', normalized);
-    return normalized;
-  }
-
-  // Priority 2: Use remote URLs (for synced pins from backend)
-  // React Native automatically caches these
-  if (remote.length > 0) {
-    console.log('🌐 Using remote images:', remote);
-    return remote;
-  }
-
-  return [];
-}
-
-/**
  * Normalize file URI to include proper file:// scheme
  * Exported for use in forms and other components
  */
@@ -72,19 +43,4 @@ export function normalizeFileUri(uri: string): string {
   }
 
   return uri;
-}
-
-// Helper functions
-function parseImages(images: string | string[] | null | undefined): string[] {
-  if (!images) return [];
-  if (Array.isArray(images)) return images.filter(Boolean);
-  if (typeof images === 'string') {
-    try {
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-    } catch {
-      return images ? [images] : [];
-    }
-  }
-  return [];
 }

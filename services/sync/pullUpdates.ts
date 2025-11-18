@@ -12,6 +12,7 @@ import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
 import { eq } from 'drizzle-orm';
 import { ImageManager } from '~/services/images/ImageManager';
 import { parseJsonArray } from '~/shared/utils/parsing';
+import { getImageUrls } from '~/services/images/utils/imageUrlUtils';
 
 // --- Types ---
 type EntityType = 'pin' | 'form';
@@ -30,12 +31,17 @@ interface ProcessResult {
 async function processPinData(pinData: Record<string, unknown>): Promise<void> {
   const pinId = pinData.id as string;
 
-  const remoteUrls = parseJsonArray(pinData.images as string);
+  // Convert relative paths to full URLs
+  const remotePaths = parseJsonArray(pinData.images as string);
+  const remoteUrls = await getImageUrls(remotePaths);
   const localImagePaths = await ImageManager.downloadRemoteImages(pinId, remoteUrls);
 
   const sanitized = sanitizePinForDb({
     ...pinData,
-    localImages: localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
+    localImages:
+      localImagePaths.length > 0
+        ? JSON.stringify(localImagePaths)
+        : (pinData.localImages as string | null | undefined),
   });
 
   await upsertEntity(pins, sanitized, pinId);

@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import { ensureDirectoryExists, deleteFile } from './fileSystemsUtils';
+import { ensureDirectoryExists } from './fileSystemsUtils';
 
 const BASE_DIRECTORY = FileSystem.documentDirectory || '';
 
@@ -17,14 +17,6 @@ export async function getPinDirectoryPath(pinId: string): Promise<string> {
 
   console.log(`   ✓ Directory ready: ${path}`);
   return path;
-}
-
-export async function cleanupEmptyDirectory(directory: string): Promise<void> {
-  try {
-    await deleteFile(directory);
-  } catch {
-    // ignore
-  }
 }
 
 function buildPinDirName(pinId: string): string {
