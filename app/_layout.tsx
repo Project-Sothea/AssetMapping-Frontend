@@ -8,8 +8,7 @@ import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 import { PopupProvider } from '~/shared/contexts/PopupContext';
 import { useInitialSync } from '~/hooks/RealTimeSync/useInitialSync';
-import { expoDb, useRunMigrations } from '~/services/drizzleDb';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin';
+import { useRunMigrations } from '~/services/drizzleDb';
 
 // Helper component to initialize real-time sync and initial data sync
 function SyncInitializer() {
@@ -36,7 +35,6 @@ export default function RootLayout() {
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'loading' | 'error' | 'done'>(
     'idle'
   );
-  useDrizzleStudio(expoDb);
   useEffect(() => {
     if (error) {
       setMigrationStatus('error');
