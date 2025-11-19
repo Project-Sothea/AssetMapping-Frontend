@@ -20,27 +20,20 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         name="longTermConditions"
         options={[
           'MSK Conditions',
-          'GI Conditions',
+          'Gastrointestinal Conditions',
           'Eye/Visual Acuity',
           'Hypertension',
+          'Diabetes Mellitus',
           'High Cholesterol',
-          'Neurological',
-          "Don't have any",
-          'Other',
+          'Neurological (Headache/Dementia/Epilepsy)',
+          'Do not have any',
+          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
-        otherFieldName="otherCondition"
-        otherValue={values.otherCondition ?? undefined}
-        onOtherChange={handleChange('otherCondition')}
-      />
-
-      <Text style={styles.question}>If yes, please specify.</Text>
-      <TextInput
-        style={styles.input}
-        value={values.conditionDetails ?? ''}
-        onChangeText={handleChange('conditionDetails')}
-        multiline
+        otherFieldName="otherLongTermConditions"
+        otherValue={values.otherLongTermConditions ?? undefined}
+        onOtherChange={handleChange('otherLongTermConditions')}
       />
 
       <Text style={styles.question}>How do you manage your condition?</Text>
@@ -50,341 +43,166 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
           "Go to the doctor's",
           'Get medicine',
           'I do not manage',
-          "I don't know how to manage",
-          'Other',
+          'I do not know how to manage',
+          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
-        otherFieldName="otherManagement"
-        otherValue={values.otherManagement ?? undefined}
-        onOtherChange={handleChange('otherManagement')}
+        otherFieldName="otherManagementMethods"
+        otherValue={values.otherManagementMethods ?? undefined}
+        onOtherChange={handleChange('otherManagementMethods')}
+      />
+
+      <Text style={styles.question}>
+        Is it difficult to manage your condition? If so, what makes it hard?
+      </Text>
+      <CheckboxGroup
+        name="conditionDifficultyReasons"
+        options={[
+          'Too expensive',
+          'Medicine not available (in nearby places)',
+          'No transportation',
+          'Do not know what to do',
+          'Doctor said it is unnecessary to treat',
+          'I think it is unnecessary to treat',
+          'Others',
+        ]}
+        values={values}
+        setFieldValue={setFieldValue}
+        otherFieldName="otherConditionDifficultyReasons"
+        otherValue={values.otherConditionDifficultyReasons ?? undefined}
+        onOtherChange={handleChange('otherConditionDifficultyReasons')}
       />
 
       <Text style={styles.question}>
         What do you do when you are sick and Project Sothea is not around to help?
       </Text>
       <CheckboxGroup
-        name="whatDoWhenSick"
+        name="selfCareActions"
         options={[
-          "Don't do anything",
+          'Do not do anything about it and just hope I will get better over time',
           'Seek medical help',
           'Take herbal or traditional medicine available in the village',
-          'Other',
+          'I do not know what to do',
+          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
-        otherFieldName="otherSickAction"
-        otherValue={values.otherSickAction ?? undefined}
-        onOtherChange={handleChange('otherSickAction')}
+        otherFieldName="otherSelfCareActions"
+        otherValue={values.otherSelfCareActions ?? undefined}
+        onOtherChange={handleChange('otherSelfCareActions')}
       />
 
       <Text style={styles.question}>
         Do you know where to find a doctor if you are not feeling well?
       </Text>
       <RadioGroup
-        name="knowDoctor"
+        name="knowWhereToFindDoctor"
         options={[
           { label: 'Yes', value: 'yes' },
           { label: 'No', value: 'no' },
-          { label: "I don't find a doctor", value: 'noFind' },
+          { label: 'I do not find a doctor', value: 'do_not_find' },
+          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        otherFieldName="otherKnowWhereToFindDoctor"
+        otherValue={values.otherKnowWhereToFindDoctor ?? undefined}
+        onOtherChange={handleChange('otherKnowWhereToFindDoctor')}
       />
 
       <Text style={styles.question}>
-        Do you have own means of transport to visit a clinic when you are unwell?
+        Do you have your own means of transport to visit a clinic when you are unwell?
       </Text>
       <RadioGroup
-        name="ownTransport"
+        name="transportToClinic"
         options={[
           { label: 'Yes', value: 'yes' },
           { label: 'No', value: 'no' },
+          { label: 'I do not know how to get there', value: 'do_not_know' },
+          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        otherFieldName="otherTransportToClinic"
+        otherValue={values.otherTransportToClinic ?? undefined}
+        onOtherChange={handleChange('otherTransportToClinic')}
       />
 
       <Text style={styles.question}>Where do you go to buy your medicine?</Text>
       <CheckboxGroup
-        name="whereBuyMedicine"
-        options={['Pharmacy', "I don't know where to go", "I don't wish to buy medicine", 'Other']}
+        name="medicinePurchaseLocations"
+        options={[
+          'Pharmacy',
+          'I do not wish to buy medicine',
+          'I do not know where to go',
+          'Others',
+        ]}
         values={values}
         setFieldValue={setFieldValue}
-        otherFieldName="otherBuyMedicine"
-        otherValue={values.otherBuyMedicine ?? undefined}
-        onOtherChange={handleChange('otherBuyMedicine')}
+        otherFieldName="otherMedicinePurchaseLocations"
+        otherValue={values.otherMedicinePurchaseLocations ?? undefined}
+        onOtherChange={handleChange('otherMedicinePurchaseLocations')}
       />
 
       <Text style={styles.question}>Do you know what the poverty card scheme is about?</Text>
       <RadioGroup
-        name="povertyCard"
+        name="povertyCardSchemeAwareness"
         options={[
           { label: 'Yes and I use it', value: 'use' },
-          { label: "Yes but I don't use it", value: 'noUse' },
+          { label: 'Yes but I do not use it', value: 'do_not_use' },
           { label: 'No', value: 'no' },
+          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        otherFieldName="otherPovertyCardSchemeAwareness"
+        otherValue={values.otherPovertyCardSchemeAwareness ?? undefined}
+        onOtherChange={handleChange('otherPovertyCardSchemeAwareness')}
       />
 
       <Text style={styles.question}>Do you brush your teeth?</Text>
       <RadioGroup
-        name="brushTeeth"
+        name="toothBrushingFrequency"
         options={[
-          { label: 'Yes, twice a day', value: 'yesTwiceADay' },
-          { label: 'Yes, once a day', value: 'yesOnceADay' },
+          { label: 'Yes, twice a day', value: 'twice_a_day' },
+          { label: 'Yes, once a day', value: 'once_a_day' },
           { label: 'No', value: 'no' },
-          { label: 'Other', value: 'other' },
+          { label: 'I do not know', value: 'do_not_know' },
+          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
-        otherFieldName="otherBrushTeeth"
-        otherValue={values.otherBrushTeeth ?? undefined}
-        onOtherChange={handleChange('otherBrushTeeth')}
+        otherFieldName="otherToothBrushingFrequency"
+        otherValue={values.otherToothBrushingFrequency ?? undefined}
+        onOtherChange={handleChange('otherToothBrushingFrequency')}
       />
 
       <Text style={styles.question}>
-        Do you have a toothbrush? If so, where did you get it from?
+        Do you have a toothbrush and toothpaste? If so, where did you get them from?
       </Text>
       <TextInput
         style={styles.input}
         placeholder="Your answer"
-        value={values.haveToothbrush ?? ''}
-        onChangeText={handleChange('haveToothbrush')}
+        value={values.toothbrushAndToothpasteSource ?? ''}
+        onChangeText={handleChange('toothbrushAndToothpasteSource')}
       />
-
-      <Text style={styles.subheading}>Diarrhoea</Text>
-      <Text style={styles.question}>What is diarrhoea?</Text>
+      <Text style={styles.question}>If not, why do you not have a toothbrush or toothpaste?</Text>
       <CheckboxGroup
-        name="diarrhoea"
+        name="noToothbrushOrToothpasteReasons"
         options={[
-          'Back pain',
-          'Water and loose stools',
-          'Nose bleed',
-          'Hearing loss',
-          'Toothache',
-          "I don't know",
+          'Too expensive',
+          'Do not know where to buy',
+          'Seems unnecessary',
+          'Have homemade alternatives',
+          'I do not know',
+          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>What should I do if I have diarrhoea?</Text>
-      <CheckboxGroup
-        name="diarrhoeaAction"
-        options={[
-          'Stop drinking water',
-          'Drink more water',
-          'Eat cold foods',
-          'Drink alcohol',
-          'Exercise more',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>Common Cold</Text>
-      <Text style={styles.question}>How does a common cold look like?</Text>
-      <CheckboxGroup
-        name="coldLookLike"
-        options={[
-          'Coughing & runny nose & sore throat & fever',
-          'Diarrhoea',
-          'Eye swelling',
-          'Bloody stools',
-          'Ringing in the ears',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>If I have a common cold, what should I do?</Text>
-      <CheckboxGroup
-        name="coldAction"
-        options={[
-          'Drink more cold water',
-          'Cover my mouth when I cough and sneeze',
-          'Stand in the rain',
-          'Engage in strenuous exercise',
-          'Wear a mask to prevent spread of infection',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>MSK</Text>
-      <Text style={styles.question}>What is a musculoskeletal related injury?</Text>
-      <CheckboxGroup
-        name="mskInjury"
-        options={[
-          'Aching and stiffness',
-          'Headache',
-          'Hand tremors',
-          'Constipation',
-          'Blurry vision',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>How should I approach my musculoskeletal injury?</Text>
-      <CheckboxGroup
-        name="mskAction"
-        options={[
-          'Prevent exertion with exercise',
-          'Get medical help',
-          'Increase movement',
-          'Press aggressively on the area of pain',
-          'Gently rotate the joint (if not severely painful) a few times a day',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>Hypertension</Text>
-      <Text style={styles.question}>What is hypertension?</Text>
-      <CheckboxGroup
-        name="hypertension"
-        options={[
-          'High blood sugar',
-          'High blood pressure',
-          'High blood fat',
-          'Stomach pain',
-          'Headache',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>
-        What should I do if I have been diagnosed with hypertension?
-      </Text>
-      <CheckboxGroup
-        name="hypertensionAction"
-        options={[
-          'Exercise more',
-          'Eat less salty food',
-          'Eat more fried food',
-          'Consume more coffee',
-          'Consume more fruits and vegetables',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>Cholesterol</Text>
-      <Text style={styles.question}>What is high cholesterol?</Text>
-      <CheckboxGroup
-        name="cholesterol"
-        options={[
-          'High blood sugar',
-          'High blood pressure',
-          'High blood fat',
-          'Stomach pain',
-          'Headache',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>
-        What should I do if I have been diagnosed with high cholesterol?
-      </Text>
-      <CheckboxGroup
-        name="cholesterolAction"
-        options={[
-          'Rest more by increasing sedentary activity',
-          'Decrease intake of fatty foods and sugary drinks',
-          'Try to lose weight to stay within the healthy range',
-          'Quit smoking',
-          'Stop consuming fruits and vegetables',
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>Diabetes</Text>
-      <Text style={styles.question}>What is diabetes?</Text>
-      <CheckboxGroup
-        name="diabetes"
-        options={[
-          'High blood sugar',
-          'High blood pressure',
-          'High blood fat',
-          'Stomach pain',
-          'Headache',
-          "I don't know",
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>What should I do if I have been diagnosed with diabetes?</Text>
-      <CheckboxGroup
-        name="diabetesAction"
-        options={[
-          'Drink sweet drinks',
-          'Regular exercise',
-          'Consume more fried food',
-          'Avoid skipping meals',
-          'Consume more alcohol',
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.subheading}>Hygiene & Others</Text>
-      <Text style={styles.question}>Do you wash your hands before meals?</Text>
-      <RadioGroup
-        name="handBeforeMeal"
-        options={[
-          { label: 'Yes', value: 'yes' },
-          { label: 'No', value: 'no' },
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>Do you wash your hands after using the toilet?</Text>
-      <RadioGroup
-        name="handAfterToilet"
-        options={[
-          { label: 'Yes', value: 'yes' },
-          { label: 'No', value: 'no' },
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>
-        Eating well-cooked and clean food is important in maintaining my health.
-      </Text>
-      <RadioGroup
-        name="eatCleanFood"
-        options={[
-          { label: 'Agree', value: 'agree' },
-          { label: 'Disagree', value: 'disagree' },
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-      />
-
-      <Text style={styles.question}>What else would you like to learn?</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Your answer"
-        value={values.otherLearning ?? ''}
-        onChangeText={handleChange('otherLearning')}
-        multiline
+        otherFieldName="otherNoToothbrushOrToothpasteReasons"
+        otherValue={values.otherNoToothbrushOrToothpasteReasons ?? undefined}
+        onOtherChange={handleChange('otherNoToothbrushOrToothpasteReasons')}
       />
     </View>
   );

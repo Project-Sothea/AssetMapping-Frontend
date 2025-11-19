@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { updateForm } from '../services';
+import { updateForm } from '../services/FormService';
 import type { FormDB } from '~/db/schema';
 
 export const useUpdateForm = () => {

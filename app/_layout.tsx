@@ -84,7 +84,6 @@ export default function RootLayout() {
         <QueryProvider>
           <SafeAreaProvider>
             <PopupProvider>
-              {/* Only initialize sync after migrations are complete */}
               {migrationStatus === 'done' && <SyncInitializer />}
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

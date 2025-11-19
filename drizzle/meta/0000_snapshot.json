@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "90d4a8c6-108d-4459-a8dc-b620b7b68106",
+  "id": "51943198-a41d-4b7b-90c2-cb979a0efa9d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "forms": {
@@ -20,7 +20,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "(CURRENT_TIMESTAMP)"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -28,7 +28,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "(CURRENT_TIMESTAMP)"
         },
         "deletedAt": {
           "name": "deletedAt",
@@ -52,6 +52,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "formName": {
+          "name": "formName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "villageId": {
           "name": "villageId",
           "type": "text",
@@ -66,6 +73,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "gender": {
+          "name": "gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "age": {
+          "name": "age",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "village": {
           "name": "village",
           "type": "text",
@@ -73,225 +94,22 @@
           "notNull": false,
           "autoincrement": false
         },
-        "brushTeeth": {
-          "name": "brushTeeth",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "canAttend": {
-          "name": "canAttend",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "cholesterol": {
-          "name": "cholesterol",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "coldLookLike": {
-          "name": "coldLookLike",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "conditionDetails": {
-          "name": "conditionDetails",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "diabetes": {
-          "name": "diabetes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "diarrhoea": {
-          "name": "diarrhoea",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "diarrhoeaAction": {
-          "name": "diarrhoeaAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "eatCleanFood": {
-          "name": "eatCleanFood",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "handAfterToilet": {
-          "name": "handAfterToilet",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "handBeforeMeal": {
-          "name": "handBeforeMeal",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "haveToothbrush": {
-          "name": "haveToothbrush",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "hypertension": {
-          "name": "hypertension",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "knowDoctor": {
-          "name": "knowDoctor",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "knowWaterFilters": {
-          "name": "knowWaterFilters",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "mskInjury": {
-          "name": "mskInjury",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherBrushTeeth": {
-          "name": "otherBrushTeeth",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherBuyMedicine": {
-          "name": "otherBuyMedicine",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherCondition": {
-          "name": "otherCondition",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherLearning": {
-          "name": "otherLearning",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherManagement": {
-          "name": "otherManagement",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherSickAction": {
-          "name": "otherSickAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherWaterFilterReason": {
-          "name": "otherWaterFilterReason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "otherWaterSource": {
-          "name": "otherWaterSource",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "ownTransport": {
-          "name": "ownTransport",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "povertyCard": {
-          "name": "povertyCard",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "whereBuyMedicine": {
-          "name": "whereBuyMedicine",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "cholesterolAction": {
-          "name": "cholesterolAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "coldAction": {
-          "name": "coldAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "diabetesAction": {
-          "name": "diabetesAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "hypertensionAction": {
-          "name": "hypertensionAction",
-          "type": "text",
+        "canAttendHealthScreening": {
+          "name": "canAttendHealthScreening",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "longTermConditions": {
           "name": "longTermConditions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherLongTermConditions": {
+          "name": "otherLongTermConditions",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -304,22 +122,337 @@
           "notNull": false,
           "autoincrement": false
         },
-        "mskAction": {
-          "name": "mskAction",
+        "otherManagementMethods": {
+          "name": "otherManagementMethods",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "notUsingWaterFilter": {
-          "name": "notUsingWaterFilter",
+        "conditionDifficultyReasons": {
+          "name": "conditionDifficultyReasons",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "unsafeWater": {
-          "name": "unsafeWater",
+        "otherConditionDifficultyReasons": {
+          "name": "otherConditionDifficultyReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "selfCareActions": {
+          "name": "selfCareActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherSelfCareActions": {
+          "name": "otherSelfCareActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "knowWhereToFindDoctor": {
+          "name": "knowWhereToFindDoctor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherKnowWhereToFindDoctor": {
+          "name": "otherKnowWhereToFindDoctor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "transportToClinic": {
+          "name": "transportToClinic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherTransportToClinic": {
+          "name": "otherTransportToClinic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "medicinePurchaseLocations": {
+          "name": "medicinePurchaseLocations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherMedicinePurchaseLocations": {
+          "name": "otherMedicinePurchaseLocations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "povertyCardSchemeAwareness": {
+          "name": "povertyCardSchemeAwareness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherPovertyCardSchemeAwareness": {
+          "name": "otherPovertyCardSchemeAwareness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "povertyCardNonUseReasons": {
+          "name": "povertyCardNonUseReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "toothBrushingFrequency": {
+          "name": "toothBrushingFrequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherToothBrushingFrequency": {
+          "name": "otherToothBrushingFrequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "toothbrushAndToothpasteSource": {
+          "name": "toothbrushAndToothpasteSource",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "noToothbrushOrToothpasteReasons": {
+          "name": "noToothbrushOrToothpasteReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherNoToothbrushOrToothpasteReasons": {
+          "name": "otherNoToothbrushOrToothpasteReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diarrhoeaDefinition": {
+          "name": "diarrhoeaDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherDiarrhoeaDefinition": {
+          "name": "otherDiarrhoeaDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diarrhoeaActions": {
+          "name": "diarrhoeaActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherDiarrhoeaActions": {
+          "name": "otherDiarrhoeaActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "commonColdSymptoms": {
+          "name": "commonColdSymptoms",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherCommonColdSymptoms": {
+          "name": "otherCommonColdSymptoms",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "commonColdActions": {
+          "name": "commonColdActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherCommonColdActions": {
+          "name": "otherCommonColdActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mskInjuryDefinition": {
+          "name": "mskInjuryDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherMskInjuryDefinition": {
+          "name": "otherMskInjuryDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mskInjuryActions": {
+          "name": "mskInjuryActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherMskInjuryActions": {
+          "name": "otherMskInjuryActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "hypertensionDefinition": {
+          "name": "hypertensionDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHypertensionDefinition": {
+          "name": "otherHypertensionDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "hypertensionActions": {
+          "name": "hypertensionActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHypertensionActions": {
+          "name": "otherHypertensionActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "healthyFoodFrequency": {
+          "name": "healthyFoodFrequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHealthyFoodFrequency": {
+          "name": "otherHealthyFoodFrequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "unhealthyFoodReasons": {
+          "name": "unhealthyFoodReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherUnhealthyFoodReasons": {
+          "name": "otherUnhealthyFoodReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "highCholesterolDefinition": {
+          "name": "highCholesterolDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHighCholesterolDefinition": {
+          "name": "otherHighCholesterolDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "highCholesterolActions": {
+          "name": "highCholesterolActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHighCholesterolActions": {
+          "name": "otherHighCholesterolActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diabetesDefinition": {
+          "name": "diabetesDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherDiabetesDefinition": {
+          "name": "otherDiabetesDefinition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diabetesActions": {
+          "name": "diabetesActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherDiabetesActions": {
+          "name": "otherDiabetesActions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherLearningAreas": {
+          "name": "otherLearningAreas",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -332,8 +465,64 @@
           "notNull": false,
           "autoincrement": false
         },
-        "whatDoWhenSick": {
-          "name": "whatDoWhenSick",
+        "otherWaterSources": {
+          "name": "otherWaterSources",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "unsafeWaterTypes": {
+          "name": "unsafeWaterTypes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherUnsafeWaterTypes": {
+          "name": "otherUnsafeWaterTypes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "waterFilterAwareness": {
+          "name": "waterFilterAwareness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherWaterFilterAwareness": {
+          "name": "otherWaterFilterAwareness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "waterFilterNonUseReasons": {
+          "name": "waterFilterNonUseReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherWaterFilterNonUseReasons": {
+          "name": "otherWaterFilterNonUseReasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "handwashingAfterToilet": {
+          "name": "handwashingAfterToilet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "otherHandwashingAfterToilet": {
+          "name": "otherHandwashingAfterToilet",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -369,7 +558,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "forms_pinId_pins_id_fk": {
+          "name": "forms_pinId_pins_id_fk",
+          "tableFrom": "forms",
+          "tableTo": "pins",
+          "columnsFrom": [
+            "pinId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -390,7 +593,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "(CURRENT_TIMESTAMP)"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -398,7 +601,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "(CURRENT_TIMESTAMP)"
         },
         "deletedAt": {
           "name": "deletedAt",
@@ -464,6 +667,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "images": {
+          "name": "images",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "failureReason": {
           "name": "failureReason",
           "type": "text",
@@ -498,13 +708,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "images": {
-          "name": "images",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {},
@@ -529,7 +732,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
+          "default": "(CURRENT_TIMESTAMP)"
         },
         "operation": {
           "name": "operation",

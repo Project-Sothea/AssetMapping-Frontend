@@ -29,7 +29,7 @@ export default function RadioGroup({
     <View>
       {options.map((opt) => {
         const isSelected = values[name] === opt.value;
-        const showOther = opt.value === 'other' && isSelected && otherFieldName;
+        const showOther = opt.value === 'others' && isSelected && otherFieldName;
 
         return (
           <View key={opt.value} style={styles.optionBlock}>

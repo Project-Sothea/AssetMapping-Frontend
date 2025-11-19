@@ -23,15 +23,15 @@ export default function GeneralSection({
   return (
     <View style={{ gap: 12 }}>
       <View style={styles.headerCard}>
-        <Text style={styles.headerTitle}>Form name</Text>
+        <Text style={styles.headerTitle}>Form name*</Text>
         <TextInput
           style={styles.inputTitle}
-          onChangeText={handleChange('name')}
-          onBlur={handleBlur('name')}
-          value={values.name as string}
+          onChangeText={handleChange('formName')}
+          onBlur={handleBlur('formName')}
+          value={values.formName as string}
           placeholder="e.g. 2025 December"
         />
-        {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
+        {errors.formName && touched.formName && <Text style={styles.error}>{errors.formName}</Text>}
         <Text style={styles.helperText}>
           This name uniquely identifies the form across exports and downloads.
         </Text>
@@ -43,8 +43,8 @@ export default function GeneralSection({
       <RadioGroup
         name="village"
         options={[
-          { label: 'Krang Svat', value: 'KS' },
-          { label: 'Srae Ou', value: 'SO' },
+          { label: 'Krang Svat', value: 'ks' },
+          { label: 'Srae Ou', value: 'so' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -52,7 +52,33 @@ export default function GeneralSection({
         touched={touched.village}
       />
 
-      <Text style={styles.question}>What is your village identifier number?*</Text>
+      <Text style={styles.question}>What is your name?</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('name')}
+        value={values.name as string}
+      />
+
+      <Text style={styles.question}>What is your gender?</Text>
+      <RadioGroup
+        name="gender"
+        options={[
+          { label: 'Male', value: 'male' },
+          { label: 'Female', value: 'female' },
+        ]}
+        values={values}
+        setFieldValue={setFieldValue}
+      />
+
+      <Text style={styles.question}>How old are you this year?</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('age')}
+        value={values.age !== null && values.age !== undefined ? String(values.age) : ''}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.question}>What is your household number?*</Text>
       <TextInput
         style={styles.input}
         onChangeText={handleChange('villageId')}
@@ -65,14 +91,13 @@ export default function GeneralSection({
       )}
 
       <Text style={styles.question}>
-        Are you physically able to attend our health screening in December?
+        Are you able to physically attend our health screening in December?
       </Text>
       <RadioGroup
-        name="canAttend"
+        name="canAttendHealthScreening"
         options={[
           { label: 'Yes', value: 'yes' },
           { label: 'No', value: 'no' },
-          { label: "Don't want to come", value: 'dontWant' },
         ]}
         values={values}
         setFieldValue={setFieldValue}

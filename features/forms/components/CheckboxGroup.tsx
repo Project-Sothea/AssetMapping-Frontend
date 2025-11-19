@@ -49,7 +49,7 @@ export default function CheckboxGroup({
           <Text style={styles.label}>{opt}</Text>
         </View>
       ))}
-      {otherFieldName && Array.isArray(values[name]) && values[name].includes('Other') && (
+      {otherFieldName && Array.isArray(values[name]) && values[name].includes('Others') && (
         <TextInput
           style={styles.input}
           placeholder="Please specify"

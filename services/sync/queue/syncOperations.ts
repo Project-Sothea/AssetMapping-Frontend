@@ -38,22 +38,26 @@ export async function syncPin(operation: Operation, data: Pin): Promise<void> {
  */
 export async function syncForm(operation: Operation, data: Form): Promise<void> {
   const { failureReason, status, lastSyncedAt, lastFailedSyncAt, ...rest } = data;
-
-  const response = await apiClient.syncItem({
-    idempotencyKey: uuidv4(),
-    entityType: 'form',
-    operation,
-    payload:
-      operation === 'delete'
-        ? { id: data.id }
-        : {
-            ...rest,
-            version: rest.version, // Include version for conflict detection
-            updatedAt: rest.updatedAt || new Date().toISOString(),
-          },
-    deviceId: 'mobile-app',
-    timestamp: new Date().toISOString(),
-  });
+  const formData = new FormData();
+  formData.append(
+    'data',
+    JSON.stringify({
+      idempotencyKey: uuidv4(),
+      entityType: 'form',
+      operation,
+      payload:
+        operation === 'delete'
+          ? { id: data.id }
+          : {
+              ...rest,
+              version: rest.version, // Include version for conflict detection
+              updatedAt: rest.updatedAt || new Date().toISOString(),
+            },
+      deviceId: 'mobile-app',
+      timestamp: new Date().toISOString(),
+    })
+  );
+  const response = await apiClient.syncItem(formData);
 
   // Handle version conflicts - pull latest data
   if (!response.success) {

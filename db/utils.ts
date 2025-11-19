@@ -5,22 +5,7 @@
  * array fields that are stored as JSON strings in SQLite.
  */
 
-import { parseArrayFields as sharedParseArrayFields } from '~/shared/utils/parsing';
 import type { Pin, Form, FormDB } from '~/db/schema';
-
-/**
- * Parse JSON string arrays back to arrays when reading from SQLite.
- *
- * @param value - Object with potential JSON string fields
- * @returns Object with JSON strings parsed back to arrays
- *
- * @example
- * parseArrayFields({ tags: '["a","b"]', name: 'test' })
- * // Returns: { tags: ['a', 'b'], name: 'test' }
- */
-export function parseArrayFields<T>(value: T): T {
-  return sharedParseArrayFields(value);
-}
 
 /**
  * Sanitize data for SQLite - remove undefined values and convert Dates
@@ -88,61 +73,91 @@ export function sanitizePinForDb(
  * Sanitize Form for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizeFormForDb(
-  form: Partial<Form> & Record<string, unknown>
-): Omit<FormDB, 'id'> & { id: string } {
+export function sanitizeFormForDb(form: Partial<Form> & Record<string, unknown>): FormDB {
   return {
+    // Metadata
     id: form.id as string,
     createdAt: form.createdAt ?? new Date().toISOString(),
     updatedAt: form.updatedAt ?? null,
     deletedAt: form.deletedAt ?? null,
     version: form.version ?? 1,
     pinId: nullIfEmpty(form.pinId),
+
+    // General
+    formName: nullIfEmpty(form.formName),
     villageId: nullIfEmpty(form.villageId),
     name: nullIfEmpty(form.name),
+    gender: nullIfEmpty(form.gender),
+    age: form.age ?? null,
     village: nullIfEmpty(form.village),
+    canAttendHealthScreening: form.canAttendHealthScreening ?? null,
 
-    // Text fields
-    brushTeeth: nullIfEmpty(form.brushTeeth),
-    canAttend: nullIfEmpty(form.canAttend),
-    conditionDetails: nullIfEmpty(form.conditionDetails),
-    eatCleanFood: nullIfEmpty(form.eatCleanFood),
-    handAfterToilet: nullIfEmpty(form.handAfterToilet),
-    handBeforeMeal: nullIfEmpty(form.handBeforeMeal),
-    haveToothbrush: nullIfEmpty(form.haveToothbrush),
-    knowDoctor: nullIfEmpty(form.knowDoctor),
-    knowWaterFilters: nullIfEmpty(form.knowWaterFilters),
-    otherBrushTeeth: nullIfEmpty(form.otherBrushTeeth),
-    otherBuyMedicine: nullIfEmpty(form.otherBuyMedicine),
-    otherCondition: nullIfEmpty(form.otherCondition),
-    otherLearning: nullIfEmpty(form.otherLearning),
-    otherManagement: nullIfEmpty(form.otherManagement),
-    otherSickAction: nullIfEmpty(form.otherSickAction),
-    otherWaterFilterReason: nullIfEmpty(form.otherWaterFilterReason),
-    otherWaterSource: nullIfEmpty(form.otherWaterSource),
-    ownTransport: nullIfEmpty(form.ownTransport),
-    povertyCard: nullIfEmpty(form.povertyCard),
-
-    // Array fields (stored as JSON strings)
-    cholesterol: jsonifyArray(form.cholesterol),
-    cholesterolAction: jsonifyArray(form.cholesterolAction),
-    coldAction: jsonifyArray(form.coldAction),
-    coldLookLike: jsonifyArray(form.coldLookLike),
-    diabetes: jsonifyArray(form.diabetes),
-    diabetesAction: jsonifyArray(form.diabetesAction),
-    diarrhoea: jsonifyArray(form.diarrhoea),
-    diarrhoeaAction: jsonifyArray(form.diarrhoeaAction),
-    hypertension: jsonifyArray(form.hypertension),
-    hypertensionAction: jsonifyArray(form.hypertensionAction),
-    mskAction: jsonifyArray(form.mskAction),
-    mskInjury: jsonifyArray(form.mskInjury),
+    // Health
     longTermConditions: jsonifyArray(form.longTermConditions),
+    otherLongTermConditions: nullIfEmpty(form.otherLongTermConditions),
     managementMethods: jsonifyArray(form.managementMethods),
-    notUsingWaterFilter: jsonifyArray(form.notUsingWaterFilter),
-    unsafeWater: jsonifyArray(form.unsafeWater),
+    otherManagementMethods: nullIfEmpty(form.otherManagementMethods),
+    conditionDifficultyReasons: jsonifyArray(form.conditionDifficultyReasons),
+    otherConditionDifficultyReasons: nullIfEmpty(form.otherConditionDifficultyReasons),
+    selfCareActions: jsonifyArray(form.selfCareActions),
+    otherSelfCareActions: nullIfEmpty(form.otherSelfCareActions),
+    knowWhereToFindDoctor: nullIfEmpty(form.knowWhereToFindDoctor),
+    otherKnowWhereToFindDoctor: nullIfEmpty(form.otherKnowWhereToFindDoctor),
+    transportToClinic: nullIfEmpty(form.transportToClinic),
+    otherTransportToClinic: nullIfEmpty(form.otherTransportToClinic),
+    medicinePurchaseLocations: nullIfEmpty(form.medicinePurchaseLocations),
+    otherMedicinePurchaseLocations: nullIfEmpty(form.otherMedicinePurchaseLocations),
+    povertyCardSchemeAwareness: nullIfEmpty(form.povertyCardSchemeAwareness),
+    otherPovertyCardSchemeAwareness: nullIfEmpty(form.otherPovertyCardSchemeAwareness),
+    povertyCardNonUseReasons: nullIfEmpty(form.povertyCardNonUseReasons),
+    toothBrushingFrequency: nullIfEmpty(form.toothBrushingFrequency),
+    otherToothBrushingFrequency: nullIfEmpty(form.otherToothBrushingFrequency),
+    toothbrushAndToothpasteSource: nullIfEmpty(form.toothbrushAndToothpasteSource),
+    noToothbrushOrToothpasteReasons: jsonifyArray(form.noToothbrushOrToothpasteReasons),
+    otherNoToothbrushOrToothpasteReasons: nullIfEmpty(form.otherNoToothbrushOrToothpasteReasons),
+
+    // Education
+    diarrhoeaDefinition: nullIfEmpty(form.diarrhoeaDefinition),
+    otherDiarrhoeaDefinition: nullIfEmpty(form.otherDiarrhoeaDefinition),
+    diarrhoeaActions: jsonifyArray(form.diarrhoeaActions),
+    otherDiarrhoeaActions: nullIfEmpty(form.otherDiarrhoeaActions),
+    commonColdSymptoms: nullIfEmpty(form.commonColdSymptoms),
+    otherCommonColdSymptoms: nullIfEmpty(form.otherCommonColdSymptoms),
+    commonColdActions: jsonifyArray(form.commonColdActions),
+    otherCommonColdActions: nullIfEmpty(form.otherCommonColdActions),
+    mskInjuryDefinition: nullIfEmpty(form.mskInjuryDefinition),
+    otherMskInjuryDefinition: nullIfEmpty(form.otherMskInjuryDefinition),
+    mskInjuryActions: jsonifyArray(form.mskInjuryActions),
+    otherMskInjuryActions: nullIfEmpty(form.otherMskInjuryActions),
+    hypertensionDefinition: nullIfEmpty(form.hypertensionDefinition),
+    otherHypertensionDefinition: nullIfEmpty(form.otherHypertensionDefinition),
+    hypertensionActions: jsonifyArray(form.hypertensionActions),
+    otherHypertensionActions: nullIfEmpty(form.otherHypertensionActions),
+    healthyFoodFrequency: nullIfEmpty(form.healthyFoodFrequency),
+    otherHealthyFoodFrequency: nullIfEmpty(form.otherHealthyFoodFrequency),
+    unhealthyFoodReasons: jsonifyArray(form.unhealthyFoodReasons),
+    otherUnhealthyFoodReasons: nullIfEmpty(form.otherUnhealthyFoodReasons),
+    highCholesterolDefinition: nullIfEmpty(form.highCholesterolDefinition),
+    otherHighCholesterolDefinition: nullIfEmpty(form.otherHighCholesterolDefinition),
+    highCholesterolActions: jsonifyArray(form.highCholesterolActions),
+    otherHighCholesterolActions: nullIfEmpty(form.otherHighCholesterolActions),
+    diabetesDefinition: nullIfEmpty(form.diabetesDefinition),
+    otherDiabetesDefinition: nullIfEmpty(form.otherDiabetesDefinition),
+    diabetesActions: jsonifyArray(form.diabetesActions),
+    otherDiabetesActions: nullIfEmpty(form.otherDiabetesActions),
+    otherLearningAreas: nullIfEmpty(form.otherLearningAreas),
+
+    // Water
     waterSources: jsonifyArray(form.waterSources),
-    whatDoWhenSick: jsonifyArray(form.whatDoWhenSick),
-    whereBuyMedicine: jsonifyArray(form.whereBuyMedicine), // ← include if multi-select
+    otherWaterSources: nullIfEmpty(form.otherWaterSources),
+    unsafeWaterTypes: jsonifyArray(form.unsafeWaterTypes),
+    otherUnsafeWaterTypes: nullIfEmpty(form.otherUnsafeWaterTypes),
+    waterFilterAwareness: nullIfEmpty(form.waterFilterAwareness),
+    otherWaterFilterAwareness: nullIfEmpty(form.otherWaterFilterAwareness),
+    waterFilterNonUseReasons: jsonifyArray(form.waterFilterNonUseReasons),
+    otherWaterFilterNonUseReasons: nullIfEmpty(form.otherWaterFilterNonUseReasons),
+    handwashingAfterToilet: nullIfEmpty(form.handwashingAfterToilet),
+    otherHandwashingAfterToilet: nullIfEmpty(form.otherHandwashingAfterToilet),
 
     // Sync tracking fields
     status: nullIfEmpty(form.status),

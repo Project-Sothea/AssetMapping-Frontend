@@ -20,38 +20,38 @@ import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
  */
 export const pins = sqliteTable('pins', {
   // Primary identifier
-  id: text('id').primaryKey(),
+  id: text().primaryKey(),
 
   // Timestamps
-  createdAt: text('createdAt')
+  createdAt: text()
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
-  deletedAt: text('deletedAt'), // Soft delete
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
+  deletedAt: text(), // Soft delete
 
   // Version for optimistic concurrency control
   version: integer('version').notNull().default(1),
 
   // Location
-  lat: real('lat'),
-  lng: real('lng'),
+  lat: real(),
+  lng: real(),
 
   // Details
-  type: text('type'),
-  name: text('name'),
-  address: text('address'),
-  cityVillage: text('cityVillage'),
-  description: text('description'),
+  type: text(),
+  name: text(),
+  address: text(),
+  cityVillage: text(),
+  description: text(),
 
   // Images - stored as JSON string
-  images: text('images'), // JSON.stringify(['url1', 'url2'])
+  images: text(), // JSON.stringify(['url1', 'url2'])
 
   // Local-only fields (sync tracking)
-  failureReason: text('failureReason'),
-  status: text('status'),
-  lastSyncedAt: text('lastSyncedAt'),
-  lastFailedSyncAt: text('lastFailedSyncAt'),
-  localImages: text('localImages'), // Local file paths before upload
+  failureReason: text(),
+  status: text(),
+  lastSyncedAt: text(),
+  lastFailedSyncAt: text(),
+  localImages: text(), // Local file paths before upload
 });
 
 /**
@@ -59,72 +59,97 @@ export const pins = sqliteTable('pins', {
  * Stores health assessment forms linked to pins
  */
 export const forms = sqliteTable('forms', {
-  // Primary identifier
-  id: text('id').primaryKey(),
-
-  // Timestamps
-  createdAt: text('createdAt')
+  // Metadata
+  id: text().primaryKey(),
+  createdAt: text()
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
-  deletedAt: text('deletedAt'),
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
+  deletedAt: text(),
+  version: integer().notNull().default(1),
+  pinId: text().references(() => pins.id), // Foreign key
 
-  // Version for optimistic concurrency control
-  version: integer('version').notNull().default(1),
+  // General
+  formName: text(),
+  villageId: text(),
+  name: text(),
+  gender: text(),
+  age: integer(),
+  village: text(),
+  canAttendHealthScreening: integer({ mode: 'boolean' }),
 
-  // Relations
-  pinId: text('pinId'), // Foreign key
-  villageId: text('villageId'),
-  name: text('name'),
-  village: text('village'),
+  // Health
+  longTermConditions: text(),
+  otherLongTermConditions: text(),
+  managementMethods: text(),
+  otherManagementMethods: text(),
+  conditionDifficultyReasons: text(),
+  otherConditionDifficultyReasons: text(),
+  selfCareActions: text(),
+  otherSelfCareActions: text(),
+  knowWhereToFindDoctor: text(),
+  otherKnowWhereToFindDoctor: text(),
+  transportToClinic: text(),
+  otherTransportToClinic: text(),
+  medicinePurchaseLocations: text(),
+  otherMedicinePurchaseLocations: text(),
+  povertyCardSchemeAwareness: text(),
+  otherPovertyCardSchemeAwareness: text(),
+  povertyCardNonUseReasons: text(),
+  toothBrushingFrequency: text(),
+  otherToothBrushingFrequency: text(),
+  toothbrushAndToothpasteSource: text(),
+  noToothbrushOrToothpasteReasons: text(),
+  otherNoToothbrushOrToothpasteReasons: text(),
 
-  // Health Assessment Fields (text fields)
-  brushTeeth: text('brushTeeth'),
-  canAttend: text('canAttend'),
-  cholesterol: text('cholesterol'),
-  coldLookLike: text('coldLookLike'),
-  conditionDetails: text('conditionDetails'),
-  diabetes: text('diabetes'),
-  diarrhoea: text('diarrhoea'),
-  diarrhoeaAction: text('diarrhoeaAction'),
-  eatCleanFood: text('eatCleanFood'),
-  handAfterToilet: text('handAfterToilet'),
-  handBeforeMeal: text('handBeforeMeal'),
-  haveToothbrush: text('haveToothbrush'),
-  hypertension: text('hypertension'),
-  knowDoctor: text('knowDoctor'),
-  knowWaterFilters: text('knowWaterFilters'),
-  mskInjury: text('mskInjury'),
-  otherBrushTeeth: text('otherBrushTeeth'),
-  otherBuyMedicine: text('otherBuyMedicine'),
-  otherCondition: text('otherCondition'),
-  otherLearning: text('otherLearning'),
-  otherManagement: text('otherManagement'),
-  otherSickAction: text('otherSickAction'),
-  otherWaterFilterReason: text('otherWaterFilterReason'),
-  otherWaterSource: text('otherWaterSource'),
-  ownTransport: text('ownTransport'),
-  povertyCard: text('povertyCard'),
-  whereBuyMedicine: text('whereBuyMedicine'),
+  // Education
+  diarrhoeaDefinition: text(),
+  otherDiarrhoeaDefinition: text(),
+  diarrhoeaActions: text(),
+  otherDiarrhoeaActions: text(),
+  commonColdSymptoms: text(),
+  otherCommonColdSymptoms: text(),
+  commonColdActions: text(),
+  otherCommonColdActions: text(),
+  mskInjuryDefinition: text(),
+  otherMskInjuryDefinition: text(),
+  mskInjuryActions: text(),
+  otherMskInjuryActions: text(),
+  hypertensionDefinition: text(),
+  otherHypertensionDefinition: text(),
+  hypertensionActions: text(),
+  otherHypertensionActions: text(),
+  healthyFoodFrequency: text(),
+  otherHealthyFoodFrequency: text(),
+  unhealthyFoodReasons: text(),
+  otherUnhealthyFoodReasons: text(),
+  highCholesterolDefinition: text(),
+  otherHighCholesterolDefinition: text(),
+  highCholesterolActions: text(),
+  otherHighCholesterolActions: text(),
+  diabetesDefinition: text(),
+  otherDiabetesDefinition: text(),
+  diabetesActions: text(),
+  otherDiabetesActions: text(),
+  otherLearningAreas: text(),
 
-  // Health Assessment Fields (array fields - stored as JSON strings)
-  cholesterolAction: text('cholesterolAction'),
-  coldAction: text('coldAction'),
-  diabetesAction: text('diabetesAction'),
-  hypertensionAction: text('hypertensionAction'),
-  longTermConditions: text('longTermConditions'),
-  managementMethods: text('managementMethods'),
-  mskAction: text('mskAction'),
-  notUsingWaterFilter: text('notUsingWaterFilter'),
-  unsafeWater: text('unsafeWater'),
-  waterSources: text('waterSources'),
-  whatDoWhenSick: text('whatDoWhenSick'),
+  // Water
+  waterSources: text(),
+  otherWaterSources: text(),
+  unsafeWaterTypes: text(),
+  otherUnsafeWaterTypes: text(),
+  waterFilterAwareness: text(),
+  otherWaterFilterAwareness: text(),
+  waterFilterNonUseReasons: text(),
+  otherWaterFilterNonUseReasons: text(),
+  handwashingAfterToilet: text(),
+  otherHandwashingAfterToilet: text(),
 
   // Local-only fields (sync tracking)
-  failureReason: text('failureReason'),
-  status: text('status'),
-  lastSyncedAt: text('lastSyncedAt'),
-  lastFailedSyncAt: text('lastFailedSyncAt'),
+  failureReason: text(),
+  status: text(),
+  lastSyncedAt: text(),
+  lastFailedSyncAt: text(),
 });
 
 /**
@@ -132,23 +157,23 @@ export const forms = sqliteTable('forms', {
  * Manages background sync operations
  */
 export const syncQueue = sqliteTable('sync_queue', {
-  id: text('id').primaryKey(),
-  createdAt: text('createdAt')
+  id: text().primaryKey(),
+  createdAt: text()
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  operation: text('operation').notNull(),
-  entityType: text('entityType').notNull(),
-  entityId: text('entityId').notNull(),
-  idempotencyKey: text('idempotencyKey').notNull().unique(),
-  payload: text('payload').notNull(),
-  status: text('status').notNull(),
-  attempts: integer('attempts').notNull().default(0),
-  maxAttempts: integer('maxAttempts').notNull().default(3),
-  lastError: text('lastError'),
-  lastAttemptAt: text('lastAttemptAt'),
-  sequenceNumber: integer('sequenceNumber'),
-  dependsOn: text('dependsOn'),
-  deviceId: text('deviceId'),
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  operation: text().notNull(),
+  entityType: text().notNull(),
+  entityId: text().notNull(),
+  idempotencyKey: text().notNull().unique(),
+  payload: text().notNull(),
+  status: text().notNull(),
+  attempts: integer().notNull().default(0),
+  maxAttempts: integer().notNull().default(3),
+  lastError: text(),
+  lastAttemptAt: text(),
+  sequenceNumber: integer(),
+  dependsOn: text(),
+  deviceId: text(),
 });
 
 // ==================== Inferred Types ====================
@@ -161,15 +186,25 @@ export type FormDB = typeof forms.$inferSelect;
 type ArrayFieldKeys =
   | 'longTermConditions'
   | 'managementMethods'
-  | 'whatDoWhenSick'
-  | 'coldAction'
-  | 'mskAction'
-  | 'hypertensionAction'
-  | 'cholesterolAction'
-  | 'diabetesAction'
+  | 'conditionDifficultyReason'
+  | 'selfCareActions'
+  | 'noToothbrushOrToothpasteReason'
+  | 'diarrhoeaDefinition'
+  | 'diarrhoeaActions'
+  | 'commonColdSymptoms'
+  | 'commonColdActions'
+  | 'mskInjuryDefinition'
+  | 'mskInjuryActions'
+  | 'hypertensionDefinition'
+  | 'hypertensionActions'
+  | 'unhealthyFoodReason'
+  | 'highCholesterolDefinition'
+  | 'highCholesterolActions'
+  | 'diabetesDefinition'
+  | 'diabetesActions'
   | 'waterSources'
-  | 'unsafeWater'
-  | 'notUsingWaterFilter';
+  | 'unsafeWaterTypes'
+  | 'waterFilterNonUseReasons';
 
 export type Form = Omit<FormDB, ArrayFieldKeys> & {
   [K in ArrayFieldKeys]?: string[] | null;

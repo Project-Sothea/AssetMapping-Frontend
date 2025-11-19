@@ -7,7 +7,7 @@ import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
 import type { Form, FormDB } from '~/db/schema';
 import { FormCard } from '~/features/forms/components/FormCard';
-import { FormDetailsModal } from '~/features/forms/components/FormDetailsModal';
+import { FormModal } from '~/features/forms/components/FormModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {
@@ -102,7 +102,7 @@ export default function FormScreen() {
         />
       </View>
 
-      <FormDetailsModal
+      <FormModal
         visible={modalVisible}
         pinId={pinId}
         selectedForm={selectedForm}
