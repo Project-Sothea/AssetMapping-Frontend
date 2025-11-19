@@ -563,12 +563,8 @@
           "name": "forms_pinId_pins_id_fk",
           "tableFrom": "forms",
           "tableTo": "pins",
-          "columnsFrom": [
-            "pinId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pinId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -831,9 +827,7 @@
       "indexes": {
         "sync_queue_idempotencyKey_unique": {
           "name": "sync_queue_idempotencyKey_unique",
-          "columns": [
-            "idempotencyKey"
-          ],
+          "columns": ["idempotencyKey"],
           "isUnique": true
         }
       },
