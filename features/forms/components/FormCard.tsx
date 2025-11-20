@@ -29,8 +29,8 @@ export const FormCard = ({ form, onPress, onDelete }: FormCardProps) => {
           pressed && styles.cardPressed,
         ]}
         onPress={() => onPress(form)}>
-        {form.name ? (
-          <Text style={styles.nameText}>{form.name}</Text>
+        {form.formName ? (
+          <Text style={styles.nameText}>{form.formName}</Text>
         ) : (
           <Text style={styles.villageText}>{form.village}</Text>
         )}

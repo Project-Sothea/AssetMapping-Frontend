@@ -73,7 +73,7 @@ export default function GeneralSection({
       <Text style={styles.question}>How old are you this year?</Text>
       <TextInput
         style={styles.input}
-        onChangeText={handleChange('age')}
+        onChangeText={(text) => setFieldValue('age', text ? parseInt(text, 10) : '')}
         value={values.age !== null && values.age !== undefined ? String(values.age) : ''}
         keyboardType="numeric"
       />
@@ -96,8 +96,8 @@ export default function GeneralSection({
       <RadioGroup
         name="canAttendHealthScreening"
         options={[
-          { label: 'Yes', value: 'yes' },
-          { label: 'No', value: 'no' },
+          { label: 'Yes', value: true },
+          { label: 'No', value: false },
         ]}
         values={values}
         setFieldValue={setFieldValue}
