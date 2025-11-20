@@ -4,7 +4,7 @@ import type { Form } from '~/db/schema';
 
 interface RadioGroupProps {
   name: keyof Form;
-  options: { label: string; value: string }[];
+  options: { label: string; value: string | boolean }[];
   values: Form;
   setFieldValue: (field: string, value: unknown) => void;
   errors?: string;
@@ -32,7 +32,7 @@ export default function RadioGroup({
         const showOther = opt.value === 'others' && isSelected && otherFieldName;
 
         return (
-          <View key={opt.value} style={styles.optionBlock}>
+          <View key={String(opt.value)} style={styles.optionBlock}>
             <View style={styles.checkboxContainer}>
               <Checkbox
                 value={isSelected}
