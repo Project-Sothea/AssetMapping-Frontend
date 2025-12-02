@@ -13,7 +13,7 @@ import { parseArrayFields } from '~/shared/utils/parsing';
 import EducationSection from './EducationSection';
 
 const validationSchema = Yup.object().shape({
-  formName: Yup.string().nullable().required('Required'),
+  name: Yup.string().nullable().required('Required'),
   village: Yup.string().required('Required'),
   villageId: Yup.string().required('Required'),
 });
@@ -39,7 +39,6 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
       pinId: pinId,
 
       // General
-      formName: '',
       villageId: '',
       name: '',
       gender: '',

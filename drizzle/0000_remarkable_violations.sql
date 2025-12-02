@@ -5,7 +5,6 @@ CREATE TABLE `forms` (
 	`deletedAt` text,
 	`version` integer DEFAULT 1 NOT NULL,
 	`pinId` text,
-	`formName` text,
 	`villageId` text,
 	`name` text,
 	`gender` text,

@@ -84,7 +84,6 @@ export function sanitizeFormForDb(form: Partial<Form> & Record<string, unknown>)
     pinId: nullIfEmpty(form.pinId),
 
     // General
-    formName: nullIfEmpty(form.formName),
     villageId: nullIfEmpty(form.villageId),
     name: nullIfEmpty(form.name),
     gender: nullIfEmpty(form.gender),

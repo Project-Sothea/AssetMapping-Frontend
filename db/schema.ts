@@ -70,7 +70,6 @@ export const forms = sqliteTable('forms', {
   pinId: text().references(() => pins.id), // Foreign key
 
   // General
-  formName: text(),
   villageId: text(),
   name: text(),
   gender: text(),

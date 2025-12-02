@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "51943198-a41d-4b7b-90c2-cb979a0efa9d",
+  "id": "87567278-eaa6-4b15-a20a-aca4549869d4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "forms": {
@@ -47,13 +47,6 @@
         },
         "pinId": {
           "name": "pinId",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "formName": {
-          "name": "formName",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -563,8 +556,12 @@
           "name": "forms_pinId_pins_id_fk",
           "tableFrom": "forms",
           "tableTo": "pins",
-          "columnsFrom": ["pinId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pinId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -827,7 +824,9 @@
       "indexes": {
         "sync_queue_idempotencyKey_unique": {
           "name": "sync_queue_idempotencyKey_unique",
-          "columns": ["idempotencyKey"],
+          "columns": [
+            "idempotencyKey"
+          ],
           "isUnique": true
         }
       },

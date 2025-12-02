@@ -46,7 +46,6 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       <View style={styles.infoCard}>
         <InfoRow label="City/Village" value={pin.cityVillage} />
         <InfoRow label="Address" value={pin.address} />
-        <InfoRow label="Type" value={pin.type} />
       </View>
 
       {/* Swipeable fullscreen image modal */}

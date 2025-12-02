@@ -22,21 +22,6 @@ export default function GeneralSection({
 }: GeneralSectionProps) {
   return (
     <View style={{ gap: 12 }}>
-      <View style={styles.headerCard}>
-        <Text style={styles.headerTitle}>Form name*</Text>
-        <TextInput
-          style={styles.inputTitle}
-          onChangeText={handleChange('formName')}
-          onBlur={handleBlur('formName')}
-          value={values.formName as string}
-          placeholder="e.g. 2025 December"
-        />
-        {errors.formName && touched.formName && <Text style={styles.error}>{errors.formName}</Text>}
-        <Text style={styles.helperText}>
-          This name uniquely identifies the form across exports and downloads.
-        </Text>
-      </View>
-
       <Text style={styles.heading}>General</Text>
 
       <Text style={styles.question}>Which village are you from?*</Text>
@@ -52,12 +37,14 @@ export default function GeneralSection({
         touched={touched.village}
       />
 
-      <Text style={styles.question}>What is your name?</Text>
+      <Text style={styles.question}>What is your name?*</Text>
       <TextInput
         style={styles.input}
         onChangeText={handleChange('name')}
+        onBlur={handleBlur('name')}
         value={values.name as string}
       />
+      {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
 
       <Text style={styles.question}>What is your gender?</Text>
       <RadioGroup
@@ -107,29 +94,6 @@ export default function GeneralSection({
 }
 
 const styles = StyleSheet.create({
-  headerCard: {
-    marginTop: 2,
-    marginBottom: 2,
-    gap: 6,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  inputTitle: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    minHeight: 48,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  helperText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
   heading: {
     fontWeight: 'bold',
     fontSize: 20,
