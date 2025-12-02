@@ -83,7 +83,7 @@ export async function processQueue(): Promise<void> {
   setIsProcessing(true);
 
   try {
-    const pending = await db
+    const pending = db
       .select()
       .from(syncQueue)
       .where(eq(syncQueue.status, 'pending'))

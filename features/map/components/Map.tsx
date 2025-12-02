@@ -90,8 +90,9 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
 
     try {
-      // Convert PinFormValues to Pin format (localImages array -> JSON string)
-      const pinData: Omit<Pin, 'id'> = {
+      // Convert PinFormValues to Pin format
+      const pinData: Pin = {
+        id: values.id,
         name: values.name,
         cityVillage: values.cityVillage,
         address: values.address,
@@ -99,17 +100,17 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
         type: values.type,
         lat: values.lat,
         lng: values.lng,
-        localImages: JSON.stringify(values.localImages || []),
+        images: JSON.stringify(values.images || []),
         createdAt: new Date().toISOString(),
-        updatedAt: null,
+        updatedAt: new Date().toISOString(),
         deletedAt: null,
         version: 1,
-        images: null,
-        status: null,
+        status: 'unsynced',
         failureReason: null,
         lastSyncedAt: null,
         lastFailedSyncAt: null,
       };
+      console.log('📤 Creating pin with data:', pinData);
       await createPinAsync(pinData);
       Alert.alert('Pin Created!');
       setModalVisible(false);
@@ -126,28 +127,20 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
 
     try {
-      // Convert PinFormValues to Pin format (localImages array -> JSON string)
-      const pinData: Pin = {
+      // Simple update - just pass the changed fields
+      await updatePinAsync({
         id: values.id,
-        name: values.name,
-        cityVillage: values.cityVillage,
-        address: values.address,
-        description: values.description,
-        type: values.type,
-        lat: values.lat,
-        lng: values.lng,
-        localImages: JSON.stringify(values.localImages || []),
-        createdAt: new Date().toISOString(), // These will be overwritten by actual DB values
-        updatedAt: new Date().toISOString(),
-        deletedAt: null,
-        version: values.version,
-        images: null,
-        status: null,
-        failureReason: null,
-        lastSyncedAt: null,
-        lastFailedSyncAt: null,
-      };
-      await updatePinAsync({ id: values.id, updates: pinData });
+        updates: {
+          name: values.name,
+          cityVillage: values.cityVillage,
+          address: values.address,
+          description: values.description,
+          type: values.type,
+          lat: values.lat,
+          lng: values.lng,
+          images: JSON.stringify(values.images || []), // Store filenames
+        },
+      });
       Alert.alert('Pin Updated!');
       setDetailsVisible(false);
       setDroppedCoords(null);

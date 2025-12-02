@@ -8,12 +8,11 @@ import {
   ViewStyle,
 } from 'react-native';
 import { FallbackImage } from './FallbackImage';
-import { parseImageUris } from '~/services/images/utils/uriUtils';
+import { parseImageFilenames } from '~/services/images/ImageManager';
 
 type FallbackImageListProps = {
-  localImages?: string | null;
-  remoteImages?: string | null;
-  entityId: string;
+  images?: string | string[] | null;
+  pinId: string;
   imageStyle?: StyleProp<ImageStyle>;
   containerStyle?: StyleProp<ViewStyle>;
   onImagePress?: (index: number) => void;
@@ -29,37 +28,27 @@ type FallbackImageListProps = {
  *
  * Usage:
  * <FallbackImageList
- *   localImages={pin.localImages}
- *   remoteImages={pin.images}
- *   entityId={pin.id}
+ *   images={pin.images}
+ *   pinId={pin.id}
  *   imageStyle={styles.thumbnail}
  *   onImagePress={(index) => openImageModal(index)}
  * />
  */
 export const FallbackImageList: React.FC<FallbackImageListProps> = ({
-  localImages,
-  remoteImages,
-  entityId,
+  images,
+  pinId,
   imageStyle,
   containerStyle,
   onImagePress,
   horizontal = true,
   maxImages,
 }) => {
-  const localUris = parseImageUris(localImages);
-  const remoteUris = parseImageUris(remoteImages);
-
-  // Create a combined list ensuring we have a slot for each image
-  const maxLength = Math.max(localUris.length, remoteUris.length);
-  const images = Array.from({ length: maxLength }, (_, index) => ({
-    local: localUris[index] || null,
-    remote: remoteUris[index] || null,
-  }));
+  const filenames = parseImageFilenames(images);
 
   // Limit number of images if specified
-  const displayImages = maxImages ? images.slice(0, maxImages) : images;
+  const displayFilenames = maxImages ? filenames.slice(0, maxImages) : filenames;
 
-  if (displayImages.length === 0) {
+  if (displayFilenames.length === 0) {
     return null;
   }
 
@@ -70,16 +59,15 @@ export const FallbackImageList: React.FC<FallbackImageListProps> = ({
       showsVerticalScrollIndicator={false}
       style={[horizontal ? styles.horizontalScroll : styles.verticalScroll, containerStyle]}
       contentContainerStyle={horizontal ? styles.horizontalContent : styles.verticalContent}>
-      {displayImages.map((image, index) => (
+      {displayFilenames.map((filename, index) => (
         <TouchableOpacity
-          key={index}
+          key={`${pinId}-${filename}-${index}`}
           onPress={() => onImagePress?.(index)}
           disabled={!onImagePress}
           activeOpacity={onImagePress ? 0.7 : 1}>
           <FallbackImage
-            localUri={image.local}
-            remoteUri={image.remote}
-            entityId={entityId}
+            filename={filename}
+            pinId={pinId}
             style={[styles.defaultImage, imageStyle]}
           />
         </TouchableOpacity>

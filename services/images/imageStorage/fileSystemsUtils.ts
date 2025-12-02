@@ -1,57 +1,53 @@
-import * as FileSystem from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
+import { fetch } from 'expo/fetch';
 
-export async function ensureDirectoryExists(path: string): Promise<void> {
+export async function downloadFile(
+  url: string,
+  destinationDir: Directory,
+  filename?: string
+): Promise<File> {
+  console.log(`⬇️  Downloading: ${url}`);
   try {
-    await FileSystem.makeDirectoryAsync(path, { intermediates: true });
-  } catch (error) {
-    console.warn(`Failed to create directory ${path}:`, error);
+    destinationDir.create();
+  } catch {
+    // exists
   }
-}
-
-export async function deleteFile(uri: string): Promise<void> {
-  await FileSystem.deleteAsync(uri, { idempotent: true });
-}
-
-export async function copyFile(from: string, to: string): Promise<void> {
-  await FileSystem.copyAsync({ from, to });
-}
-
-export async function downloadFile(from: string, to: string): Promise<void> {
-  console.log(`⬇️  Downloading: ${from}`);
-  console.log(`   → Saving to: ${to}`);
-
-  const res = await FileSystem.downloadAsync(from, to);
-
-  if (res.status !== 200) {
-    console.error(`   ✗ Download failed: HTTP ${res.status}`);
-    throw new Error(`Download failed: HTTP ${res.status}`);
+  // If no filename provided, let File.downloadFileAsync derive it from URL.
+  let outFile: File;
+  if (filename) {
+    outFile = new File(destinationDir, filename);
+    outFile.create();
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`   ✗ Download failed: HTTP ${response.status}`);
+      throw new Error(`Download failed: HTTP ${response.status}`);
+    }
+    outFile.write(await response.bytes());
+  } else {
+    const output = await File.downloadFileAsync(url, destinationDir);
+    // output is a File instance per docs (has exists & uri)
+    outFile = output as File;
   }
-
-  // Verify the file was actually saved
-  const fileInfo = await FileSystem.getInfoAsync(to);
-  if (!fileInfo.exists) {
-    console.error(`   ✗ File not found after download: ${to}`);
-    throw new Error(`File not found after download: ${to}`);
-  }
-
-  console.log(`   ✓ Downloaded successfully (${fileInfo.size} bytes)`);
+  console.log(`   ✓ Downloaded successfully (${outFile.uri})`);
+  return outFile;
 }
 
 /**
- * Validate that image files exist on filesystem
+ * Validate image file existence using File objects.
+ * Assumes URIs reside under document or cache paths.
  */
-export async function validateFilesExist(uris: string[]): Promise<string[]> {
+export function validateFilesExist(uris: string[]): string[] {
   if (uris.length === 0) return [];
-
-  const validUris: string[] = [];
-
+  const valid: string[] = [];
   console.log(`Validating ${uris.length} image files...`);
-
   for (const uri of uris) {
     try {
-      const fileInfo = await FileSystem.getInfoAsync(uri);
-      if (fileInfo.exists) {
-        validUris.push(uri);
+      const name = uri.split('/').pop() || 'unknown';
+      // Simple heuristic: default to cache root; adjust logic if you maintain structured URIs.
+      const parent = new Directory(Paths.cache);
+      const f = new File(parent, name);
+      if ((f as any).exists ?? false) {
+        valid.push(uri);
       } else {
         console.warn(`  ✗ File missing: ${uri}`);
       }
@@ -59,11 +55,7 @@ export async function validateFilesExist(uris: string[]): Promise<string[]> {
       console.warn(`  ✗ Validation error: ${uri}`, error);
     }
   }
-
-  const skipped = uris.length - validUris.length;
-  if (skipped > 0) {
-    console.log(`  ${validUris.length} valid, ${skipped} skipped`);
-  }
-
-  return validUris;
+  const skipped = uris.length - valid.length;
+  if (skipped > 0) console.log(`  ${valid.length} valid, ${skipped} skipped`);
+  return valid;
 }

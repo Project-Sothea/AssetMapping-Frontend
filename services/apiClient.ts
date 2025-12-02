@@ -126,11 +126,7 @@ class ApiClient {
   }
 
   // Sync API methods
-  async syncItem(
-    request: SyncItemRequest | FormData
-  ): Promise<ApiResponse<SyncItemResponse['data']>> {
-    const body = request instanceof FormData ? request : JSON.stringify(request);
-
+  async syncItem(body: FormData): Promise<ApiResponse<SyncItemResponse['data']>> {
     const response = await this.request<SyncItemResponse>('/api/sync/item', {
       method: 'POST',
       body,
@@ -147,19 +143,6 @@ class ApiClient {
       success: false,
       error: response.error,
     };
-  }
-
-  async batchSync(items: SyncItemRequest[]): Promise<ApiResponse<BatchSyncResponse>> {
-    // Longer timeout for batch operations - 5 seconds per item, minimum 30s, max 2 minutes
-    const timeoutMs = Math.min(Math.max(items.length * 5000, 30000), 120000);
-    return this.request<BatchSyncResponse>(
-      '/api/sync/batch',
-      {
-        method: 'POST',
-        body: JSON.stringify({ items }),
-      },
-      timeoutMs
-    );
   }
 
   // Fetch API methods
@@ -197,85 +180,6 @@ class ApiClient {
       { method: 'GET' },
       120000
     );
-  }
-
-  // Validation API methods
-  async validatePin(
-    pinData: Record<string, unknown>
-  ): Promise<ApiResponse<Record<string, unknown>>> {
-    const response = await this.request<ValidationResponse>('/api/pins/validate', {
-      method: 'POST',
-      body: JSON.stringify(pinData),
-    });
-
-    if (response.success && response.data) {
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    }
-
-    return {
-      success: false,
-      error: response.error,
-    };
-  }
-
-  async validateForm(
-    formData: Record<string, unknown>
-  ): Promise<ApiResponse<Record<string, unknown>>> {
-    const response = await this.request<ValidationResponse>('/api/forms/validate', {
-      method: 'POST',
-      body: JSON.stringify(formData),
-    });
-
-    if (response.success && response.data) {
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    }
-
-    return {
-      success: false,
-      error: response.error,
-    };
-  }
-
-  // Image API methods
-  async deleteImage(
-    imageUrl: string,
-    entityType: 'pin' | 'form',
-    entityId: string
-  ): Promise<ApiResponse<void>> {
-    return this.request<void>('/api/images', {
-      method: 'DELETE',
-      body: JSON.stringify({ imageUrl, entityType, entityId }),
-    });
-  }
-
-  async listImages(entityType: 'pin' | 'form', entityId: string): Promise<ApiResponse<string[]>> {
-    return this.request<string[]>(`/api/images/${entityType}/${entityId}`, {
-      method: 'GET',
-    });
-  }
-
-  async processImage(
-    imageUrl: string,
-    entityType: 'pin' | 'form',
-    entityId: string
-  ): Promise<ApiResponse<{ imageUrl: string }>> {
-    return this.request<{ imageUrl: string }>('/api/images/process', {
-      method: 'POST',
-      body: JSON.stringify({ imageUrl, entityType, entityId }),
-    });
-  }
-
-  // Health check
-  async healthCheck(): Promise<
-    ApiResponse<{ status: string; uptime: number; environment: string; timestamp: string }>
-  > {
-    return this.request('/health');
   }
 }
 

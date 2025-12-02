@@ -1,14 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image, ImageProps, ImageStyle, StyleProp, View } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { ImageManager } from '~/services/images/ImageManager';
-import { getImageUrl } from '~/services/images/utils/imageUrlUtils';
 
 type FallbackImageProps = Omit<ImageProps, 'source'> & {
-  localUri?: string | null;
-  remoteUri?: string | null;
+  filename: string; // Just the filename (UUID.jpg)
+  pinId: string; // Pin ID to construct paths
   style?: StyleProp<ImageStyle>;
-  entityId?: string; // Optional: for downloading remote images to local storage
 };
 
 /**
@@ -16,21 +12,19 @@ type FallbackImageProps = Omit<ImageProps, 'source'> & {
  *
  * Intelligent image loading with automatic fallback:
  * 1. Try local file first (fastest, offline-friendly)
- * 2. If local fails or doesn't exist, try remote URL
- * 3. If using remote, automatically download to local storage for next time
+ * 2. If local fails or doesn't exist, fetch from remote URL
+ * 3. Automatically download remote images to local storage for next time
  *
  * Usage:
  * <FallbackImage
- *   localUri={pin.localImages?.[0]}
- *   remoteUri={pin.images?.[0]}
- *   entityId={pin.id}
+ *   filename="abc-123.jpg"
+ *   pinId={pin.id}
  *   style={styles.image}
  * />
  */
 export const FallbackImage: React.FC<FallbackImageProps> = ({
-  localUri,
-  remoteUri,
-  entityId,
+  filename,
+  pinId,
   style,
   onError,
   ...imageProps
@@ -39,98 +33,46 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   const [hasLocalFailed, setHasLocalFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const normalizeFileUri = useCallback((uri: string): string => {
-    if (!uri) return uri;
-    if (uri.startsWith('file://') || uri.startsWith('http')) return uri;
-    if (uri.startsWith('/')) return `file://${uri}`;
-    return uri;
-  }, []);
-
-  const checkLocalFileExists = useCallback(
-    async (uri: string): Promise<boolean> => {
-      try {
-        const normalizedUri = normalizeFileUri(uri);
-        const path = normalizedUri.replace('file://', '');
-        const info = await FileSystem.getInfoAsync(path);
-        return info.exists;
-      } catch (error) {
-        console.warn('⚠️ FallbackImage: Failed to check local file:', error);
-        return false;
-      }
-    },
-    [normalizeFileUri]
-  );
-
-  const downloadRemoteImageInBackground = useCallback(async (remoteUrl: string, eId: string) => {
-    try {
-      console.log('📥 FallbackImage: Downloading remote image to local storage...');
-      // Use ImageManager.saveImages which handles downloading remote URLs
-      const result = await ImageManager.saveImages(eId, [remoteUrl]);
-
-      if (result.success.length > 0) {
-        console.log('✅ FallbackImage: Downloaded successfully:', result.success[0]);
-      } else if (result.fail.length > 0) {
-        console.warn('⚠️ FallbackImage: Download failed:', result.fail);
-      }
-    } catch (error) {
-      console.error('❌ FallbackImage: Download error:', error);
-    }
-  }, []);
-
   const loadImage = useCallback(async () => {
+    if (!filename || !pinId) {
+      setIsLoading(false);
+      return;
+    }
+
     // Reset state
     setHasLocalFailed(false);
     setCurrentUri(null);
     setIsLoading(true);
 
-    // Step 1: Try local file first
-    if (localUri && !hasLocalFailed) {
-      const localExists = await checkLocalFileExists(localUri);
-      if (localExists) {
-        const normalizedUri = normalizeFileUri(localUri);
-        console.log('📁 FallbackImage: Using local file:', normalizedUri);
-        setCurrentUri(normalizedUri);
-        setIsLoading(false);
-        return;
-      } else {
-        console.log(
-          '⚠️ FallbackImage: Local file not found (will use remote, no re-download):',
-          localUri
-        );
-      }
+    const { getLocalPath, fileExistsLocally, getRemoteUrl } = await import(
+      '~/services/images/ImageManager'
+    );
+
+    // Try local file first
+    const localPath = getLocalPath(pinId, filename);
+    const exists = fileExistsLocally(pinId, filename);
+
+    if (exists && !hasLocalFailed) {
+      console.log('📁 Using local file:', filename);
+      console.log(localPath);
+      setCurrentUri(localPath);
+      setIsLoading(false);
+      return;
     }
 
-    // Step 2: Fall back to remote URL (convert relative path to full URL)
-    if (remoteUri) {
-      const fullRemoteUrl = await getImageUrl(remoteUri);
-      console.log('🌐 FallbackImage: Resolved remote URL:', fullRemoteUrl);
-      if (fullRemoteUrl) {
-        console.log('🌐 FallbackImage: Using remote URL:', fullRemoteUrl);
-        setCurrentUri(fullRemoteUrl);
-        setIsLoading(false);
-
-        // Step 3: ONLY download if localUri was never set (null/undefined)
-        // If localUri exists but file is missing, it means the file was deleted/corrupted
-        // In that case, just use remote without re-downloading to avoid filename conflicts
-        if (entityId && !localUri) {
-          console.log('📥 FallbackImage: No local copy exists, will download remote image');
-          downloadRemoteImageInBackground(fullRemoteUrl, entityId);
-        }
-        return;
-      }
+    // File doesn't exist locally or local failed, try remote
+    const remoteUrl = await getRemoteUrl(pinId, filename);
+    if (remoteUrl) {
+      console.log('🌐 Using remote URL:', filename);
+      setCurrentUri(remoteUrl);
+      setIsLoading(false);
+      return;
     }
 
     // No images available
+    console.warn('❌ No image available:', filename);
     setIsLoading(false);
-  }, [
-    localUri,
-    remoteUri,
-    entityId,
-    hasLocalFailed,
-    checkLocalFileExists,
-    normalizeFileUri,
-    downloadRemoteImageInBackground,
-  ]);
+  }, [filename, pinId, hasLocalFailed]);
 
   useEffect(() => {
     loadImage();
@@ -138,28 +80,21 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
 
   const handleError = useCallback(
     (error: { nativeEvent?: { error?: string } }) => {
-      console.error(
-        '❌ FallbackImage: Image failed to load:',
-        currentUri,
-        error.nativeEvent?.error
-      );
+      console.error('❌ Image failed to load:', filename, error.nativeEvent?.error);
 
-      // If local image failed, try remote (but don't re-download)
-      if (currentUri === normalizeFileUri(localUri || '') && remoteUri) {
-        console.log('🔄 FallbackImage: Local failed, falling back to remote (no re-download)');
+      // If local file failed, mark it and retry (will use remote)
+      if (!hasLocalFailed) {
+        console.log('🔄 Local failed, falling back to remote:', filename);
         setHasLocalFailed(true);
-        setCurrentUri(remoteUri);
-        // Don't auto-download here - the localUri exists in DB but file is corrupt/missing
-        // Re-downloading would create a new filename and cause sync issues
+        loadImage(); // Retry, will use remote URL this time
       }
 
       // Call the original onError handler if provided
       if (onError) {
-        // Don't call onError with incomplete event - just handle internally
-        console.warn('Image load error:', error.nativeEvent?.error);
+        onError(error as any);
       }
     },
-    [currentUri, localUri, remoteUri, normalizeFileUri, onError]
+    [filename, hasLocalFailed, loadImage, onError]
   );
 
   if (!currentUri && isLoading) {

@@ -7,9 +7,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
 import { pins, forms, Form, Pin } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
-import { urisToFiles } from '~/services/images/utils/fileUtils';
-import { parseImageUris } from '~/services/images/utils/uriUtils';
-import { validateFilesExist } from '~/services/images/imageStorage/fileSystemsUtils';
+import { parseImageFilenames } from '~/services/images/ImageManager';
 
 type Operation = 'create' | 'update' | 'delete';
 
@@ -24,13 +22,9 @@ export async function syncPin(operation: Operation, data: Pin): Promise<void> {
   }
 
   // Handle create/update operations with image upload
-  // Validate local images exist
-  const localUris = parseImageUris(data.localImages);
-  const validLocalUris = await validateFilesExist(localUris);
+  const syncedData = await syncPinToBackend(operation, data);
 
-  const syncedData = await syncPinToBackend(operation, data, validLocalUris);
-
-  await updateLocalPinAfterSync(data.id, validLocalUris, syncedData);
+  await updateLocalPinAfterSync(data.id, syncedData);
 }
 
 /**
@@ -126,26 +120,15 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
  */
 async function syncPinToBackend(
   operation: Operation,
-  data: Pin,
-  validLocalUris: string[]
+  data: Pin
 ): Promise<Record<string, unknown> | undefined> {
-  const { lastSyncedAt, lastFailedSyncAt, status, failureReason, localImages, images, ...rest } =
-    data;
+  const { lastSyncedAt, lastFailedSyncAt, status, failureReason, ...rest } = data;
 
   const payload: Record<string, unknown> = {
     ...rest,
     version: rest.version, // Include version for conflict detection
     updatedAt: rest.updatedAt || new Date().toISOString(),
   };
-
-  // For updates: include existing remote images URLs to keep (deletions are implicit)
-  // Backend will merge these with newly uploaded images
-  if (operation === 'update' && images) {
-    const existingRemoteUrls = parseImageUris(images);
-    if (existingRemoteUrls.length > 0) {
-      payload.images = JSON.stringify(existingRemoteUrls);
-    }
-  }
 
   // Create FormData for multipart request
   const formData = new FormData();
@@ -156,32 +139,29 @@ async function syncPinToBackend(
     JSON.stringify({
       idempotencyKey: uuidv4(),
       entityType: 'pin',
-      operation: rest.id ? 'update' : 'create',
+      operation, // use the requested operation from the queue
       payload,
       deviceId: 'mobile-app',
       timestamp: new Date().toISOString(),
     })
   );
 
-  // Attach only new image files (not present in remote images array)
-  let newImageUris: string[] = validLocalUris;
-  if (operation === 'update' && images) {
-    const existingRemoteUrls = parseImageUris(images);
-    // Only upload images that are not already present in remote images
-    newImageUris = validLocalUris.filter((uri) => {
-      // Compare by filename (UUID.jpg)
-      const localFilename = uri.split('/').pop();
-      return !existingRemoteUrls.some((remote) => remote.split('/').pop() === localFilename);
-    });
-  }
-  if (newImageUris.length > 0) {
-    console.log(`📎 Attaching ${newImageUris.length} new images to sync request`);
-    const imageFiles = urisToFiles(newImageUris);
-    console.log('🔍 Image file metadata:', JSON.stringify(imageFiles, null, 2));
-    imageFiles.forEach((file, index) => {
-      // React Native FormData requires { uri, name, type } format
-      console.log(`  📎 Appending image ${index + 1}:`, file);
-      formData.append('images', file as any);
+  const filenames = parseImageFilenames(data.images);
+  if (filenames.length > 0) {
+    const { getLocalPath } = await import('~/services/images/ImageManager');
+
+    filenames.forEach((filename) => {
+      const uri = getLocalPath(data.id, filename);
+      console.log(`📎 Attaching image for upload: ${uri}`);
+      // Determine MIME type from file extension
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const mimeType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+
+      formData.append('images', {
+        uri,
+        name: filename,
+        type: mimeType,
+      } as any);
     });
   }
 
@@ -210,11 +190,10 @@ async function syncPinToBackend(
 
 /**
  * Update local database after successful sync
- * Updates version and remote image URLs from backend to keep local and remote in sync
+ * Updates version and image filenames from backend to keep local and remote in sync
  */
 async function updateLocalPinAfterSync(
   pinId: string,
-  validLocalUris: string[],
   syncedData?: Record<string, unknown>
 ): Promise<void> {
   const updates: Record<string, unknown> = {
@@ -228,20 +207,16 @@ async function updateLocalPinAfterSync(
     console.log(`✅ Updated local version to ${syncedData.version}`);
   }
 
-  // Update remote image URLs from backend (backend returns updated images array)
+  // Update images from backend (backend returns filenames or paths)
   if (syncedData && typeof syncedData === 'object' && 'images' in syncedData) {
-    updates.images = syncedData.images;
-    const remoteImagePaths = parseImageUris(syncedData.images as string | string[]);
-    // Download backend images and update localImages to match backend UUIDs
-    const { downloadRemoteImages } = await import('~/services/images/ImageManager');
-    const localImagePaths = await downloadRemoteImages(pinId, remoteImagePaths);
-    updates.localImages = JSON.stringify(localImagePaths);
-    const imageCount = localImagePaths.length;
-    console.log(`✅ Synced ${imageCount} images with backend and updated local copies`);
-  } else if (validLocalUris.length > 0) {
-    // Only keep localImages if backend didn't return images (edge case)
-    updates.localImages = JSON.stringify(validLocalUris);
-    console.log(`✅ Keeping ${validLocalUris.length} local images for offline access`);
+    const { parseImageFilenames } = await import('~/services/images/ImageManager');
+    const backendImages = parseImageFilenames(syncedData.images as string | string[]);
+
+    // Extract just filenames (backend might return paths like "pin/ID/file.jpg")
+    const filenames = backendImages.map((path) => path.split('/').pop() || path);
+
+    // Store filenames in database
+    updates.images = JSON.stringify(filenames);
   }
 
   await db.update(pins).set(updates).where(eq(pins.id, pinId));

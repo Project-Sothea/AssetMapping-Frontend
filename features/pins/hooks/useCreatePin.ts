@@ -4,7 +4,7 @@ import { createPin } from '../services';
 
 export const useCreatePin = () => {
   const mutation = useMutation({
-    mutationFn: (pin: Omit<Pin, 'id'>) => createPin(pin),
+    mutationFn: (pin: Pin) => createPin(pin),
   });
 
   return {

@@ -62,11 +62,10 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
           {pin.description && <Text style={styles.description}>{pin.description}</Text>}
 
           {/* Display images using FallbackImageList */}
-          {(pin.localImages || pin.images) && (
+          {pin.images && (
             <FallbackImageList
-              localImages={pin.localImages}
-              remoteImages={pin.images}
-              entityId={pin.id}
+              images={pin.images}
+              pinId={pin.id}
               imageStyle={styles.thumbnail}
               containerStyle={styles.imageScroll}
             />

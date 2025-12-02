@@ -43,15 +43,14 @@ export const pins = sqliteTable('pins', {
   cityVillage: text(),
   description: text(),
 
-  // Images - stored as JSON string
-  images: text(), // JSON.stringify(['url1', 'url2'])
+  // Images - stored as JSON array of filenames (UUIDs)
+  images: text(),
 
   // Local-only fields (sync tracking)
   failureReason: text(),
   status: text(),
   lastSyncedAt: text(),
   lastFailedSyncAt: text(),
-  localImages: text(), // Local file paths before upload
 });
 
 /**

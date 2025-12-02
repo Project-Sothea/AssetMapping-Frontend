@@ -30,11 +30,10 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
         </View>
       </View>
 
-      {(pin.localImages || pin.images) && (
+      {pin.images && (
         <FallbackImageList
-          localImages={pin.localImages}
-          remoteImages={pin.images}
-          entityId={pin.id}
+          images={pin.images}
+          pinId={pin.id}
           imageStyle={styles.image}
           containerStyle={styles.imageScroll}
           onImagePress={openImage}
@@ -52,9 +51,8 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
       {modalVisible && (
         <ImageModal
           visible={modalVisible}
-          localImages={pin.localImages}
-          remoteImages={pin.images}
-          entityId={pin.id}
+          images={pin.images}
+          pinId={pin.id}
           initialIndex={activeIndex}
           onClose={() => setModalVisible(false)}
         />

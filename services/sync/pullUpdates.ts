@@ -2,7 +2,6 @@
  * Pull Updates from Backend
  *
  * Fetches updated entities from backend and saves to local SQLite database
- * Downloads remote images to local storage for offline access
  */
 
 import { db } from '~/services/drizzleDb';
@@ -10,9 +9,6 @@ import { pins, forms } from '~/db/schema';
 import { apiClient } from '~/services/apiClient';
 import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
 import { eq } from 'drizzle-orm';
-import { ImageManager } from '~/services/images/ImageManager';
-import { parseJsonArray } from '~/shared/utils/parsing';
-import { getImageUrls } from '~/services/images/utils/imageUrlUtils';
 
 // --- Types ---
 type EntityType = 'pin' | 'form';
@@ -26,22 +22,18 @@ interface ProcessResult {
 
 /**
  * Helper: Process and save a single pin to local database
- * Downloads remote images to local storage for offline access
  */
 async function processPinData(pinData: Record<string, unknown>): Promise<void> {
   const pinId = pinData.id as string;
 
-  // Convert relative paths to full URLs
-  const remotePaths = parseJsonArray(pinData.images as string);
-  const remoteUrls = await getImageUrls(remotePaths);
-  const localImagePaths = await ImageManager.downloadRemoteImages(pinId, remoteUrls);
+  // Extract filenames from backend response (may be paths like "pin/ID/file.jpg")
+  const { parseImageFilenames } = await import('~/services/images/ImageManager');
+  const backendImages = parseImageFilenames(pinData.images as string | string[]);
+  const filenames = backendImages.map((path) => path.split('/').pop() || path);
 
   const sanitized = sanitizePinForDb({
     ...pinData,
-    localImages:
-      localImagePaths.length > 0
-        ? JSON.stringify(localImagePaths)
-        : (pinData.localImages as string | null | undefined),
+    images: JSON.stringify(filenames),
   });
 
   await upsertEntity(pins, sanitized, pinId);

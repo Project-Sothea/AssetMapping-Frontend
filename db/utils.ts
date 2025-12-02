@@ -61,7 +61,6 @@ export function sanitizePinForDb(
     cityVillage: nullIfEmpty(pin.cityVillage),
     description: nullIfEmpty(pin.description),
     images: jsonifyArray(pin.images),
-    localImages: jsonifyArray(pin.localImages),
     status: nullIfEmpty(pin.status),
     failureReason: nullIfEmpty(pin.failureReason),
     lastSyncedAt: pin.lastSyncedAt ?? null,

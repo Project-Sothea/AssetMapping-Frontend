@@ -10,7 +10,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import * as ImageManager from '~/services/images/ImageManager';
+import { getLocalPath, pickImage, saveImageLocally } from '~/services/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
@@ -22,7 +22,7 @@ const PinFormSchema = Yup.object().shape({
   id: Yup.string().required(),
   lat: Yup.number().nullable().required('Latitude is required'),
   lng: Yup.number().nullable().required('Longitude is required'),
-  localImages: Yup.array().of(Yup.string()).nullable(),
+  images: Yup.array().of(Yup.string()).nullable(),
   version: Yup.number().nullable(),
 });
 
@@ -32,7 +32,7 @@ export type PinFormValues = {
   address: string | null;
   description: string | null;
   type: string | null;
-  localImages: string[]; // array of images with uri (may be null)
+  images: string[]; // Array of filenames (UUIDs), not full paths
   id: string;
   lat: number | null;
   lng: number | null;
@@ -46,29 +46,27 @@ type PinFormProps = {
 
 export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   console.log('📋 PinForm - Received initialValues:', initialValues);
-  console.log('📋 PinForm - localImages:', initialValues.localImages);
+  console.log('📋 PinForm - images (filenames):', initialValues.images);
 
   const appendNewImage = async (
     setFieldValue: (field: string, value: unknown) => void,
-    images: string[] | null
+    currentFilenames: string[] | null
   ) => {
-    const { data, error } = await ImageManager.ImageManager.pick();
-    const safeImages = Array.isArray(images) ? images : [];
-    if (!error && data) {
-      // Copy picked image to canonical pin directory with UUID filename
-      // Use pin id from initialValues
-      const pinId = initialValues.id;
-      const { success: savedUris } = await ImageManager.ImageManager.saveImages(pinId, [data]);
-      if (savedUris && savedUris.length > 0) {
-        console.log('📥 Saved picked image to canonical directory:', savedUris[0]);
-        setFieldValue('localImages', [...safeImages, savedUris[0]]);
-      } else {
-        console.warn('Failed to save picked image to canonical directory');
-      }
-    } else if (error) {
-      console.warn(error.message);
+    try {
+      // Pick image
+      const pickedUri = await pickImage();
+      if (!pickedUri) return;
+
+      // Save to pin folder (returns filename)
+      const newFilename = await saveImageLocally(initialValues.id, pickedUri);
+
+      // Add filename to form
+      const existing = Array.isArray(currentFilenames) ? currentFilenames : [];
+      setFieldValue('images', [...existing, newFilename]);
+      console.log('📥 Added image:', newFilename);
+    } catch (error) {
+      console.error('Failed to add image:', error);
     }
-    return;
   };
 
   return (
@@ -112,28 +110,27 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={{ marginBottom: 8 }}>
-                {values.localImages &&
-                  values.localImages.length > 0 &&
-                  values.localImages.map((image, idx) => {
-                    console.log(`🖼️ PinForm - Rendering image ${idx}:`, image);
+                {values.images &&
+                  values.images.length > 0 &&
+                  values.images.map((filename, idx) => {
+                    const localPath = getLocalPath(initialValues.id, filename);
                     return (
                       <View
-                        key={`image-${idx}-${image.substring(0, 10)}`}
+                        key={`image-${idx}-${filename}`}
                         style={{ position: 'relative', marginRight: 8 }}>
                         <Image
-                          source={{ uri: image }}
+                          source={{ uri: localPath }}
                           style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
                           onError={(e) =>
                             console.error(`❌ Image ${idx} failed to load:`, e.nativeEvent.error)
                           }
-                          onLoad={() => console.log(`✅ Image ${idx} loaded successfully`)}
+                          onLoad={() => console.log(`✅ Image ${idx} loaded`)}
                         />
                         <Pressable
                           onPress={() => {
-                            const newImages = values.localImages.filter((_, i) => i !== idx);
-                            // Always set to array, even if empty
-                            setFieldValue('localImages', newImages.length > 0 ? newImages : []);
-                            console.log('Removed image, remaining:', newImages.length);
+                            const remainingFilenames = values.images.filter((_, i) => i !== idx);
+                            setFieldValue('images', remainingFilenames);
+                            console.log('🗑️ Removed from form:', filename);
                           }}
                           style={{
                             position: 'absolute',
@@ -152,7 +149,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
               </ScrollView>
               <View style={styles.buttonRow}>
                 <TouchableOpacity
-                  onPress={() => appendNewImage(setFieldValue, values.localImages)}
+                  onPress={() => appendNewImage(setFieldValue, values.images)}
                   style={styles.imagePickerButton}>
                   <MaterialIcons name="image" size={24} color="blue" />
                   <Text style={styles.imagePickerText}>Pick an Image</Text>
@@ -169,8 +166,8 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
               </View>
 
               {/* Optionally display validation error */}
-              {touched.localImages && errors.localImages && (
-                <Text style={styles.error}>{errors.localImages as string}</Text>
+              {touched.images && errors.images && (
+                <Text style={styles.error}>{errors.images as string}</Text>
               )}
             </View>
           </View>
