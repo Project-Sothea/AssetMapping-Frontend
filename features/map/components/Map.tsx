@@ -27,7 +27,8 @@ import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
 import type { PinFormValues } from './PinForm';
 
-const MAP_STYLE_URL = MapboxGL.StyleURL.Outdoors;
+// Default style; can be toggled at runtime
+const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
 
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
@@ -38,6 +39,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
   const { data: pins } = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
+  const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
 
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
   const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
@@ -69,6 +71,14 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
 
   const refreshMap = () => {
     setMapKey((k) => k + 1); // force remount
+  };
+
+  const toggleStyle = () => {
+    setStyleUrl((prev) =>
+      prev === MapboxGL.StyleURL.SatelliteStreet
+        ? MapboxGL.StyleURL.Outdoors
+        : MapboxGL.StyleURL.SatelliteStreet
+    );
   };
 
   const handleDropPin = async (feature: Feature<Geometry>) => {
@@ -182,7 +192,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
       <MapView
         key={mapKey}
         style={{ flex: 1 }}
-        styleURL={MAP_STYLE_URL}
+        styleURL={styleUrl}
         compassEnabled
         scaleBarEnabled
         onLongPress={handleDropPin}>
@@ -282,6 +292,10 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
           coords={{ lng: droppedCoords[0], lat: droppedCoords[1] }}
         />
       )}
+      <TouchableOpacity style={[styles.refreshButton, { right: 60 }]} onPress={toggleStyle}>
+        <MaterialIcons name="satellite" color="black" size={30} style={styles.refreshText} />
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.refreshButton} onPress={refreshMap}>
         <MaterialIcons name="refresh" color="black" size={30} style={styles.refreshText} />
       </TouchableOpacity>
