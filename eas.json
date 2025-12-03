@@ -14,7 +14,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_MAPBOX_KEY": "pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw"
+        "EXPO_PUBLIC_MAPBOX_KEY": "pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw",
+        "EXPO_PUBLIC_API_URL": "https://assetmapping-backend.onrender.com"
       }
     }
   },

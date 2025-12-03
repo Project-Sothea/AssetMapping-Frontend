@@ -57,7 +57,7 @@ export function ApiUrlConfiguration() {
       <Spacer />
       <TextInput
         style={styles.input}
-        placeholder="http://192.168.1.100:3000"
+        placeholder="https://assetmapping-backend.onrender.com"
         value={apiUrl}
         onChangeText={setApiUrlState}
       />
