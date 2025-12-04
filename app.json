@@ -65,13 +65,14 @@
       "package": "com.anonymous.AssetMapApp",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3e539786-199b-4155-a9f6-bdbbe1603eb7"
+        "projectId": "d2c9d6b5-4270-44c2-a31b-5ac53cb5f93f"
       }
     }
   }
