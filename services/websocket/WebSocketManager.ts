@@ -24,8 +24,6 @@ class WebSocketManager {
   private ws: WebSocket | null = null;
   private userId: string | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  private pingInterval: ReturnType<typeof setInterval> | null = null;
-  private pingStartTime: number | null = null;
 
   // Status tracking
   private status: WebSocketStatus = {
@@ -199,9 +197,6 @@ class WebSocketManager {
       console.log('🔄 Reconnected - triggering incremental sync');
       this.triggerReconnectSync();
     }
-
-    // Start ping/pong health check
-    this.startPingInterval();
   }
 
   /**
@@ -210,13 +205,6 @@ class WebSocketManager {
   private handleMessage(event: MessageEvent): void {
     try {
       const message = safeJsonParse(event.data, { type: 'unknown' });
-
-      // Handle pong response for latency measurement
-      if (message.type === 'pong' && this.pingStartTime) {
-        const latency = Date.now() - this.pingStartTime;
-        this.updateStatus({ latency });
-        this.pingStartTime = null;
-      }
 
       // Notify all message handlers
       this.messageHandlers.forEach((handler) => {
@@ -303,31 +291,12 @@ class WebSocketManager {
   }
 
   /**
-   * Start ping interval for health monitoring
-   */
-  private startPingInterval(): void {
-    this.clearTimers();
-
-    this.pingInterval = setInterval(() => {
-      if (this.isConnected()) {
-        this.pingStartTime = Date.now();
-        this.send({ type: 'ping' });
-      }
-    }, 30000); // Every 30 seconds
-  }
-
-  /**
    * Clear all timers
    */
   private clearTimers(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
     }
   }
 

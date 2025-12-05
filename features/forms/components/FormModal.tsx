@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Button } from '~/shared/components/ui/Button';
@@ -26,8 +26,16 @@ type FormModalProps = {
   onSubmit: (values: Form) => void;
 };
 
+const SECTION_ORDER = ['general', 'health', 'education', 'water'] as const;
+
 export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: FormModalProps) => {
-  const mergedInitialValues = React.useMemo((): Form => {
+  const [expandedSection, setExpandedSection] = useState<(typeof SECTION_ORDER)[number]>('general');
+
+  const toggleSection = useCallback((section: (typeof SECTION_ORDER)[number]) => {
+    setExpandedSection((prev) => (prev === section ? prev : section));
+  }, []);
+
+  const mergedInitialValues = useMemo((): Form => {
     const normalizedInitialData = selectedForm ? parseArrayFields(selectedForm) : {};
     return {
       // Metadata
@@ -131,32 +139,52 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
         onSubmit={onSubmit}>
         {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
           <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-            <GeneralSection
-              values={values}
-              setFieldValue={setFieldValue}
-              handleChange={handleChange}
-              handleBlur={handleBlur}
-              errors={errors}
-              touched={touched}
-            />
+            <Section
+              title="General"
+              isOpen={expandedSection === 'general'}
+              onPress={() => toggleSection('general')}>
+              <GeneralSection
+                values={values}
+                setFieldValue={setFieldValue}
+                handleChange={handleChange}
+                handleBlur={handleBlur}
+                errors={errors}
+                touched={touched}
+              />
+            </Section>
 
-            <HealthSection
-              values={values}
-              setFieldValue={setFieldValue}
-              handleChange={handleChange}
-            />
+            <Section
+              title="Health"
+              isOpen={expandedSection === 'health'}
+              onPress={() => toggleSection('health')}>
+              <HealthSection
+                values={values}
+                setFieldValue={setFieldValue}
+                handleChange={handleChange}
+              />
+            </Section>
 
-            <EducationSection
-              values={values}
-              setFieldValue={setFieldValue}
-              handleChange={handleChange}
-            />
+            <Section
+              title="Education"
+              isOpen={expandedSection === 'education'}
+              onPress={() => toggleSection('education')}>
+              <EducationSection
+                values={values}
+                setFieldValue={setFieldValue}
+                handleChange={handleChange}
+              />
+            </Section>
 
-            <WaterSection
-              values={values}
-              setFieldValue={setFieldValue}
-              handleChange={handleChange}
-            />
+            <Section
+              title="Water"
+              isOpen={expandedSection === 'water'}
+              onPress={() => toggleSection('water')}>
+              <WaterSection
+                values={values}
+                setFieldValue={setFieldValue}
+                handleChange={handleChange}
+              />
+            </Section>
 
             <Button title="Submit" onPress={() => handleSubmit()} />
             <Spacer />
@@ -171,4 +199,41 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
+  sectionHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#f4f4f5',
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontWeight: '700',
+    fontSize: 16,
+    color: '#111827',
+  },
+  sectionBody: {
+    marginBottom: 16,
+  },
 });
+
+type SectionProps = {
+  title: string;
+  isOpen: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+};
+
+function Section({ title, isOpen, onPress, children }: SectionProps) {
+  return (
+    <View style={{ marginBottom: 4 }}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text>{isOpen ? '−' : '+'}</Text>
+      </TouchableOpacity>
+      {isOpen && <View style={styles.sectionBody}>{children}</View>}
+    </View>
+  );
+}
