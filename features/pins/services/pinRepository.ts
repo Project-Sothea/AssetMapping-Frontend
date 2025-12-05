@@ -1,7 +1,7 @@
 import { db } from '~/services/drizzleDb';
 import { pins } from '~/db/schema';
 import type { Pin } from '~/db/schema';
-import { sanitizePinForDb } from '~/db/utils';
+import { sanitizePinForDb, mapPinDbToPin } from '~/db/utils';
 import { eq } from 'drizzle-orm';
 
 export async function createPinDb(pin: Pin): Promise<void> {
@@ -14,14 +14,10 @@ export async function updatePinDb(pin: Pin): Promise<Pin> {
     .set(sanitizePinForDb(pin))
     .where(eq(pins.id, pin.id))
     .returning();
-  return result[0] ?? null;
+  return result[0] ? mapPinDbToPin(result[0]) : null;
 }
 
 export async function getPinById(id: string): Promise<Pin | null> {
   const result = await db.select().from(pins).where(eq(pins.id, id)).limit(1);
-  return result[0] ?? null;
-}
-
-export async function softDeletePinDb(id: string): Promise<void> {
-  await db.update(pins).set({ deletedAt: new Date().toISOString() }).where(eq(pins.id, id));
+  return result[0] ? mapPinDbToPin(result[0]) : null;
 }

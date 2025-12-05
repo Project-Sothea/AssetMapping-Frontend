@@ -5,7 +5,8 @@
  * array fields that are stored as JSON strings in SQLite.
  */
 
-import type { Pin, Form, FormDB } from '~/db/schema';
+import type { Pin, PinDB, Form, FormDB } from '~/db/schema';
+import { parseImageFilenames } from '~/services/images/ImageManager';
 
 /**
  * Sanitize data for SQLite - remove undefined values and convert Dates
@@ -46,12 +47,11 @@ function jsonifyArray(value: unknown): string {
  */
 export function sanitizePinForDb(
   pin: Partial<Pin> & Record<string, unknown>
-): Omit<Pin, 'id'> & { id: string } {
+): Omit<PinDB, 'id'> & { id: string } {
   return {
     id: pin.id as string,
     createdAt: pin.createdAt ?? new Date().toISOString(),
     updatedAt: pin.updatedAt ?? null,
-    deletedAt: pin.deletedAt ?? null,
     version: pin.version ?? 1,
     lat: pin.lat ?? null,
     lng: pin.lng ?? null,
@@ -62,9 +62,14 @@ export function sanitizePinForDb(
     description: nullIfEmpty(pin.description),
     images: jsonifyArray(pin.images),
     status: nullIfEmpty(pin.status),
-    failureReason: nullIfEmpty(pin.failureReason),
-    lastSyncedAt: pin.lastSyncedAt ?? null,
-    lastFailedSyncAt: pin.lastFailedSyncAt ?? null,
+  };
+}
+
+export function mapPinDbToPin(pin: PinDB): Pin {
+  const { images, ...rest } = pin;
+  return {
+    ...rest,
+    images: parseImageFilenames(images),
   };
 }
 
@@ -72,13 +77,12 @@ export function sanitizePinForDb(
  * Sanitize Form for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizeFormForDb(form: Partial<Form> & Record<string, unknown>): FormDB {
+export function sanitizeFormForDb(form: Form): FormDB {
   return {
     // Metadata
     id: form.id as string,
     createdAt: form.createdAt ?? new Date().toISOString(),
     updatedAt: form.updatedAt ?? null,
-    deletedAt: form.deletedAt ?? null,
     version: form.version ?? 1,
     pinId: nullIfEmpty(form.pinId),
 
@@ -157,10 +161,7 @@ export function sanitizeFormForDb(form: Partial<Form> & Record<string, unknown>)
     handwashingAfterToilet: nullIfEmpty(form.handwashingAfterToilet),
     otherHandwashingAfterToilet: nullIfEmpty(form.otherHandwashingAfterToilet),
 
-    // Sync tracking fields
+    // Sync tracking field
     status: nullIfEmpty(form.status),
-    failureReason: nullIfEmpty(form.failureReason),
-    lastSyncedAt: form.lastSyncedAt ?? null,
-    lastFailedSyncAt: form.lastFailedSyncAt ?? null,
   };
 }

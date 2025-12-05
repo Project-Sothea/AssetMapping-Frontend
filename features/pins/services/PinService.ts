@@ -11,15 +11,16 @@
 import { db } from '~/services/drizzleDb';
 import { pins, type Pin } from '~/db/schema';
 import { eq } from 'drizzle-orm';
-import { enqueuePin } from '~/services/sync/queue';
+import { enqueuePin } from '~/services/sync/queue/syncQueue';
 import * as ImageManager from '~/services/images/ImageManager';
+import { mapPinDbToPin, sanitizePinForDb } from '~/db/utils';
 
 // ============================================
 // CREATE
 // ============================================
 
 export async function createPin(pin: Pin): Promise<Pin> {
-  await db.insert(pins).values(pin);
+  await db.insert(pins).values(sanitizePinForDb(pin));
   await enqueuePin('create', pin);
   console.log('✅ Created pin:', pin.id);
 
@@ -38,8 +39,8 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
 
   // Handle image changes (now using filenames)
   if (updates.images !== undefined) {
-    const oldFilenames = ImageManager.parseImageFilenames(existing.images);
-    const newFilenames = ImageManager.parseImageFilenames(updates.images);
+    const oldFilenames = existing.images || [];
+    const newFilenames = updates.images || [];
 
     // Find removed filenames
     const removedFilenames = oldFilenames.filter((fn) => !newFilenames.includes(fn));
@@ -67,7 +68,7 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
     status: 'unsynced',
   };
 
-  await db.update(pins).set(updated).where(eq(pins.id, id));
+  await db.update(pins).set(sanitizePinForDb(updated)).where(eq(pins.id, id));
   await enqueuePin('update', updated);
   console.log('✅ Updated pin:', id);
 
@@ -83,7 +84,7 @@ export async function deletePin(id: string): Promise<void> {
   if (!existing) throw new Error(`Pin ${id} not found`);
 
   // Delete all local images when deleting the pin
-  const filenames = ImageManager.parseImageFilenames(existing.images);
+  const filenames = existing.images || [];
   if (filenames.length > 0) {
     try {
       await ImageManager.deleteImagesByFilename(id, filenames);
@@ -94,14 +95,7 @@ export async function deletePin(id: string): Promise<void> {
     }
   }
 
-  await db
-    .update(pins)
-    .set({
-      deletedAt: new Date().toISOString(),
-      status: 'unsynced',
-    })
-    .where(eq(pins.id, id));
-
+  await db.delete(pins).where(eq(pins.id, id));
   await enqueuePin('delete', { id });
   console.log('✅ Deleted pin:', id);
 }
@@ -112,5 +106,5 @@ export async function deletePin(id: string): Promise<void> {
 
 export async function getPinById(id: string): Promise<Pin | null> {
   const result = await db.select().from(pins).where(eq(pins.id, id)).limit(1);
-  return result[0] || null;
+  return result[0] ? mapPinDbToPin(result[0]) : null;
 }
