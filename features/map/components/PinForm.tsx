@@ -10,7 +10,12 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import { getLocalPath, pickImage, saveImageLocally } from '~/services/images/ImageManager';
+import {
+  deleteImageByFilename,
+  getLocalPath,
+  pickImage,
+  saveImageLocally,
+} from '~/services/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const PinFormSchema = Yup.object().shape({
@@ -128,9 +133,15 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                         />
                         <Pressable
                           onPress={() => {
+                            // Remove from form state
                             const remainingFilenames = values.images.filter((_, i) => i !== idx);
                             setFieldValue('images', remainingFilenames);
                             console.log('🗑️ Removed from form:', filename);
+
+                            // Delete the locally cached file when user removes before save
+                            deleteImageByFilename(initialValues.id, filename).catch((error) =>
+                              console.warn('⚠️ Failed to delete local image', filename, error)
+                            );
                           }}
                           style={{
                             position: 'absolute',

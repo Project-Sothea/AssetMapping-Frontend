@@ -15,6 +15,7 @@
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 import { safeJsonParse } from '~/shared/utils/parsing';
 import { getApiUrl } from '~/services/apiUrl';
+import { performIncrementalSync } from '~/services/sync/syncService';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
 type MessageHandler = (message: Record<string, unknown>) => void;
@@ -336,8 +337,6 @@ class WebSocketManager {
    */
   private async triggerReconnectSync(): Promise<void> {
     try {
-      // Dynamic import to avoid circular dependency
-      const { performIncrementalSync } = await import('~/services/sync/syncService');
       await performIncrementalSync();
     } catch (error) {
       console.error('Failed to perform incremental sync after reconnect:', error);

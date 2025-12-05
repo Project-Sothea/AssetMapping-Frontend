@@ -28,7 +28,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { processQueue } from '~/services/sync/queue';
+import { processQueue } from '~/services/sync/queue/syncQueue';
 import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
 
 interface NotificationMessage {

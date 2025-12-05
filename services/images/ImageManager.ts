@@ -16,7 +16,7 @@
 import { Directory, File, Paths } from 'expo-file-system/next';
 import * as ImagePicker from 'expo-image-picker';
 import { fetch } from 'expo/fetch';
-import { getApiUrl } from '../apiUrl';
+import { getDownloadUrl } from '../api/storageApi';
 
 // ============================================
 // PICK IMAGE
@@ -56,13 +56,6 @@ export async function saveImageLocally(pinId: string, imageUri: string): Promise
     console.log(`✅ Created directory: ${pinDir.uri}`);
   }
 
-  // Already saved? Return filename
-  if (imageUri.includes(pinDir.uri)) {
-    const filename = imageUri.split('/').pop()!;
-    console.log(`📍 Already in pin dir, returning: ${filename}`);
-    return filename;
-  }
-
   // Extract filename from ImagePicker URI (already has UUID)
   const filename = imageUri.split('/').pop()!;
   console.log(`🆕 Saving new image as: ${filename}`);
@@ -88,9 +81,19 @@ export async function deleteImageByFilename(pinId: string, filename: string): Pr
   try {
     const pinDir = new Directory(Paths.document, 'pins', pinId);
     const file = new File(pinDir, filename);
+    // If file is already gone, treat as success
+    if ((file as any).exists === false) {
+      console.log('🗑️ Already deleted or missing:', filename);
+      return;
+    }
     file.delete();
     console.log('🗑️ Deleted:', filename);
   } catch (error) {
+    // Ignore missing file errors, otherwise bubble up
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      console.log('🗑️ Already deleted or missing:', filename);
+      return;
+    }
     console.error('Failed to delete:', filename, error);
     throw error;
   }
@@ -140,9 +143,49 @@ export function getLocalPath(pinId: string, filename: string): string {
  * Get remote URL for a filename
  */
 export async function getRemoteUrl(pinId: string, filename: string): Promise<string | null> {
-  const apiUrl = await getApiUrl();
-  if (!apiUrl) return null;
-  return `${apiUrl}/uploads/pin/${pinId}/${filename}`;
+  try {
+    const key = `pins/${pinId}/${filename}`;
+    const response = await getDownloadUrl(key);
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to fetch remote image URL from storage', error);
+  }
+
+  return null;
+}
+
+/**
+ * Download a remote image and cache it locally for offline use.
+ * Returns the local URI on success, or null on failure.
+ */
+export async function cacheRemoteImage(
+  pinId: string,
+  filename: string,
+  remoteUrl: string
+): Promise<string | null> {
+  try {
+    const pinDir = new Directory(Paths.document, 'pins', pinId);
+    if (!pinDir.exists) {
+      pinDir.create({ intermediates: true });
+    }
+
+    const destFile = new File(pinDir, filename);
+    const response = await fetch(remoteUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status}`);
+    }
+
+    destFile.create();
+    const bytes = await response.bytes();
+    destFile.write(bytes);
+    return destFile.uri;
+  } catch (error) {
+    console.warn('⚠️ Failed to cache remote image locally', { pinId, filename, error });
+    return null;
+  }
 }
 
 /**

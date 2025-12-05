@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { deletePin } from '../services';
+import { deletePin } from '../services/PinService';
 
 export const useDeletePin = () => {
   const mutation = useMutation({

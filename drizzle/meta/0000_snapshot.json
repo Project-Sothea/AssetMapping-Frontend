@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "87567278-eaa6-4b15-a20a-aca4549869d4",
+  "id": "dab28c06-c9ef-48db-9d16-157c4ec31af0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "forms": {
@@ -29,13 +29,6 @@
           "notNull": false,
           "autoincrement": false,
           "default": "(CURRENT_TIMESTAMP)"
-        },
-        "deletedAt": {
-          "name": "deletedAt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "version": {
           "name": "version",
@@ -521,29 +514,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "failureReason": {
-          "name": "failureReason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "status": {
           "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "lastSyncedAt": {
-          "name": "lastSyncedAt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "lastFailedSyncAt": {
-          "name": "lastFailedSyncAt",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -556,9 +528,13 @@
           "name": "forms_pinId_pins_id_fk",
           "tableFrom": "forms",
           "tableTo": "pins",
-          "columnsFrom": ["pinId"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
+          "columnsFrom": [
+            "pinId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -591,13 +567,6 @@
           "notNull": false,
           "autoincrement": false,
           "default": "(CURRENT_TIMESTAMP)"
-        },
-        "deletedAt": {
-          "name": "deletedAt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "version": {
           "name": "version",
@@ -663,36 +632,8 @@
           "notNull": false,
           "autoincrement": false
         },
-        "failureReason": {
-          "name": "failureReason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "status": {
           "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "lastSyncedAt": {
-          "name": "lastSyncedAt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "lastFailedSyncAt": {
-          "name": "lastFailedSyncAt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "localImages": {
-          "name": "localImages",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -820,7 +761,9 @@
       "indexes": {
         "sync_queue_idempotencyKey_unique": {
           "name": "sync_queue_idempotencyKey_unique",
-          "columns": ["idempotencyKey"],
+          "columns": [
+            "idempotencyKey"
+          ],
           "isUnique": true
         }
       },

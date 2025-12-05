@@ -2,7 +2,6 @@ CREATE TABLE `forms` (
 	`id` text PRIMARY KEY NOT NULL,
 	`createdAt` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`updatedAt` text DEFAULT (CURRENT_TIMESTAMP),
-	`deletedAt` text,
 	`version` integer DEFAULT 1 NOT NULL,
 	`pinId` text,
 	`villageId` text,
@@ -72,18 +71,14 @@ CREATE TABLE `forms` (
 	`otherWaterFilterNonUseReasons` text,
 	`handwashingAfterToilet` text,
 	`otherHandwashingAfterToilet` text,
-	`failureReason` text,
 	`status` text,
-	`lastSyncedAt` text,
-	`lastFailedSyncAt` text,
-	FOREIGN KEY (`pinId`) REFERENCES `pins`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`pinId`) REFERENCES `pins`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `pins` (
 	`id` text PRIMARY KEY NOT NULL,
 	`createdAt` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`updatedAt` text DEFAULT (CURRENT_TIMESTAMP),
-	`deletedAt` text,
 	`version` integer DEFAULT 1 NOT NULL,
 	`lat` real,
 	`lng` real,
@@ -93,11 +88,7 @@ CREATE TABLE `pins` (
 	`cityVillage` text,
 	`description` text,
 	`images` text,
-	`failureReason` text,
-	`status` text,
-	`lastSyncedAt` text,
-	`lastFailedSyncAt` text,
-	`localImages` text
+	`status` text
 );
 --> statement-breakpoint
 CREATE TABLE `sync_queue` (

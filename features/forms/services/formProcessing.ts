@@ -11,7 +11,6 @@ export async function prepareFormForInsertion(form: Omit<FormDB, 'id'>): Promise
     createdAt: form.createdAt || timestamp,
     updatedAt: form.updatedAt || timestamp,
     version: form.version || 1,
-    deletedAt: form.deletedAt || null,
     status: form.status || 'unsynced', // Default to unsynced for new forms
   };
 

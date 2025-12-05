@@ -6,7 +6,7 @@
  */
 
 import { pullAllPins, pullAllForms, pullPinsSince, pullFormsSince } from './pullUpdates';
-import { processQueue } from './queue';
+import { processQueue } from './queue/syncQueue';
 import { getLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 
 /**

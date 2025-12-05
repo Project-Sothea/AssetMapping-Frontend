@@ -22,8 +22,8 @@ export async function updateFormDb(form: FormDB): Promise<FormDB> {
   return result[0];
 }
 
-export async function softDeleteFormDb(id: string): Promise<void> {
-  await db.update(forms).set({ deletedAt: new Date().toISOString() }).where(eq(forms.id, id));
+export async function deleteFormDb(id: string): Promise<void> {
+  await db.delete(forms).where(eq(forms.id, id));
 }
 
 export async function getFormById(id: string): Promise<FormDB | undefined> {

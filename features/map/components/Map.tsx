@@ -110,15 +110,11 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
         type: values.type,
         lat: values.lat,
         lng: values.lng,
-        images: JSON.stringify(values.images || []),
+        images: values.images || [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        deletedAt: null,
         version: 1,
         status: 'unsynced',
-        failureReason: null,
-        lastSyncedAt: null,
-        lastFailedSyncAt: null,
       };
       console.log('📤 Creating pin with data:', pinData);
       await createPinAsync(pinData);
@@ -148,7 +144,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
           type: values.type,
           lat: values.lat,
           lng: values.lng,
-          images: JSON.stringify(values.images || []), // Store filenames
+          images: values.images || [], // Store filenames
         },
       });
       Alert.alert('Pin Updated!');

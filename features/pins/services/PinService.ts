@@ -37,30 +37,6 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
     throw new Error(`Pin ${id} not found`);
   }
 
-  // Handle image changes (now using filenames)
-  if (updates.images !== undefined) {
-    const oldFilenames = existing.images || [];
-    const newFilenames = updates.images || [];
-
-    // Find removed filenames
-    const removedFilenames = oldFilenames.filter((fn) => !newFilenames.includes(fn));
-
-    // Delete removed images from local storage
-    if (removedFilenames.length > 0) {
-      try {
-        await ImageManager.deleteImagesByFilename(id, removedFilenames);
-        console.log('🗑️ Deleted removed images:', removedFilenames.length);
-      } catch (error) {
-        console.error('Failed to delete some images:', error);
-        // Continue anyway - database update is more important
-      }
-    }
-
-    // Track which images need to be deleted from backend
-    // The sync operation will handle sending delete requests
-    console.log('📝 Images to delete from backend:', removedFilenames);
-  }
-
   const updated: Pin = {
     ...existing,
     ...updates,

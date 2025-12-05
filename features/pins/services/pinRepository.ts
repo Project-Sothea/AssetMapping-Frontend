@@ -8,7 +8,7 @@ export async function createPinDb(pin: Pin): Promise<void> {
   await db.insert(pins).values(sanitizePinForDb(pin));
 }
 
-export async function updatePinDb(pin: Pin): Promise<Pin> {
+export async function updatePinDb(pin: Pin): Promise<Pin | null> {
   const result = await db
     .update(pins)
     .set(sanitizePinForDb(pin))

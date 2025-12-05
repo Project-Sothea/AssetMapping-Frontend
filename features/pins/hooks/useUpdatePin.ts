@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import type { Pin } from '~/db/schema';
-import { updatePin } from '../services';
+import { updatePin } from '../services/PinService';
 
 export const useUpdatePin = () => {
   const mutation = useMutation({

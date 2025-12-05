@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
-import { processQueue, getQueueMetrics, retryFailed, clearFailed } from '~/services/sync/queue';
+import {
+  processQueue,
+  getQueueMetrics,
+  retryFailed,
+  clearFailed,
+} from '~/services/sync/queue/syncQueue';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { usePopup } from '~/shared/contexts/PopupContext';
 

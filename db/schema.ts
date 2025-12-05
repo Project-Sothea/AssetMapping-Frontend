@@ -27,7 +27,6 @@ export const pins = sqliteTable('pins', {
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
-  deletedAt: text(), // Soft delete
 
   // Version for optimistic concurrency control
   version: integer('version').notNull().default(1),
@@ -46,11 +45,8 @@ export const pins = sqliteTable('pins', {
   // Images - stored as JSON array of filenames (UUIDs)
   images: text(),
 
-  // Local-only fields (sync tracking)
-  failureReason: text(),
+  // Local-only field (sync status)
   status: text(),
-  lastSyncedAt: text(),
-  lastFailedSyncAt: text(),
 });
 
 /**
@@ -64,9 +60,8 @@ export const forms = sqliteTable('forms', {
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
-  deletedAt: text(),
   version: integer().notNull().default(1),
-  pinId: text().references(() => pins.id), // Foreign key
+  pinId: text().references(() => pins.id, { onDelete: 'cascade' }), // Foreign key with cascade
 
   // General
   villageId: text(),
@@ -143,11 +138,8 @@ export const forms = sqliteTable('forms', {
   handwashingAfterToilet: text(),
   otherHandwashingAfterToilet: text(),
 
-  // Local-only fields (sync tracking)
-  failureReason: text(),
+  // Local-only field (sync status)
   status: text(),
-  lastSyncedAt: text(),
-  lastFailedSyncAt: text(),
 });
 
 /**
@@ -176,7 +168,7 @@ export const syncQueue = sqliteTable('sync_queue', {
 
 // ==================== Inferred Types ====================
 // Consolidated here to simplify imports (replacing previous db/types.ts)
-export type Pin = typeof pins.$inferSelect;
+export type PinDB = typeof pins.$inferSelect;
 export type FormDB = typeof forms.$inferSelect;
 
 // Form represents the runtime application type with parsed arrays (string[])
@@ -207,3 +199,7 @@ type ArrayFieldKeys =
 export type Form = Omit<FormDB, ArrayFieldKeys> & {
   [K in ArrayFieldKeys]?: string[] | null;
 };
+
+// Pin represents the runtime application type with parsed images (string[])
+// whereas PinDB has images as JSON strings for database storage
+export type Pin = Omit<PinDB, 'images'> & { images?: string[] | null };

@@ -24,11 +24,10 @@ export default function PinScreen() {
 
   // Filter pins based on search query
   const filteredPins = useMemo(() => {
-    const visiblePins = pins.filter((pin) => !pin.deletedAt); // exclude deleted pins
-    if (!query.trim()) return visiblePins;
+    if (!query.trim()) return pins;
 
     const lowerQuery = query.toLowerCase();
-    return visiblePins.filter((pin) => pin.name?.toLowerCase().includes(lowerQuery));
+    return pins.filter((pin) => pin.name?.toLowerCase().includes(lowerQuery));
   }, [query, pins]);
 
   const handleNavigateToMap = (pin: Pin) => {

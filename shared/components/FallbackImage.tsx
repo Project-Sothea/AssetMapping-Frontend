@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image, ImageProps, ImageStyle, StyleProp, View } from 'react-native';
+import {
+  cacheRemoteImage,
+  fileExistsLocally,
+  getLocalPath,
+  getRemoteUrl,
+} from '~/services/images/ImageManager';
 
 type FallbackImageProps = Omit<ImageProps, 'source'> & {
   filename: string; // Just the filename (UUID.jpg)
@@ -34,19 +40,26 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   const loadImage = useCallback(async () => {
+    let isActive = true;
+
+    const setSafeState = (uri: string | null, loading: boolean, localFailed?: boolean) => {
+      if (!isActive) return;
+      if (uri !== undefined) setCurrentUri(uri);
+      if (loading !== undefined) setIsLoading(loading);
+      if (localFailed !== undefined) setHasLocalFailed(localFailed);
+    };
+
+    const cleanup = () => {
+      isActive = false;
+    };
+
     if (!filename || !pinId) {
-      setIsLoading(false);
-      return;
+      setSafeState(null, false);
+      return cleanup;
     }
 
     // Reset state
-    setHasLocalFailed(false);
-    setCurrentUri(null);
-    setIsLoading(true);
-
-    const { getLocalPath, fileExistsLocally, getRemoteUrl } = await import(
-      '~/services/images/ImageManager'
-    );
+    setSafeState(null, true);
 
     // Try local file first
     const localPath = getLocalPath(pinId, filename);
@@ -55,27 +68,50 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     if (exists && !hasLocalFailed) {
       console.log('📁 Using local file:', filename);
       console.log(localPath);
-      setCurrentUri(localPath);
-      setIsLoading(false);
-      return;
+      setSafeState(localPath, false);
+      return cleanup;
     }
 
     // File doesn't exist locally or local failed, try remote
     const remoteUrl = await getRemoteUrl(pinId, filename);
     if (remoteUrl) {
       console.log('🌐 Using remote URL:', filename);
-      setCurrentUri(remoteUrl);
-      setIsLoading(false);
-      return;
+      setSafeState(remoteUrl, false, true); // mark local failed so retries prefer cached/remote
+
+      // Cache remote image for offline use (fire and forget)
+      cacheRemoteImage(pinId, filename, remoteUrl)
+        .then((cachedPath) => {
+          if (cachedPath && isActive) {
+            setCurrentUri(cachedPath);
+          }
+        })
+        .catch(() => {
+          // Already logged inside cacheRemoteImage
+        });
+
+      return cleanup;
     }
 
     // No images available
     console.warn('❌ No image available:', filename);
-    setIsLoading(false);
+    setSafeState(null, false);
+    return cleanup;
   }, [filename, pinId, hasLocalFailed]);
 
   useEffect(() => {
-    loadImage();
+    let cleanup: (() => void) | undefined;
+
+    loadImage()
+      .then((fn) => {
+        cleanup = fn;
+      })
+      .catch((error) => {
+        console.warn('⚠️ Failed to load image', error);
+      });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [loadImage]);
 
   const handleError = useCallback(

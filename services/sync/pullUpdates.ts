@@ -6,8 +6,11 @@
 
 import { db } from '~/services/drizzleDb';
 import { pins, forms } from '~/db/schema';
-import { apiClient } from '~/services/apiClient';
-import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
+import type { Pin, Form } from '~/db/schema';
+import { fetchForm, fetchForms, fetchFormsSince } from '~/services/api/formsApi';
+import { fetchPin, fetchPins, fetchPinsSince } from '~/services/api/pinsApi';
+import { deleteImagesByFilename } from '~/services/images/ImageManager';
+import { sanitizePinForDb, sanitizeFormForDb, mapPinDbToPin } from '~/db/utils';
 import { eq } from 'drizzle-orm';
 
 // --- Types ---
@@ -23,18 +26,22 @@ interface ProcessResult {
 /**
  * Helper: Process and save a single pin to local database
  */
-async function processPinData(pinData: Record<string, unknown>): Promise<void> {
-  const pinId = pinData.id as string;
+async function processPinData(pinData: Pin): Promise<void> {
+  const pinId = pinData.id;
 
-  // Extract filenames from backend response (may be paths like "pin/ID/file.jpg")
-  const { parseImageFilenames } = await import('~/services/images/ImageManager');
-  const backendImages = parseImageFilenames(pinData.images as string | string[]);
-  const filenames = backendImages.map((path) => path.split('/').pop() || path);
+  const sanitized = sanitizePinForDb(pinData);
 
-  const sanitized = sanitizePinForDb({
-    ...pinData,
-    images: JSON.stringify(filenames),
-  });
+  // Remove local files that no longer exist on the backend
+  const existing = await db.select().from(pins).where(eq(pins.id, pinId)).limit(1);
+  if (existing.length > 0) {
+    const existingPin = mapPinDbToPin(existing[0]);
+    const existingFilenames = existingPin.images || [];
+    const backendSet = new Set(pinData.images || []);
+    const removed = existingFilenames.filter((name) => !backendSet.has(name));
+    if (removed.length > 0) {
+      await deleteImagesByFilename(pinId, removed);
+    }
+  }
 
   await upsertEntity(pins, sanitized, pinId);
 }
@@ -42,7 +49,7 @@ async function processPinData(pinData: Record<string, unknown>): Promise<void> {
 /**
  * Helper: Process and save a single form to local database
  */
-async function processFormData(formData: Record<string, unknown>): Promise<void> {
+async function processFormData(formData: Form): Promise<void> {
   const sanitized = sanitizeFormForDb(formData);
   await upsertEntity(forms, sanitized, sanitized.id);
 }
@@ -144,7 +151,7 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
   try {
     await fetchAndProcessSingle(
       'pin',
-      () => apiClient.fetchPin(pinId),
+      () => fetchPin(pinId),
       processPinData,
       `Pulling pin update from backend: ${pinId}`
     );
@@ -162,7 +169,7 @@ export async function pullFormUpdate(formId: string): Promise<void> {
   try {
     await fetchAndProcessSingle(
       'form',
-      () => apiClient.fetchForm(formId),
+      () => fetchForm(formId),
       processFormData,
       `Pulling form update from backend: ${formId}`
     );
@@ -180,7 +187,7 @@ export async function pullAllPins(): Promise<void> {
   try {
     await fetchAndProcess(
       'pin',
-      () => apiClient.fetchPins(),
+      () => fetchPins(),
       processPinData,
       'Pulling all pins from backend'
     );
@@ -197,7 +204,7 @@ export async function pullAllForms(): Promise<void> {
   try {
     await fetchAndProcess(
       'form',
-      () => apiClient.fetchForms(),
+      () => fetchForms(),
       processFormData,
       'Pulling all forms from backend'
     );
@@ -214,7 +221,7 @@ export async function pullPinsSince(timestamp: number): Promise<void> {
   try {
     await fetchAndProcess(
       'pin',
-      () => apiClient.fetchPinsSince(timestamp),
+      () => fetchPinsSince(timestamp),
       processPinData,
       `Pulling pins updated since ${new Date(timestamp).toISOString()}`
     );
@@ -231,7 +238,7 @@ export async function pullFormsSince(timestamp: number): Promise<void> {
   try {
     await fetchAndProcess(
       'form',
-      () => apiClient.fetchFormsSince(timestamp),
+      () => fetchFormsSince(timestamp),
       processFormData,
       `Pulling forms updated since ${new Date(timestamp).toISOString()}`
     );

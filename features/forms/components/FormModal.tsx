@@ -34,7 +34,6 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
       id: '',
       createdAt: '',
       updatedAt: '',
-      deletedAt: '',
       version: 1,
       pinId: pinId,
 
@@ -113,11 +112,8 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
       handwashingAfterToilet: '',
       otherHandwashingAfterToilet: '',
 
-      // Local-only fields (sync tracking)
-      failureReason: '',
+      // Local-only field (sync status)
       status: '',
-      lastSyncedAt: '',
-      lastFailedSyncAt: '',
 
       ...normalizedInitialData,
     };

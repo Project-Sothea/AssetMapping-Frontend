@@ -1,6 +1,6 @@
-import { createFormDb, updateFormDb, softDeleteFormDb, getFormById } from './formRepository';
+import { createFormDb, updateFormDb, deleteFormDb, getFormById } from './formRepository';
 import { prepareFormForInsertion } from './formProcessing';
-import { enqueueForm } from '~/services/sync/queue';
+import { enqueueForm } from '~/services/sync/queue/syncQueue';
 import { updatePin } from '~/features/pins/services/PinService';
 import type { FormDB } from '~/db/schema';
 
@@ -65,6 +65,6 @@ export async function updateForm(id: string, values: Omit<FormDB, 'id'>): Promis
 export async function deleteForm(id: string): Promise<void> {
   const existing = await getFormById(id);
   if (!existing) throw new Error(`Form ${id} not found`);
-  await softDeleteFormDb(id);
+  await deleteFormDb(id);
   await enqueueForm('delete', { id });
 }
