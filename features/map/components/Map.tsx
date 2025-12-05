@@ -13,6 +13,7 @@ import type { Feature, Geometry } from 'geojson';
 import MapboxGL from '~/services/mapbox';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
+import * as Location from 'expo-location';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
 import { PinFormModal } from './PinFormModal';
@@ -155,6 +156,39 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   };
 
+  const handleCenterOnUser = async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const coords = loc?.coords;
+      if (!coords) {
+        Alert.alert('Location unavailable', 'Unable to access your current location.');
+        return;
+      }
+      cameraRef.current?.setCamera({
+        centerCoordinate: [coords.longitude, coords.latitude],
+        zoomLevel: 16,
+        animationDuration: 800,
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to center on user location', error);
+      Alert.alert('Location unavailable', 'Unable to access your current location.');
+    }
+  };
+
+  useEffect(() => {
+    const requestLocationPermission = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('⚠️ Location permission not granted');
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to request location permission', error);
+      }
+    };
+    requestLocationPermission();
+  }, []);
+
   const handleDeletePin = async (pin: Pin) => {
     if (!pin.id) {
       Alert.alert('Error deleting pin');
@@ -206,7 +240,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
           }
         />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
-
+        <Images images={{ pin }} />
         {pins && (
           <ShapeSource
             id="pins"
@@ -261,7 +295,6 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
                 textOpacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 1],
               }}
             />
-            <Images images={{ pin }} />
           </ShapeSource>
         )}
       </MapView>
@@ -290,6 +323,10 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
       )}
       <TouchableOpacity style={[styles.refreshButton, { right: 60 }]} onPress={toggleStyle}>
         <MaterialIcons name="satellite" color="black" size={30} style={styles.refreshText} />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.refreshButton, { right: 110 }]} onPress={handleCenterOnUser}>
+        <MaterialIcons name="my-location" color="black" size={24} style={styles.refreshText} />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.refreshButton} onPress={refreshMap}>

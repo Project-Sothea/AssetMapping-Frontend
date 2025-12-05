@@ -21,7 +21,8 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Show current location on map."
+          "locationWhenInUsePermission": "Show current location on map.",
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-sqlite",
@@ -54,7 +55,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app needs access to your camera",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library"
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library",
+        "NSLocationWhenInUseUsageDescription": "Allow SO'FORM to access your location to show your position on the map"
       }
     },
     "android": {
