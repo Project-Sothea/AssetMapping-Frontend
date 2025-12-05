@@ -1,5 +1,3 @@
-import { Formik } from 'formik';
-import * as Yup from 'yup';
 import {
   View,
   TextInput,
@@ -10,6 +8,10 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
+import { useEffect } from 'react';
+import { useForm, type Resolver } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   deleteImageByFilename,
   getLocalPath,
@@ -18,31 +20,53 @@ import {
 } from '~/services/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const PinFormSchema = Yup.object().shape({
-  name: Yup.string().nullable().required('Name is required'),
-  cityVillage: Yup.string().nullable(),
-  address: Yup.string().nullable(),
-  description: Yup.string().nullable(),
-  type: Yup.string().nullable(),
-  id: Yup.string().required(),
-  lat: Yup.number().nullable().required('Latitude is required'),
-  lng: Yup.number().nullable().required('Longitude is required'),
-  images: Yup.array().of(Yup.string()).nullable(),
-  version: Yup.number().nullable(),
-});
-
 export type PinFormValues = {
-  name: string | null;
-  cityVillage: string | null;
-  address: string | null;
-  description: string | null;
-  type: string | null;
+  name: string;
+  cityVillage: string;
+  address: string;
+  description: string;
+  type: string;
   images: string[]; // Array of filenames (UUIDs), not full paths
   id: string;
   lat: number | null;
   lng: number | null;
-  version: number; // Include version for conflict detection
+  version: number | null; // Include version for conflict detection
 };
+
+const pinSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name is required'),
+    cityVillage: z.string().default(''),
+    address: z.string().default(''),
+    description: z.string().default(''),
+    type: z.string().default(''),
+    images: z.array(z.string()).default([]),
+    id: z.string().min(1, 'Missing pin id'),
+    lat: z.preprocess(
+      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+      z.number().nullable()
+    ),
+    lng: z.preprocess(
+      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+      z.number().nullable()
+    ),
+    version: z.preprocess(
+      (v) => (v === '' || v === undefined ? null : Number(v)),
+      z.number().nullable()
+    ),
+  })
+  .superRefine((val, ctx) => {
+    if (val.lat === null) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Latitude is required', path: ['lat'] });
+    }
+    if (val.lng === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Longitude is required',
+        path: ['lng'],
+      });
+    }
+  });
 
 type PinFormProps = {
   onSubmit: (formData: PinFormValues) => void;
@@ -53,10 +77,43 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   console.log('📋 PinForm - Received initialValues:', initialValues);
   console.log('📋 PinForm - images (filenames):', initialValues.images);
 
-  const appendNewImage = async (
-    setFieldValue: (field: string, value: unknown) => void,
-    currentFilenames: string[] | null
-  ) => {
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<PinFormValues>({
+    defaultValues: {
+      ...initialValues,
+      name: initialValues.name ?? '',
+      cityVillage: initialValues.cityVillage ?? '',
+      address: initialValues.address ?? '',
+      description: initialValues.description ?? '',
+      type: initialValues.type ?? '',
+      images: initialValues.images ?? [],
+      version: initialValues.version ?? null,
+    },
+    resolver: zodResolver(pinSchema) as Resolver<PinFormValues>,
+    mode: 'onBlur',
+  });
+
+  useEffect(() => {
+    reset({
+      ...initialValues,
+      name: initialValues.name ?? '',
+      cityVillage: initialValues.cityVillage ?? '',
+      address: initialValues.address ?? '',
+      description: initialValues.description ?? '',
+      type: initialValues.type ?? '',
+      images: initialValues.images ?? [],
+      version: initialValues.version ?? null,
+    });
+  }, [initialValues, reset]);
+
+  const values = watch();
+
+  const appendNewImage = async (currentFilenames: string[] | null) => {
     try {
       // Pick image
       const pickedUri = await pickImage();
@@ -67,7 +124,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
 
       // Add filename to form
       const existing = Array.isArray(currentFilenames) ? currentFilenames : [];
-      setFieldValue('images', [...existing, newFilename]);
+      setValue('images', [...existing, newFilename], { shouldValidate: true, shouldDirty: true });
       console.log('📥 Added image:', newFilename);
     } catch (error) {
       console.error('Failed to add image:', error);
@@ -75,116 +132,102 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
   };
 
   return (
-    <Formik<PinFormValues>
-      initialValues={initialValues}
-      validationSchema={PinFormSchema}
-      onSubmit={onSubmit}
-      validateOnChange={false}
-      validateOnBlur={false}>
-      {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => {
-        return (
-          <View style={styles.container}>
-            {[
-              { name: 'name', label: 'Name', required: true },
-              { name: 'cityVillage', label: 'City/Village' },
-              { name: 'address', label: 'Address' },
-              { name: 'description', label: 'Description' },
-            ].map(({ name, label, required }) => (
-              <View key={name}>
-                <Text>
-                  {label}
-                  {required ? ' *' : ''}
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  onChangeText={handleChange(name)}
-                  onBlur={handleBlur(name)}
-                  value={(values[name as keyof PinFormValues] as string | null) ?? ''}
-                  placeholder={`Enter ${label.toLowerCase()}`}
-                />
-                {touched[name as keyof typeof touched] && errors[name as keyof typeof errors] && (
-                  <Text style={styles.error}>{String(errors[name as keyof typeof errors])}</Text>
-                )}
-              </View>
-            ))}
+    <View style={styles.container}>
+      {[
+        { name: 'name', label: 'Name', required: true },
+        { name: 'cityVillage', label: 'City/Village' },
+        { name: 'address', label: 'Address' },
+        { name: 'description', label: 'Description' },
+      ].map(({ name, label, required }) => (
+        <View key={name}>
+          <Text>
+            {label}
+            {required ? ' *' : ''}
+          </Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={(text) =>
+              setValue(name as keyof PinFormValues, text as PinFormValues[keyof PinFormValues], {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+            value={(values[name as keyof PinFormValues] as string) ?? ''}
+            placeholder={`Enter ${label.toLowerCase()}`}
+          />
+          {errors[name as keyof typeof errors]?.message && (
+            <Text style={styles.error}>{String(errors[name as keyof typeof errors]?.message)}</Text>
+          )}
+        </View>
+      ))}
 
-            <View>
-              <Text style={{ marginBottom: 8 }}>Images</Text>
+      <View>
+        <Text style={{ marginBottom: 8 }}>Images</Text>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginBottom: 8 }}>
-                {values.images &&
-                  values.images.length > 0 &&
-                  values.images.map((filename, idx) => {
-                    const localPath = getLocalPath(initialValues.id, filename);
-                    return (
-                      <View
-                        key={`image-${idx}-${filename}`}
-                        style={{ position: 'relative', marginRight: 8 }}>
-                        <Image
-                          source={{ uri: localPath }}
-                          style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
-                          onError={(e) =>
-                            console.error(`❌ Image ${idx} failed to load:`, e.nativeEvent.error)
-                          }
-                          onLoad={() => console.log(`✅ Image ${idx} loaded`)}
-                        />
-                        <Pressable
-                          onPress={() => {
-                            // Remove from form state
-                            const remainingFilenames = values.images.filter((_, i) => i !== idx);
-                            setFieldValue('images', remainingFilenames);
-                            console.log('🗑️ Removed from form:', filename);
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+          {values.images &&
+            values.images.length > 0 &&
+            values.images.map((filename, idx) => {
+              const localPath = getLocalPath(initialValues.id, filename);
+              return (
+                <View
+                  key={`image-${idx}-${filename}`}
+                  style={{ position: 'relative', marginRight: 8 }}>
+                  <Image
+                    source={{ uri: localPath }}
+                    style={{ width: 80, height: 80, marginRight: 8, borderRadius: 8 }}
+                    onError={(e) =>
+                      console.error(`❌ Image ${idx} failed to load:`, e.nativeEvent.error)
+                    }
+                    onLoad={() => console.log(`✅ Image ${idx} loaded`)}
+                  />
+                  <Pressable
+                    onPress={() => {
+                      const remainingFilenames = values.images.filter((_, i) => i !== idx);
+                      setValue('images', remainingFilenames, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                      console.log('🗑️ Removed from form:', filename);
 
-                            // Delete the locally cached file when user removes before save
-                            deleteImageByFilename(initialValues.id, filename).catch((error) =>
-                              console.warn('⚠️ Failed to delete local image', filename, error)
-                            );
-                          }}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 8,
-                            backgroundColor: 'white',
-                            borderRadius: 12,
-                            padding: 2,
-                            zIndex: 1,
-                          }}>
-                          <MaterialIcons name="cancel" size={20} color="red" />
-                        </Pressable>
-                      </View>
-                    );
-                  })}
-              </ScrollView>
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  onPress={() => appendNewImage(setFieldValue, values.images)}
-                  style={styles.imagePickerButton}>
-                  <MaterialIcons name="image" size={24} color="blue" />
-                  <Text style={styles.imagePickerText}>Pick an Image</Text>
-                </TouchableOpacity>
+                      deleteImageByFilename(initialValues.id, filename).catch((error) =>
+                        console.warn('⚠️ Failed to delete local image', filename, error)
+                      );
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 8,
+                      backgroundColor: 'white',
+                      borderRadius: 12,
+                      padding: 2,
+                      zIndex: 1,
+                    }}>
+                    <MaterialIcons name="cancel" size={20} color="red" />
+                  </Pressable>
+                </View>
+              );
+            })}
+        </ScrollView>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            onPress={() => appendNewImage(values.images)}
+            style={styles.imagePickerButton}>
+            <MaterialIcons name="image" size={24} color="blue" />
+            <Text style={styles.imagePickerText}>Pick an Image</Text>
+          </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => {
-                    handleSubmit();
-                  }}
-                  style={styles.saveButton}>
-                  <MaterialIcons name="save" size={24} color="green" />
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
+          <TouchableOpacity
+            onPress={handleSubmit((data) => onSubmit(data))}
+            style={styles.saveButton}>
+            <MaterialIcons name="save" size={24} color="green" />
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+        </View>
 
-              {/* Optionally display validation error */}
-              {touched.images && errors.images && (
-                <Text style={styles.error}>{errors.images as string}</Text>
-              )}
-            </View>
-          </View>
-        );
-      }}
-    </Formik>
+        {errors.images?.message && <Text style={styles.error}>{errors.images.message}</Text>}
+      </View>
+    </View>
   );
 };
 

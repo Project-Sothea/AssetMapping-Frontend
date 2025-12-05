@@ -1,20 +1,17 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { FormikHandlers } from 'formik';
 import type { Form } from '~/db/schema';
 
 interface HealthSectionProps {
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
-  handleChange: FormikHandlers['handleChange'];
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  handleChange: (field: keyof Form) => (value: string) => void;
 }
 
 export default function HealthSection({ values, setFieldValue, handleChange }: HealthSectionProps) {
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.heading}>Health</Text>
-
       <Text style={styles.question}>Do you have any long-term conditions?</Text>
       <CheckboxGroup
         name="longTermConditions"
@@ -209,11 +206,6 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    fontWeight: 'bold',
-    fontSize: 20,
-    marginVertical: 12,
-  },
   subheading: {
     fontWeight: '600',
     fontSize: 17,

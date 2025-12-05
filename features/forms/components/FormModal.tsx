@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
+import { useForm, type Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
 import type { Form, FormDB } from '~/db/schema';
@@ -12,10 +13,10 @@ import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 import { parseArrayFields } from '~/shared/utils/parsing';
 import EducationSection from './EducationSection';
 
-const validationSchema = Yup.object().shape({
-  name: Yup.string().nullable().required('Required'),
-  village: Yup.string().required('Required'),
-  villageId: Yup.string().required('Required'),
+const validationSchema = z.object({
+  name: z.string().trim().min(1, 'Required'),
+  village: z.string().trim().min(1, 'Required'),
+  villageId: z.string().trim().min(1, 'Required'),
 });
 
 type FormModalProps = {
@@ -26,18 +27,18 @@ type FormModalProps = {
   onSubmit: (values: Form) => void;
 };
 
-const SECTION_ORDER = ['general', 'health', 'education', 'water'] as const;
+type SectionOrder = 'general' | 'health' | 'education' | 'water';
 
 export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: FormModalProps) => {
-  const [expandedSection, setExpandedSection] = useState<(typeof SECTION_ORDER)[number]>('general');
+  const [expandedSection, setExpandedSection] = useState<SectionOrder>('general');
 
-  const toggleSection = useCallback((section: (typeof SECTION_ORDER)[number]) => {
+  const toggleSection = useCallback((section: SectionOrder) => {
     setExpandedSection((prev) => (prev === section ? prev : section));
   }, []);
 
   const mergedInitialValues = useMemo((): Form => {
     const normalizedInitialData = selectedForm ? parseArrayFields(selectedForm) : {};
-    return {
+    const base: Form = {
       // Metadata
       id: '',
       createdAt: '',
@@ -54,13 +55,13 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
       canAttendHealthScreening: null,
 
       // Health
-      longTermConditions: [],
+      longTermConditions: [] as string[],
       otherLongTermConditions: '',
-      managementMethods: [],
+      managementMethods: [] as string[],
       otherManagementMethods: '',
-      conditionDifficultyReasons: [],
+      conditionDifficultyReasons: [] as string[],
       otherConditionDifficultyReasons: '',
-      selfCareActions: [],
+      selfCareActions: [] as string[],
       otherSelfCareActions: '',
       knowWhereToFindDoctor: '',
       otherKnowWhereToFindDoctor: '',
@@ -74,123 +75,165 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
       toothBrushingFrequency: '',
       otherToothBrushingFrequency: '',
       toothbrushAndToothpasteSource: '',
-      noToothbrushOrToothpasteReasons: [],
+      noToothbrushOrToothpasteReasons: [] as string[],
       otherNoToothbrushOrToothpasteReasons: '',
 
       // Education
-      diarrhoeaDefinition: [],
+      diarrhoeaDefinition: [] as string[],
       otherDiarrhoeaDefinition: '',
-      diarrhoeaActions: [],
+      diarrhoeaActions: [] as string[],
       otherDiarrhoeaActions: '',
-      commonColdSymptoms: [],
+      commonColdSymptoms: [] as string[],
       otherCommonColdSymptoms: '',
-      commonColdActions: [],
+      commonColdActions: [] as string[],
       otherCommonColdActions: '',
-      mskInjuryDefinition: [],
+      mskInjuryDefinition: [] as string[],
       otherMskInjuryDefinition: '',
-      mskInjuryActions: [],
+      mskInjuryActions: [] as string[],
       otherMskInjuryActions: '',
-      hypertensionDefinition: [],
+      hypertensionDefinition: [] as string[],
       otherHypertensionDefinition: '',
-      hypertensionActions: [],
+      hypertensionActions: [] as string[],
       otherHypertensionActions: '',
       healthyFoodFrequency: '',
       otherHealthyFoodFrequency: '',
-      unhealthyFoodReasons: [],
+      unhealthyFoodReasons: [] as string[],
       otherUnhealthyFoodReasons: '',
-      highCholesterolDefinition: [],
+      highCholesterolDefinition: [] as string[],
       otherHighCholesterolDefinition: '',
-      highCholesterolActions: [],
+      highCholesterolActions: [] as string[],
       otherHighCholesterolActions: '',
-      diabetesDefinition: [],
+      diabetesDefinition: [] as string[],
       otherDiabetesDefinition: '',
-      diabetesActions: [],
+      diabetesActions: [] as string[],
       otherDiabetesActions: '',
       otherLearningAreas: '',
 
       // Water
-      waterSources: [],
+      waterSources: [] as string[],
       otherWaterSources: '',
-      unsafeWaterTypes: [],
+      unsafeWaterTypes: [] as string[],
       otherUnsafeWaterTypes: '',
       waterFilterAwareness: '',
       otherWaterFilterAwareness: '',
-      waterFilterNonUseReasons: [],
+      waterFilterNonUseReasons: [] as string[],
       otherWaterFilterNonUseReasons: '',
       handwashingAfterToilet: '',
       otherHandwashingAfterToilet: '',
 
       // Local-only field (sync status)
       status: '',
-
-      ...normalizedInitialData,
     };
+
+    const merged = { ...base, ...normalizedInitialData } as Form;
+
+    // Ensure required text fields are strings (not null) to satisfy validation
+    merged.name = (merged.name ?? '') as string;
+    merged.village = (merged.village ?? '') as string;
+    merged.villageId = (merged.villageId ?? '') as string;
+
+    return merged;
   }, [selectedForm, pinId]);
+
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, touchedFields },
+  } = useForm<Form>({
+    defaultValues: mergedInitialValues,
+    resolver: zodResolver(validationSchema) as unknown as Resolver<Form>,
+    mode: 'onBlur',
+  });
+
+  useEffect(() => {
+    reset(mergedInitialValues);
+  }, [mergedInitialValues, reset]);
+
+  const values = watch();
+
+  const fieldErrors: Partial<Record<keyof Form, string>> = useMemo(() => {
+    const next: Partial<Record<keyof Form, string>> = {};
+    Object.entries(errors).forEach(([key, value]) => {
+      if (value && typeof value === 'object' && 'message' in value && value.message) {
+        next[key as keyof Form] = String(value.message);
+      }
+    });
+    return next;
+  }, [errors]);
+
+  const touched: Partial<Record<keyof Form, boolean>> = useMemo(() => {
+    const next: Partial<Record<keyof Form, boolean>> = {};
+    Object.keys(touchedFields).forEach((key) => {
+      next[key as keyof Form] = true;
+    });
+    return next;
+  }, [touchedFields]);
+
+  type SetFieldValue = (field: keyof Form, value: Form[keyof Form]) => void;
+
+  const setFieldValue: SetFieldValue = (field, value) => {
+    setValue(field, value, { shouldValidate: true, shouldDirty: true });
+  };
+
+  const handleChange =
+    (field: keyof Form) =>
+    (value: string | number | boolean | null): void => {
+      setFieldValue(field, value as Form[keyof Form]);
+    };
 
   return (
     <ModalWrapper
       title={selectedForm ? 'Edit Form' : 'Create Form'}
       visible={visible}
       onClose={onClose}>
-      <Formik
-        initialValues={mergedInitialValues}
-        enableReinitialize={true}
-        validationSchema={validationSchema}
-        onSubmit={onSubmit}>
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
-          <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-            <Section
-              title="General"
-              isOpen={expandedSection === 'general'}
-              onPress={() => toggleSection('general')}>
-              <GeneralSection
-                values={values}
-                setFieldValue={setFieldValue}
-                handleChange={handleChange}
-                handleBlur={handleBlur}
-                errors={errors}
-                touched={touched}
-              />
-            </Section>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <Section
+          title="General"
+          isOpen={expandedSection === 'general'}
+          onPress={() => toggleSection('general')}>
+          <GeneralSection
+            values={values}
+            setFieldValue={setFieldValue}
+            handleChange={handleChange}
+            errors={fieldErrors}
+            touched={touched}
+          />
+        </Section>
 
-            <Section
-              title="Health"
-              isOpen={expandedSection === 'health'}
-              onPress={() => toggleSection('health')}>
-              <HealthSection
-                values={values}
-                setFieldValue={setFieldValue}
-                handleChange={handleChange}
-              />
-            </Section>
+        <Section
+          title="Health"
+          isOpen={expandedSection === 'health'}
+          onPress={() => toggleSection('health')}>
+          <HealthSection
+            values={values}
+            setFieldValue={setFieldValue}
+            handleChange={handleChange}
+          />
+        </Section>
 
-            <Section
-              title="Education"
-              isOpen={expandedSection === 'education'}
-              onPress={() => toggleSection('education')}>
-              <EducationSection
-                values={values}
-                setFieldValue={setFieldValue}
-                handleChange={handleChange}
-              />
-            </Section>
+        <Section
+          title="Education"
+          isOpen={expandedSection === 'education'}
+          onPress={() => toggleSection('education')}>
+          <EducationSection
+            values={values}
+            setFieldValue={setFieldValue}
+            handleChange={handleChange}
+          />
+        </Section>
 
-            <Section
-              title="Water"
-              isOpen={expandedSection === 'water'}
-              onPress={() => toggleSection('water')}>
-              <WaterSection
-                values={values}
-                setFieldValue={setFieldValue}
-                handleChange={handleChange}
-              />
-            </Section>
+        <Section
+          title="Water"
+          isOpen={expandedSection === 'water'}
+          onPress={() => toggleSection('water')}>
+          <WaterSection values={values} setFieldValue={setFieldValue} handleChange={handleChange} />
+        </Section>
 
-            <Button title="Submit" onPress={() => handleSubmit()} />
-            <Spacer />
-          </ScrollView>
-        )}
-      </Formik>
+        <Button title="Submit" onPress={handleSubmit(onSubmit)} />
+        <Spacer />
+      </ScrollView>
     </ModalWrapper>
   );
 };

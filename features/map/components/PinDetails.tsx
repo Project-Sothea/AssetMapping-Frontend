@@ -22,15 +22,15 @@ const intoPinFormValues = (pin: Pin): PinFormValues => {
 
   return {
     id: pin.id,
-    name: pin.name,
-    cityVillage: pin.cityVillage,
-    address: pin.address,
-    description: pin.description,
-    type: pin.type,
+    name: pin.name ?? '',
+    cityVillage: pin.cityVillage ?? '',
+    address: pin.address ?? '',
+    description: pin.description ?? '',
+    type: pin.type ?? '',
     images: filenames, // Just filenames, paths constructed when needed
     lat: pin.lat,
     lng: pin.lng,
-    version: pin.version,
+    version: pin.version ?? null,
   };
 };
 

@@ -1,29 +1,24 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import RadioGroup from './RadioGroup';
-import type { FormikErrors, FormikTouched, FormikHandlers } from 'formik';
 import type { Form } from '~/db/schema';
 
 interface GeneralSectionProps {
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
-  handleChange: FormikHandlers['handleChange'];
-  handleBlur: FormikHandlers['handleBlur'];
-  errors: FormikErrors<Form>;
-  touched: FormikTouched<Form>;
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  handleChange: (field: keyof Form) => (value: string) => void;
+  errors: Partial<Record<keyof Form, string>>;
+  touched: Partial<Record<keyof Form, boolean>>;
 }
 
 export default function GeneralSection({
   values,
   setFieldValue,
   handleChange,
-  handleBlur,
   errors,
   touched,
 }: GeneralSectionProps) {
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.heading}>General</Text>
-
       <Text style={styles.question}>Which village are you from?*</Text>
       <RadioGroup
         name="village"
@@ -41,10 +36,20 @@ export default function GeneralSection({
       <TextInput
         style={styles.input}
         onChangeText={handleChange('name')}
-        onBlur={handleBlur('name')}
         value={values.name as string}
       />
       {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
+
+      <Text style={styles.question}>What is your household number?*</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('villageId')}
+        value={values.villageId as string}
+        placeholder="e.g. A1, B2"
+      />
+      {errors.villageId && touched.villageId && (
+        <Text style={styles.error}>{errors.villageId}</Text>
+      )}
 
       <Text style={styles.question}>What is your gender?</Text>
       <RadioGroup
@@ -65,18 +70,6 @@ export default function GeneralSection({
         keyboardType="numeric"
       />
 
-      <Text style={styles.question}>What is your household number?*</Text>
-      <TextInput
-        style={styles.input}
-        onChangeText={handleChange('villageId')}
-        onBlur={handleBlur('villageId')}
-        value={values.villageId as string}
-        placeholder="e.g. A1, B2"
-      />
-      {errors.villageId && touched.villageId && (
-        <Text style={styles.error}>{errors.villageId}</Text>
-      )}
-
       <Text style={styles.question}>
         Are you able to physically attend our health screening in December?
       </Text>
@@ -94,11 +87,6 @@ export default function GeneralSection({
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    fontWeight: 'bold',
-    fontSize: 20,
-    marginVertical: 12,
-  },
   question: {
     fontSize: 16,
     fontWeight: '500',

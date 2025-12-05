@@ -6,7 +6,7 @@ interface CheckboxGroupProps {
   name: keyof Form;
   options: string[];
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;

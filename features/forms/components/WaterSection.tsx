@@ -1,20 +1,17 @@
 import { View, Text, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { FormikHandlers } from 'formik';
 import type { Form } from '~/db/schema';
 
 interface WaterSectionProps {
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
-  handleChange: FormikHandlers['handleChange'];
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  handleChange: (field: keyof Form) => (value: string) => void;
 }
 
 export default function WaterSection({ values, setFieldValue, handleChange }: WaterSectionProps) {
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.heading}>Water</Text>
-
       <Text style={styles.question}>
         What are your sources of water for daily use (e.g., drinking, showering, cooking)?
       </Text>
@@ -110,11 +107,6 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    fontWeight: 'bold',
-    fontSize: 20,
-    marginVertical: 12,
-  },
   question: {
     fontSize: 16,
     fontWeight: '500',

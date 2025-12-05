@@ -1,6 +1,7 @@
 import { View, TextInput, StyleSheet, Text } from 'react-native';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
+import { useForm, type Resolver } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
 import MapboxGL from '~/services/mapbox';
@@ -11,134 +12,127 @@ interface Props {
   progress: number;
 }
 
-const validationSchema = Yup.object({
-  name: Yup.string().required('Required'),
-  styleURL: Yup.string().required('Required'),
-  maxLng: Yup.number()
-    .min(-180, 'Longitude must be ≥ -180')
-    .max(180, 'Longitude must be ≤ 180')
-    .required('Required'),
-  maxLat: Yup.number()
-    .min(-90, 'Latitude must be ≥ -90')
-    .max(90, 'Latitude must be ≤ 90')
-    .required('Required'),
-  minLng: Yup.number()
-    .min(-180, 'Longitude must be ≥ -180')
-    .max(180, 'Longitude must be ≤ 180')
-    .required('Required'),
-  minLat: Yup.number()
-    .min(-90, 'Latitude must be ≥ -90')
-    .max(90, 'Latitude must be ≤ 90')
-    .required('Required'),
-}).test('bounds-order', '', (values, ctx) => {
-  if (!values) return false;
-  const { minLat, maxLat, minLng, maxLng } = values;
+const packSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Required'),
+    styleURL: z.string().trim().min(1, 'Required'),
+    maxLng: z.number().min(-180).max(180),
+    maxLat: z.number().min(-90).max(90),
+    minLng: z.number().min(-180).max(180),
+    minLat: z.number().min(-90).max(90),
+  })
+  .refine((val) => val.minLat < val.maxLat && val.minLng < val.maxLng, {
+    path: ['minLat'],
+    message: 'Bottom left must be less than top right',
+  });
 
-  // Check bottom-left vs top-right
-  if (minLat >= maxLat || minLng >= maxLng) {
-    return ctx.createError({
-      path: 'minLat', // attach error to minLat field
-      message: 'Bottom left must be less than top right',
-    });
-  }
-
-  return true;
-});
+type PackFormValues = z.infer<typeof packSchema>;
 
 export const CreatePackForm = ({ onSubmit, progress }: Props) => {
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<PackFormValues>({
+    defaultValues: {
+      name: '',
+      styleURL: MapboxGL.StyleURL.Street,
+      maxLng: 0,
+      maxLat: 0,
+      minLng: 0,
+      minLat: 0,
+    },
+    resolver: zodResolver(packSchema) as Resolver<PackFormValues>,
+    mode: 'onBlur',
+  });
+
+  const values = watch();
+
   return (
-    <Formik
-      initialValues={{
-        name: '',
-        styleURL: MapboxGL.StyleURL.Street,
-        minZoom: 16,
-        maxZoom: 22,
-        maxLng: 0,
-        maxLat: 0,
-        minLng: 0,
-        minLat: 0,
-      }}
-      validationSchema={validationSchema}
-      onSubmit={(values) => {
-        const bounds: [Position, Position] = [
-          [Number(values.maxLng), Number(values.maxLat)], //top right (NE)
-          [Number(values.minLng), Number(values.minLat)], //bottom left (SW)
-        ];
-        const pack: CreateOfflinePackProps = {
-          name: values.name,
-          styleURL: values.styleURL,
-          bounds,
-          minZoom: 16,
-          maxZoom: 22,
-        };
-        onSubmit(pack);
-      }}>
-      {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-        <View style={styles.container}>
-          <Text style={styles.sectionHeader}>Create Your Own Pack</Text>
-          <Text>Pack Name</Text>
-          <TextInput
-            placeholder="Name"
-            style={styles.input}
-            onChangeText={handleChange('name')}
-            onBlur={handleBlur('name')}
-            value={values.name}
-          />
-          {touched.name && errors.name && <Text style={styles.error}>{errors.name}</Text>}
+    <View style={styles.container}>
+      <Text style={styles.sectionHeader}>Create Your Own Pack</Text>
+      <Text>Pack Name</Text>
+      <TextInput
+        placeholder="Name"
+        style={styles.input}
+        onChangeText={(text) => setValue('name', text, { shouldDirty: true, shouldValidate: true })}
+        value={values?.name ?? ''}
+      />
+      {errors.name?.message && <Text style={styles.error}>{errors.name.message}</Text>}
 
-          <Text>Top Right [lat, lng]</Text>
-          <View style={styles.row}>
-            <TextInput
-              placeholder="Lat"
-              style={styles.inputHalf}
-              keyboardType="numbers-and-punctuation"
-              onChangeText={handleChange('maxLat')}
-              onBlur={handleBlur('maxLat')}
-              value={String(values.maxLat)}
-            />
-            <TextInput
-              placeholder="Lng"
-              style={styles.inputHalf}
-              keyboardType="numbers-and-punctuation"
-              onChangeText={handleChange('maxLng')}
-              onBlur={handleBlur('maxLng')}
-              value={String(values.maxLng)}
-            />
-          </View>
+      <Text>Top Right [lat, lng]</Text>
+      <View style={styles.row}>
+        <TextInput
+          placeholder="Lat"
+          style={styles.inputHalf}
+          keyboardType="numbers-and-punctuation"
+          onChangeText={(text) => {
+            const val = text === '' ? 0 : Number(text);
+            setValue('maxLat', val, { shouldDirty: true, shouldValidate: true });
+          }}
+          value={String(values?.maxLat ?? '')}
+        />
+        <TextInput
+          placeholder="Lng"
+          style={styles.inputHalf}
+          keyboardType="numbers-and-punctuation"
+          onChangeText={(text) => {
+            const val = text === '' ? 0 : Number(text);
+            setValue('maxLng', val, { shouldDirty: true, shouldValidate: true });
+          }}
+          value={String(values?.maxLng ?? '')}
+        />
+      </View>
 
-          <Text>Bottom Left [lat, lng]</Text>
-          <View style={styles.row}>
-            <TextInput
-              placeholder="Lat"
-              style={styles.inputHalf}
-              keyboardType="numbers-and-punctuation"
-              onChangeText={handleChange('minLat')}
-              onBlur={handleBlur('minLat')}
-              value={String(values.minLat)}
-            />
-            <TextInput
-              placeholder="Lng"
-              style={styles.inputHalf}
-              keyboardType="numbers-and-punctuation"
-              onChangeText={handleChange('minLng')}
-              onBlur={handleBlur('minLng')}
-              value={String(values.minLng)}
-            />
-          </View>
-          <IdempotentButton
-            title="Create Pack"
-            onPress={() => {
-              handleSubmit();
-            }}
-            style={styles.createButton}
-          />
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: `${progress}%` }]} />
-          </View>
-          <Text style={styles.progressText}>Progress: {progress.toFixed(2)}%</Text>
-        </View>
-      )}
-    </Formik>
+      <Text>Bottom Left [lat, lng]</Text>
+      <View style={styles.row}>
+        <TextInput
+          placeholder="Lat"
+          style={styles.inputHalf}
+          keyboardType="numbers-and-punctuation"
+          onChangeText={(text) => {
+            const val = text === '' ? 0 : Number(text);
+            setValue('minLat', val, { shouldDirty: true, shouldValidate: true });
+          }}
+          value={String(values?.minLat ?? '')}
+        />
+        <TextInput
+          placeholder="Lng"
+          style={styles.inputHalf}
+          keyboardType="numbers-and-punctuation"
+          onChangeText={(text) => {
+            const val = text === '' ? 0 : Number(text);
+            setValue('minLng', val, { shouldDirty: true, shouldValidate: true });
+          }}
+          value={String(values?.minLng ?? '')}
+        />
+      </View>
+      {errors.minLat?.message && <Text style={styles.error}>{errors.minLat.message}</Text>}
+
+      <IdempotentButton
+        title="Create Pack"
+        onPress={handleSubmit((values) => {
+          const bounds: [Position, Position] = [
+            [Number(values.maxLng), Number(values.maxLat)],
+            [Number(values.minLng), Number(values.minLat)],
+          ];
+          const pack: CreateOfflinePackProps = {
+            name: values.name,
+            styleURL: values.styleURL,
+            bounds,
+            minZoom: 16,
+            maxZoom: 22,
+          };
+          onSubmit(pack);
+        })}
+        style={styles.createButton}
+      />
+      <View style={styles.progressContainer}>
+        <View style={[styles.progressBar, { width: `${progress}%` }]} />
+      </View>
+      <Text style={styles.progressText}>Progress: {progress.toFixed(2)}%</Text>
+    </View>
   );
 };
 

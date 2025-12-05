@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { FormikHandlers } from 'formik';
 import type { Form } from '~/db/schema';
 
 interface EducationSectionProps {
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
-  handleChange: FormikHandlers['handleChange'];
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  handleChange: (field: keyof Form) => (value: string) => void;
 }
 
 export default function EducationSection({
@@ -17,8 +16,6 @@ export default function EducationSection({
 }: EducationSectionProps) {
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.heading}>Education</Text>
-
       <Text style={styles.subheading}>Diarrhoea</Text>
       <Text style={styles.question}>What is diarrhoea?</Text>
       <CheckboxGroup
@@ -316,11 +313,6 @@ export default function EducationSection({
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    fontWeight: 'bold',
-    fontSize: 20,
-    marginVertical: 12,
-  },
   subheading: {
     fontWeight: '600',
     fontSize: 17,

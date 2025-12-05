@@ -6,7 +6,7 @@ interface RadioGroupProps {
   name: keyof Form;
   options: { label: string; value: string | boolean }[];
   values: Form;
-  setFieldValue: (field: string, value: unknown) => void;
+  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;

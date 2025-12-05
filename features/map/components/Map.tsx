@@ -70,6 +70,28 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   }, [initialCoords, initialPinId]);
 
+  useEffect(() => {
+    const setupLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.warn('Location permission not granted');
+          return;
+        }
+
+        MapboxGL.locationManager.start();
+      } catch (e) {
+        console.warn('Failed to start Mapbox location manager', e);
+      }
+    };
+
+    setupLocation();
+
+    return () => {
+      MapboxGL.locationManager.stop();
+    };
+  }, []);
+
   const refreshMap = () => {
     setMapKey((k) => k + 1); // force remount
   };
@@ -158,36 +180,27 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
 
   const handleCenterOnUser = async () => {
     try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const loc = await MapboxGL.locationManager.getLastKnownLocation();
       const coords = loc?.coords;
+      console.log('📍 User location coords:', coords);
       if (!coords) {
-        Alert.alert('Location unavailable', 'Unable to access your current location.');
+        Alert.alert(
+          'Location not ready',
+          'We are still getting your location. Please try again in a few seconds.'
+        );
         return;
       }
+
       cameraRef.current?.setCamera({
         centerCoordinate: [coords.longitude, coords.latitude],
         zoomLevel: 16,
-        animationDuration: 800,
+        animationDuration: 600,
       });
     } catch (error) {
       console.warn('⚠️ Failed to center on user location', error);
       Alert.alert('Location unavailable', 'Unable to access your current location.');
     }
   };
-
-  useEffect(() => {
-    const requestLocationPermission = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          console.warn('⚠️ Location permission not granted');
-        }
-      } catch (error) {
-        console.warn('⚠️ Failed to request location permission', error);
-      }
-    };
-    requestLocationPermission();
-  }, []);
 
   const handleDeletePin = async (pin: Pin) => {
     if (!pin.id) {
@@ -226,19 +239,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
         compassEnabled
         scaleBarEnabled
         onLongPress={handleDropPin}>
-        <Camera
-          ref={cameraRef}
-          followUserLocation={!initialCoords}
-          followZoomLevel={!initialCoords ? 18 : undefined}
-          defaultSettings={
-            initialCoords
-              ? {
-                  centerCoordinate: [initialCoords.lng, initialCoords.lat],
-                  zoomLevel: 18,
-                }
-              : undefined
-          }
-        />
+        <Camera ref={cameraRef} />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
         <Images images={{ pin }} />
         {pins && (
