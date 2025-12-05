@@ -274,7 +274,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
               filter={['!', ['has', 'point_count']]}
               style={{
                 iconImage: 'pin',
-                iconSize: 0.375,
+                iconSize: 0.18,
                 iconAllowOverlap: true,
               }}
             />
