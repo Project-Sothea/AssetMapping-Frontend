@@ -1,3 +1,4 @@
+import type { Form } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,7 +12,7 @@ import { ErrorHandler } from '~/shared/utils/errorHandling';
 import { useCreateForm } from '../hooks/useCreateForm';
 import { useDeleteForm } from '../hooks/useDeleteForm';
 import { useUpdateForm } from '../hooks/useUpdateForm';
-import type { Form, FormValues } from '../types';
+import type { FormValues } from '../types';
 
 import EducationSection from './EducationSection';
 import FormSection from './FormSection';

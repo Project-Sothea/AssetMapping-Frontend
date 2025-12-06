@@ -1,3 +1,4 @@
+import type { Form } from '@assetmapping/shared-types';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
@@ -7,7 +8,6 @@ import { FormCard } from '~/features/forms/components/FormCard';
 import { FormModal } from '~/features/forms/components/FormModal';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import type { Form } from '~/features/forms/types';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {

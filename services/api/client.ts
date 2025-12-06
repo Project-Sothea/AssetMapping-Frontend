@@ -1,6 +1,6 @@
-import { getApiUrl } from '../apiUrl';
+import type { ApiResponse } from '@assetmapping/shared-types';
 
-import type { ApiResponse } from './types';
+import { getApiUrl } from '../apiUrl';
 
 let cachedBaseUrl: string | null = null;
 

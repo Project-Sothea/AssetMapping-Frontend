@@ -8,6 +8,7 @@
  * 4. Let the form/UI handle image picking and saving
  */
 
+import type { Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
 
 import { pins } from '~/db/schema';
@@ -16,7 +17,7 @@ import { db } from '~/services/drizzleDb';
 import * as ImageManager from '~/services/images/ImageManager';
 import { enqueuePin } from '~/services/sync/queue/syncQueue';
 
-import { Pin, PinUpdate, PinValues } from '..//types';
+import { PinUpdate, PinValues } from '../types';
 
 // ============================================
 // CREATE
@@ -25,8 +26,8 @@ import { Pin, PinUpdate, PinValues } from '..//types';
 export async function createPin(pin: PinValues): Promise<Pin> {
   const newPin: Pin = {
     ...pin,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
     version: 1,
     status: 'unsynced',
   };
@@ -51,7 +52,7 @@ export async function updatePin(id: string, updates: PinUpdate): Promise<Pin> {
   const updated: Pin = {
     ...existing,
     ...updates,
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(),
     version: (existing.version || 1) + 1,
     status: 'unsynced',
   };

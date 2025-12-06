@@ -1,7 +1,6 @@
-import type { Pin } from '~/db/schema';
+import type { ApiResponse, Pin } from '@assetmapping/shared-types';
 
 import { request } from './client';
-import type { ApiResponse } from './types';
 
 const BULK_TIMEOUT_MS = 120000;
 const DEFAULT_TIMEOUT_MS = 30000;

@@ -4,10 +4,10 @@
  * Fetches updated entities from backend and saves to local SQLite database
  */
 
+import type { Pin, Form } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
 
 import { pins, forms } from '~/db/schema';
-import type { Pin, Form } from '~/db/schema';
 import { sanitizePinForDb, sanitizeFormForDb, mapPinDbToPin } from '~/db/utils';
 import { fetchForm, fetchForms, fetchFormsSince } from '~/services/api/formsApi';
 import { fetchPin, fetchPins, fetchPinsSince } from '~/services/api/pinsApi';
@@ -38,13 +38,17 @@ async function processPinData(pinData: Pin): Promise<void> {
     const existingPin = mapPinDbToPin(existing[0]);
     const existingFilenames = existingPin.images || [];
     const backendSet = new Set(pinData.images || []);
-    const removed = existingFilenames.filter((name) => !backendSet.has(name));
+    const removed = existingFilenames.filter((name: string) => !backendSet.has(name));
     if (removed.length > 0) {
       await deleteImagesByFilename(pinId, removed);
     }
   }
 
-  await upsertEntity(pins, sanitized, pinId);
+  if (existing.length > 0) {
+    await db.update(pins).set(sanitized).where(eq(pins.id, pinId));
+  } else {
+    await db.insert(pins).values(sanitized);
+  }
 }
 
 /**
@@ -52,23 +56,11 @@ async function processPinData(pinData: Pin): Promise<void> {
  */
 async function processFormData(formData: Form): Promise<void> {
   const sanitized = sanitizeFormForDb(formData);
-  await upsertEntity(forms, sanitized, sanitized.id);
-}
-
-/**
- * Generic upsert helper - insert or update entity
- */
-async function upsertEntity<T extends { id: string }>(
-  table: typeof pins | typeof forms,
-  data: T,
-  id: string
-): Promise<void> {
-  const existing = await db.select().from(table).where(eq(table.id, id)).limit(1);
-
+  const existing = await db.select().from(forms).where(eq(forms.id, sanitized.id)).limit(1);
   if (existing.length > 0) {
-    await db.update(table).set(data).where(eq(table.id, id));
+    await db.update(forms).set(sanitized).where(eq(forms.id, sanitized.id));
   } else {
-    await db.insert(table).values(data);
+    await db.insert(forms).values(sanitized);
   }
 }
 

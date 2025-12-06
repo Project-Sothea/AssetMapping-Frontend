@@ -21,10 +21,8 @@ import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
 export const pins = sqliteTable('pins', {
   // Metadata
   id: text().primaryKey(),
-  createdAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer({ mode: 'timestamp' }).notNull(),
+  updatedAt: integer({ mode: 'timestamp' }),
   version: integer().notNull().default(1),
   status: text(),
 
@@ -50,10 +48,8 @@ export const pins = sqliteTable('pins', {
 export const forms = sqliteTable('forms', {
   // Metadata
   id: text().primaryKey(),
-  createdAt: text()
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
+  createdAt: integer({ mode: 'timestamp' }).notNull(),
+  updatedAt: integer({ mode: 'timestamp' }),
   version: integer().notNull().default(1),
   pinId: text().references(() => pins.id, { onDelete: 'cascade' }), // Foreign key with cascade
   status: text(),

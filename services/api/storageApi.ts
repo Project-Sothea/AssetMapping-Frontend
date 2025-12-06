@@ -1,10 +1,6 @@
-import { request } from './client';
-import type { ApiResponse } from './types';
+import type { ApiResponse, StorageDeleteResult } from '@assetmapping/shared-types';
 
-export type DeleteObjectsResult = {
-  deleted: number;
-  errors: number;
-};
+import { request } from './client';
 
 export async function getUploadUrl(key: string, contentType: string): Promise<ApiResponse<string>> {
   const qs = new URLSearchParams({ key, mimeType: contentType }).toString();
@@ -20,8 +16,8 @@ export async function getDownloadUrl(key: string): Promise<ApiResponse<string>> 
   });
 }
 
-export async function deleteObjects(keys: string[]): Promise<ApiResponse<DeleteObjectsResult>> {
-  return request<DeleteObjectsResult>('/api/storage/objects', {
+export async function deleteObjects(keys: string[]): Promise<ApiResponse<StorageDeleteResult>> {
+  return request<StorageDeleteResult>('/api/storage/objects', {
     method: 'DELETE',
     body: JSON.stringify({ keys }),
   });

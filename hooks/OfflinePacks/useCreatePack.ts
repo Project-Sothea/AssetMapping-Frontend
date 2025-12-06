@@ -18,8 +18,3 @@ export default function useCreatePack() {
 
   return { ...mutation, progress, name };
 }
-
-/*
-Errors:
-1.  ERROR  [Error: Offline pack with name Sre O Primary School already exists.]
-*/

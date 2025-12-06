@@ -25,23 +25,13 @@
  * ```
  */
 
+import type { SyncNotification } from '@assetmapping/shared-types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
 import { processQueue } from '~/services/sync/queue/syncQueue';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
-
-interface NotificationMessage {
-  type: 'pin' | 'form' | 'image' | 'system' | 'welcome' | 'pong';
-  action?: string;
-  eventId?: string;
-  aggregateId?: string;
-  version?: number;
-  timestamp?: string;
-  payload?: Record<string, unknown>;
-  message?: string;
-}
 
 /**
  * Connect to real-time notification WebSocket
@@ -68,19 +58,16 @@ export function useRealTimeSync(userId: string | undefined) {
 
     // Subscribe to incoming messages
     const unsubscribe = webSocketManager.onMessage((message) => {
-      const notification = message as unknown as NotificationMessage;
+      if (!isSyncNotification(message)) {
+        console.log('📨 Ignoring non-sync notification:', message);
+        return;
+      }
+
+      const notification = message;
       console.log('🔄 WebSocket notification received:', notification);
 
       // Handle different message types
       switch (notification.type) {
-        case 'welcome':
-          console.log('📨 Welcome:', notification.message);
-          break;
-
-        case 'pong':
-          // Heartbeat response (handled by WebSocketManager)
-          break;
-
         case 'pin':
           console.log('📍 Pin update:', notification.action, notification.aggregateId);
 
@@ -155,20 +142,6 @@ export function useRealTimeSync(userId: string | undefined) {
             });
           break;
 
-        case 'image':
-          console.log('🖼️  Image update:', notification.action);
-          // Refetch the entity that owns the image
-          if (notification.payload?.entityType && notification.payload?.entityId) {
-            queryClient.invalidateQueries({
-              queryKey: [notification.payload.entityType + 's', notification.payload.entityId],
-            });
-          }
-          break;
-
-        case 'system':
-          console.log('🔔 System notification:', notification.message);
-          break;
-
         default:
           console.log('📨 Unknown notification:', notification);
       }
@@ -181,4 +154,14 @@ export function useRealTimeSync(userId: string | undefined) {
       // The WebSocketManager handles connection lifecycle
     };
   }, [userId, queryClient]);
+}
+
+function isSyncNotification(message: unknown): message is SyncNotification {
+  if (!message || typeof message !== 'object') return false;
+  const m = message as Record<string, unknown>;
+  return (
+    (m.type === 'pin' || m.type === 'form') &&
+    typeof m.action === 'string' &&
+    typeof m.aggregateId === 'string'
+  );
 }

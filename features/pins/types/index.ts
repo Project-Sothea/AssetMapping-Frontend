@@ -1,11 +1,8 @@
-import { pins } from '~/db/schema';
+import type { Pin } from '@assetmapping/shared-types';
 
-export type PinDB = typeof pins.$inferSelect;
-
-// Pin represents the runtime application type with parsed images (string[])
-// whereas PinDB has images as JSON strings for database storage
-export type Pin = Omit<PinDB, 'images'> & { images: string[] };
-
-export type PinValues = Omit<Pin, 'createdAt' | 'updatedAt' | 'version' | 'status'>;
+// Form/UI-facing type where images are always an array for convenience
+export type PinValues = Omit<Pin, 'createdAt' | 'updatedAt' | 'version' | 'status' | 'images'> & {
+  images: string[];
+};
 
 export type PinUpdate = Partial<Pin>;
