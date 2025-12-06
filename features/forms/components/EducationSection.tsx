@@ -1,18 +1,20 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types';
 
 interface EducationSectionProps {
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
-  handleChange: (field: keyof Form) => (value: string) => void;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
+  handleChange: (field: keyof FormValues) => (value: string) => void;
+  disabled?: boolean;
 }
 
 export default function EducationSection({
   values,
   setFieldValue,
   handleChange,
+  disabled = false,
 }: EducationSectionProps) {
   return (
     <View style={{ gap: 12 }}>
@@ -34,6 +36,7 @@ export default function EducationSection({
         otherFieldName="otherDiarrhoeaDefinition"
         otherValue={values.otherDiarrhoeaDefinition ?? undefined}
         onOtherChange={handleChange('otherDiarrhoeaDefinition')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>What should I do if I have diarrhoea?</Text>
@@ -54,6 +57,7 @@ export default function EducationSection({
         otherFieldName="otherDiarrhoeaActions"
         otherValue={values.otherDiarrhoeaActions ?? undefined}
         onOtherChange={handleChange('otherDiarrhoeaActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Common Cold</Text>
@@ -74,6 +78,7 @@ export default function EducationSection({
         otherFieldName="otherCommonColdSymptoms"
         otherValue={values.otherCommonColdSymptoms ?? undefined}
         onOtherChange={handleChange('otherCommonColdSymptoms')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>If I have a common cold, what should I do?</Text>
@@ -94,6 +99,7 @@ export default function EducationSection({
         otherFieldName="otherCommonColdActions"
         otherValue={values.otherCommonColdActions ?? undefined}
         onOtherChange={handleChange('otherCommonColdActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>MSK</Text>
@@ -114,6 +120,7 @@ export default function EducationSection({
         otherFieldName="otherMskInjuryDefinition"
         otherValue={values.otherMskInjuryDefinition ?? undefined}
         onOtherChange={handleChange('otherMskInjuryDefinition')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>How should I approach my musculoskeletal injury?</Text>
@@ -134,6 +141,7 @@ export default function EducationSection({
         otherFieldName="otherMskInjuryActions"
         otherValue={values.otherMskInjuryActions ?? undefined}
         onOtherChange={handleChange('otherMskInjuryActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Hypertension</Text>
@@ -154,6 +162,7 @@ export default function EducationSection({
         otherFieldName="otherHypertensionDefinition"
         otherValue={values.otherHypertensionDefinition ?? undefined}
         onOtherChange={handleChange('otherHypertensionDefinition')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -176,6 +185,7 @@ export default function EducationSection({
         otherFieldName="otherHypertensionActions"
         otherValue={values.otherHypertensionActions ?? undefined}
         onOtherChange={handleChange('otherHypertensionActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Healthy Eating</Text>
@@ -197,6 +207,7 @@ export default function EducationSection({
         otherFieldName="otherHealthyFoodFrequency"
         otherValue={values.otherHealthyFoodFrequency ?? undefined}
         onOtherChange={handleChange('otherHealthyFoodFrequency')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>If you often do not eat healthy food, why not?</Text>
@@ -215,6 +226,7 @@ export default function EducationSection({
         otherFieldName="otherUnhealthyFoodReasons"
         otherValue={values.otherUnhealthyFoodReasons ?? undefined}
         onOtherChange={handleChange('otherUnhealthyFoodReasons')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Cholesterol</Text>
@@ -235,6 +247,7 @@ export default function EducationSection({
         otherFieldName="otherHighCholesterolDefinition"
         otherValue={values.otherHighCholesterolDefinition ?? undefined}
         onOtherChange={handleChange('otherHighCholesterolDefinition')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -257,6 +270,7 @@ export default function EducationSection({
         otherFieldName="otherHighCholesterolActions"
         otherValue={values.otherHighCholesterolActions ?? undefined}
         onOtherChange={handleChange('otherHighCholesterolActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Diabetes</Text>
@@ -277,6 +291,7 @@ export default function EducationSection({
         otherFieldName="otherDiabetesDefinition"
         otherValue={values.otherDiabetesDefinition ?? undefined}
         onOtherChange={handleChange('otherDiabetesDefinition')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>What should I do if I have been diagnosed with diabetes?</Text>
@@ -297,6 +312,7 @@ export default function EducationSection({
         otherFieldName="otherDiabetesActions"
         otherValue={values.otherDiabetesActions ?? undefined}
         onOtherChange={handleChange('otherDiabetesActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.subheading}>Others</Text>
@@ -307,6 +323,7 @@ export default function EducationSection({
         placeholder="Your answer"
         value={values.otherLearningAreas ?? ''}
         onChangeText={handleChange('otherLearningAreas')}
+        editable={!disabled}
       />
     </View>
   );

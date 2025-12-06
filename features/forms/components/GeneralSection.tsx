@@ -1,13 +1,14 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import RadioGroup from './RadioGroup';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types';
 
 interface GeneralSectionProps {
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
-  handleChange: (field: keyof Form) => (value: string) => void;
-  errors: Partial<Record<keyof Form, string>>;
-  touched: Partial<Record<keyof Form, boolean>>;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
+  handleChange: (field: keyof FormValues) => (value: string) => void;
+  errors: Partial<Record<keyof FormValues, string>>;
+  touched: Partial<Record<keyof FormValues, boolean>>;
+  disabled?: boolean;
 }
 
 export default function GeneralSection({
@@ -16,6 +17,7 @@ export default function GeneralSection({
   handleChange,
   errors,
   touched,
+  disabled = false,
 }: GeneralSectionProps) {
   return (
     <View style={{ gap: 12 }}>
@@ -30,6 +32,7 @@ export default function GeneralSection({
         setFieldValue={setFieldValue}
         errors={errors.village}
         touched={touched.village}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>What is your name?*</Text>
@@ -37,6 +40,7 @@ export default function GeneralSection({
         style={styles.input}
         onChangeText={handleChange('name')}
         value={values.name as string}
+        editable={!disabled}
       />
       {errors.name && touched.name && <Text style={styles.error}>{errors.name}</Text>}
 
@@ -46,6 +50,7 @@ export default function GeneralSection({
         onChangeText={handleChange('villageId')}
         value={values.villageId as string}
         placeholder="e.g. A1, B2"
+        editable={!disabled}
       />
       {errors.villageId && touched.villageId && (
         <Text style={styles.error}>{errors.villageId}</Text>
@@ -60,14 +65,28 @@ export default function GeneralSection({
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>How old are you this year?</Text>
       <TextInput
         style={styles.input}
-        onChangeText={(text) => setFieldValue('age', text ? parseInt(text, 10) : null)}
-        value={values.age !== null && values.age !== undefined ? String(values.age) : ''}
+        value={values.age === null ? '' : String(values.age)}
         keyboardType="numeric"
+        editable={!disabled}
+        onChangeText={(text) => {
+          if (text.trim() === '') {
+            setFieldValue('age', null);
+            return;
+          }
+          const digitsOnly = text.replace(/[^0-9]/g, '');
+          if (digitsOnly !== text) {
+            // Prevent weird characters from appearing
+            return;
+          }
+          const parsed = Number(digitsOnly);
+          setFieldValue('age', isNaN(parsed) ? null : parsed);
+        }}
       />
 
       <Text style={styles.question}>
@@ -81,6 +100,7 @@ export default function GeneralSection({
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        disabled={disabled}
       />
     </View>
   );

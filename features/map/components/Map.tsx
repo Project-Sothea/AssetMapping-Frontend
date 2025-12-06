@@ -21,6 +21,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
 import { PinModal } from '../../pins/components/PinModal';
+import type { Pin } from '~/features/pins/types/';
 
 // Default style; can be toggled at runtime
 const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
@@ -32,11 +33,11 @@ type MapProps = {
 
 type PinModalState =
   | { mode: 'create'; coords: [number, number] }
-  | { mode: 'view'; pinId: string }
+  | { mode: 'view'; pin: Pin }
   | null;
 
 export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
-  const { data: pins } = useFetchLocalPins();
+  const pins = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
   const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
@@ -137,8 +138,9 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     if (pressedFeature?.properties) {
       const pinId = pressedFeature.properties.id as string | undefined;
       if (!pinId) return;
-
-      setPinModalState({ mode: 'view', pinId });
+      const pinData = pins?.find((p) => p.id === pinId);
+      if (!pinData) return;
+      setPinModalState({ mode: 'view', pin: pinData });
     }
   };
 
@@ -214,7 +216,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
         )}
       </MapView>
       {pinModalState?.mode === 'view' && screenIsFocused && (
-        <PinModal mode="view" visible pinId={pinModalState.pinId} onClose={handleCloseModal} />
+        <PinModal mode="view" visible pin={pinModalState.pin} onClose={handleCloseModal} />
       )}
       {pinModalState?.mode === 'create' && (
         <PinModal
@@ -224,50 +226,46 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
           onClose={handleCloseModal}
         />
       )}
-      <TouchableOpacity style={[styles.refreshButton, { right: 60 }]} onPress={toggleStyle}>
-        <MaterialIcons name="satellite" color="black" size={30} style={styles.refreshText} />
-      </TouchableOpacity>
+      <View style={styles.controlsLeft}>
+        <TouchableOpacity style={styles.controlButton} onPress={refreshMap}>
+          <MaterialIcons name="refresh" color="black" size={24} />
+        </TouchableOpacity>
+        <View style={styles.controlButton}>
+          <ReconnectButton />
+        </View>
+      </View>
 
-      <TouchableOpacity style={[styles.refreshButton, { right: 110 }]} onPress={handleCenterOnUser}>
-        <MaterialIcons name="my-location" color="black" size={24} style={styles.refreshText} />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.refreshButton} onPress={refreshMap}>
-        <MaterialIcons name="refresh" color="black" size={30} style={styles.refreshText} />
-      </TouchableOpacity>
-      <View style={styles.reconnectButton}>
-        <ReconnectButton />
+      <View style={styles.controlsRight}>
+        <TouchableOpacity style={styles.controlButton} onPress={toggleStyle}>
+          <MaterialIcons name="layers" color="black" size={24} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.controlButton} onPress={handleCenterOnUser}>
+          <MaterialIcons name="my-location" color="black" size={24} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  refreshButton: {
+  controlsLeft: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 12,
+    left: 12,
+    gap: 10,
+  },
+  controlsRight: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    gap: 10,
+  },
+  controlButton: {
     backgroundColor: '#fff',
     borderRadius: 25,
-    padding: 12, // Increased padding to match reconnect button size
-    elevation: 3, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 2,
-  },
-  refreshText: {
-    fontSize: 18,
-  },
-  reconnectButton: {
-    position: 'absolute',
-    bottom: 70, // Position above the refresh button
-    right: 10,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    padding: 2, // Reduced padding to account for ReconnectButton's internal padding
-    elevation: 3, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    padding: 12,
+    elevation: 3,
+    shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 2,

@@ -2,22 +2,19 @@ import { useLocalSearchParams } from 'expo-router';
 import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { useCreateForm } from '~/features/forms/hooks/useCreateForm';
-import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
-import type { Form, FormDB } from '~/db/schema';
+import type { Form } from '~/features/forms/types';
 import { FormCard } from '~/features/forms/components/FormCard';
-import { FormEditorModal } from '~/features/forms/components/FormEditorModal';
+import { FormModal } from '~/features/forms/components/FormModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
-  const { data: forms } = useFetchForms(pinId);
-  const [selectedForm, setSelectedForm] = useState<FormDB | null>(null);
+  const forms = useFetchForms(pinId);
+  const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
-  const { createFormAsync } = useCreateForm();
-  const { updateFormAsync } = useUpdateForm();
   const { deleteFormAsync } = useDeleteForm();
 
   const handleModalClose = () => {
@@ -25,7 +22,7 @@ export default function FormScreen() {
     setModalVisible(false);
   };
 
-  const handleFormPress = (form: FormDB) => {
+  const handleFormPress = (form: Form) => {
     setSelectedForm(form);
     setModalVisible(true);
   };
@@ -49,69 +46,45 @@ export default function FormScreen() {
     ]);
   };
 
-  const handleFormSubmit = async (values: Form) => {
-    // Ensure pinId is attached before submit
-    console.log('Submitting form with values:', values);
-    try {
-      if (selectedForm) {
-        // Update existing form
-        await updateFormAsync({ id: selectedForm.id, values: values as Omit<FormDB, 'id'> });
-
-        Alert.alert('Form Updated!');
-        setSelectedForm(null);
-        setModalVisible(false);
-      } else {
-        // Create new form
-        await createFormAsync(values as Omit<FormDB, 'id'>);
-
-        Alert.alert('Form Created!');
-        setSelectedForm(null);
-        setModalVisible(false);
-      }
-    } catch (error) {
-      const appError = ErrorHandler.handle(error, 'Failed to submit form');
-      ErrorHandler.showAlert(appError, 'Error');
-    }
-  };
-
   return (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+        <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
 
-      {forms?.length === 0 && (
-        <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
-      )}
+        {forms?.length === 0 && (
+          <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
+        )}
 
-      <View style={styles.formsList}>
-        {forms?.map((form) => (
-          <FormCard
-            key={form.id}
-            form={form}
-            onPress={handleFormPress}
-            onDelete={handleFormDelete}
+        <View style={styles.formsList}>
+          {forms?.map((form) => (
+            <FormCard
+              key={form.id}
+              form={form}
+              onPress={handleFormPress}
+              onDelete={handleFormDelete}
+            />
+          ))}
+        </View>
+
+        <View style={styles.newFormSection}>
+          <Button
+            title="Create New Form"
+            color="#3498db"
+            onPress={() => {
+              setSelectedForm(null);
+              setModalVisible(true);
+            }}
           />
-        ))}
-      </View>
+        </View>
 
-      <View style={styles.newFormSection}>
-        <Button
-          title="Create New Form"
-          color="#3498db"
-          onPress={() => {
-            setSelectedForm(null);
-            setModalVisible(true);
-          }}
+        <FormModal
+          visible={modalVisible}
+          pinId={pinId}
+          selectedForm={selectedForm}
+          onClose={handleModalClose}
         />
-      </View>
-
-      <FormEditorModal
-        visible={modalVisible}
-        pinId={pinId}
-        selectedForm={selectedForm}
-        onClose={handleModalClose}
-        onSubmit={handleFormSubmit}
-      />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

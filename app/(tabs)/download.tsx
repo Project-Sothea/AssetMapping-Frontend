@@ -1,4 +1,5 @@
 import { View, StyleSheet, ScrollView, ImageBackground } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import useCreatePack from '~/hooks/OfflinePacks/useCreatePack';
 import Spacer from '~/shared/components/ui/Spacer';
 import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePackForm';
@@ -11,49 +12,53 @@ export default function DownloadScreen() {
   const { mutateAsync: createPackMutation, progress, name } = useCreatePack();
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      style={styles.background}
-      resizeMode="cover"
-      imageStyle={styles.backgroundImage}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Spacer />
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <ImageBackground
+        source={backgroundImage}
+        style={styles.background}
+        resizeMode="cover"
+        imageStyle={styles.backgroundImage}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}>
+          <Spacer />
 
-        {/* API URL Configuration with Device ID */}
-        <ApiUrlConfiguration />
+          {/* API URL Configuration with Device ID */}
+          <ApiUrlConfiguration />
 
-        {/* Premade Packs */}
-        <View style={styles.card}>
-          <PremadePacks
-            progress={progress || 0}
-            onPress={async (pack) => {
-              try {
-                await createPackMutation(pack);
-              } catch (err) {
-                console.error('Premade pack error:', err);
-              }
-            }}
-          />
-        </View>
+          {/* Premade Packs */}
+          <View style={styles.card}>
+            <PremadePacks
+              progress={progress || 0}
+              onPress={async (pack) => {
+                try {
+                  await createPackMutation(pack);
+                } catch (err) {
+                  console.error('Premade pack error:', err);
+                }
+              }}
+            />
+          </View>
 
-        {/* Create Pack Form */}
-        <View style={styles.card}>
-          <CreatePackForm
-            onSubmit={async (pack) => {
-              try {
-                await createPackMutation(pack);
-              } catch (err) {
-                console.error(err);
-              }
-            }}
-            progress={progress || 0}
-          />
-        </View>
+          {/* Create Pack Form */}
+          <View style={styles.card}>
+            <CreatePackForm
+              onSubmit={async (pack) => {
+                try {
+                  await createPackMutation(pack);
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              progress={progress || 0}
+            />
+          </View>
 
-        {/* Downloaded Packs List */}
-        <DownloadedPacksList excludePackName={name} progress={progress || 0} />
-      </ScrollView>
-    </ImageBackground>
+          {/* Downloaded Packs List */}
+          <DownloadedPacksList excludePackName={name} progress={progress || 0} />
+        </ScrollView>
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({

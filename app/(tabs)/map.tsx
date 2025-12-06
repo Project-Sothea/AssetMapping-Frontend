@@ -1,6 +1,7 @@
 import Map from '~/features/map/components/Map';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useMemo } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MapScreen() {
   const params = useLocalSearchParams();
@@ -33,5 +34,9 @@ export default function MapScreen() {
     }, [initialCoords, router])
   );
 
-  return <Map initialCoords={initialCoords} initialPinId={initialPinId} />;
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <Map initialCoords={initialCoords} initialPinId={initialPinId} />
+    </SafeAreaView>
+  );
 }

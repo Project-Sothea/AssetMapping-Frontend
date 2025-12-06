@@ -32,11 +32,11 @@ export const pins = sqliteTable('pins', {
   version: integer('version').notNull().default(1),
 
   // Location
-  lat: real(),
-  lng: real(),
+  lat: real().notNull(),
+  lng: real().notNull(),
 
   // Details
-  name: text(),
+  name: text().notNull(),
   address: text(),
   cityVillage: text(),
   description: text(),
@@ -165,41 +165,3 @@ export const syncQueue = sqliteTable('sync_queue', {
   dependsOn: text(),
   deviceId: text(),
 });
-
-// ==================== Inferred Types ====================
-// Consolidated here to simplify imports (replacing previous db/types.ts)
-export type PinDB = typeof pins.$inferSelect;
-export type FormDB = typeof forms.$inferSelect;
-
-// Pin represents the runtime application type with parsed images (string[])
-// whereas PinDB has images as JSON strings for database storage
-export type Pin = Omit<PinDB, 'images'> & { images: string[] };
-
-// Form represents the runtime application type with parsed arrays (string[])
-// whereas FormDB has arrays as JSON strings for database storage
-type ArrayFieldKeys =
-  | 'longTermConditions'
-  | 'managementMethods'
-  | 'conditionDifficultyReasons'
-  | 'selfCareActions'
-  | 'noToothbrushOrToothpasteReasons'
-  | 'diarrhoeaDefinition'
-  | 'diarrhoeaActions'
-  | 'commonColdSymptoms'
-  | 'commonColdActions'
-  | 'mskInjuryDefinition'
-  | 'mskInjuryActions'
-  | 'hypertensionDefinition'
-  | 'hypertensionActions'
-  | 'unhealthyFoodReasons'
-  | 'highCholesterolDefinition'
-  | 'highCholesterolActions'
-  | 'diabetesDefinition'
-  | 'diabetesActions'
-  | 'waterSources'
-  | 'unsafeWaterTypes'
-  | 'waterFilterNonUseReasons';
-
-export type Form = Omit<FormDB, ArrayFieldKeys> & {
-  [K in ArrayFieldKeys]?: string[];
-};

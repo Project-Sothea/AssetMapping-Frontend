@@ -24,6 +24,7 @@ export default function Layout() {
           headerTitle: () => <SyncStatusBar />,
           headerTitleAlign: 'center',
           headerRight: () => <ReconnectButton />,
+          headerRightContainerStyle: { paddingRight: 15 },
           tabBarIcon: ({ color }) => <TabBarIcon name="map-pin" color={color} />,
         }}
       />

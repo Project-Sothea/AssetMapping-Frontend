@@ -1,17 +1,18 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types';
 
 interface CheckboxGroupProps {
-  name: keyof Form;
+  name: keyof FormValues;
   options: string[];
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;
   otherValue?: string;
   onOtherChange?: (text: string) => void;
+  disabled?: boolean;
 }
 
 export default function CheckboxGroup({
@@ -24,8 +25,10 @@ export default function CheckboxGroup({
   otherFieldName,
   otherValue,
   onOtherChange,
+  disabled = false,
 }: CheckboxGroupProps) {
   const handleCheckbox = (opt: string) => {
+    if (disabled) return;
     const currentArray = (Array.isArray(values[name]) ? values[name] : []) as string[];
     if (currentArray.includes(opt)) {
       setFieldValue(
@@ -45,6 +48,7 @@ export default function CheckboxGroup({
             value={(Array.isArray(values[name]) ? values[name] : []).includes(opt)}
             onValueChange={() => handleCheckbox(opt)}
             style={styles.checkbox}
+            disabled={disabled}
           />
           <Text style={styles.label}>{opt}</Text>
         </View>
@@ -55,6 +59,7 @@ export default function CheckboxGroup({
           placeholder="Please specify"
           value={otherValue}
           onChangeText={onOtherChange}
+          editable={!disabled}
         />
       )}
       {errors && touched && <Text style={styles.error}>{errors}</Text>}

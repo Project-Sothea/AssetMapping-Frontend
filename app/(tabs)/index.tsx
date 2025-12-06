@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ImageBackground, StyleSheet, FlatList, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PinCard } from '~/features/pins/components/PinCard';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
-import type { Pin } from '~/db/schema';
+import type { Pin } from '~/features/pins/types/';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 import backgroundImage from '~/assets/home-background.png';
 
 export default function PinScreen() {
-  const { data: pins = [] } = useFetchLocalPins(); // live reactive pins
+  const pins = useFetchLocalPins(); // live reactive pins
   const [query, setQuery] = useState('');
   const router = useRouter();
 
@@ -42,26 +43,28 @@ export default function PinScreen() {
   };
 
   return (
-    <ImageBackground
-      source={backgroundImage}
-      style={styles.background}
-      resizeMode="cover"
-      imageStyle={styles.backgroundImage}>
-      <TextInput
-        placeholder="Find pin..."
-        value={query}
-        onChangeText={setQuery}
-        style={styles.searchInput}
-        placeholderTextColor="#888"
-      />
-      <FlatList
-        data={filteredPins}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </ImageBackground>
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+      <ImageBackground
+        source={backgroundImage}
+        style={styles.background}
+        resizeMode="cover"
+        imageStyle={styles.backgroundImage}>
+        <TextInput
+          placeholder="Find pin..."
+          value={query}
+          onChangeText={setQuery}
+          style={styles.searchInput}
+          placeholderTextColor="#888"
+        />
+        <FlatList
+          data={filteredPins}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
 

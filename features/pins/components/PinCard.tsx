@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { Pin } from '~/db/schema';
+import type { Pin } from '../types/';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
@@ -15,7 +15,7 @@ type PinCardProps = {
 
 export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const router = useRouter();
-  const { data: forms = [] } = useFetchForms(pin.id);
+  const forms = useFetchForms(pin.id);
 
   // Check sync status from operations table
   const isSynced = usePinQueueStatus(pin.id);

@@ -5,12 +5,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { db } from '~/services/drizzleDb';
-import { pins, forms, Form, Pin } from '~/db/schema';
+import { pins, forms } from '~/db/schema';
 import { sync } from '~/services/api/syncApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { fetchPin } from '~/services/api/pinsApi';
 import { getLocalPath } from '~/services/images/ImageManager';
 import { pullFormUpdate, pullPinUpdate } from '../pullUpdates';
+import { Pin } from '~/features/pins/types';
+import { Form } from '~/features/forms/types';
 
 type Operation = 'create' | 'update' | 'delete';
 

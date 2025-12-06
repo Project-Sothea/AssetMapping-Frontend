@@ -1,15 +1,21 @@
 import { View, Text, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types/';
 
 interface WaterSectionProps {
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
-  handleChange: (field: keyof Form) => (value: string) => void;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
+  handleChange: (field: keyof FormValues) => (value: string) => void;
+  disabled?: boolean;
 }
 
-export default function WaterSection({ values, setFieldValue, handleChange }: WaterSectionProps) {
+export default function WaterSection({
+  values,
+  setFieldValue,
+  handleChange,
+  disabled = false,
+}: WaterSectionProps) {
   return (
     <View style={{ gap: 12 }}>
       <Text style={styles.question}>
@@ -31,6 +37,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
         otherFieldName="otherWaterSources"
         otherValue={values.otherWaterSources ?? undefined}
         onOtherChange={handleChange('otherWaterSources')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -53,6 +60,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
         otherFieldName="otherUnsafeWaterTypes"
         otherValue={values.otherUnsafeWaterTypes ?? undefined}
         onOtherChange={handleChange('otherUnsafeWaterTypes')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>Do you know what water filters are?</Text>
@@ -68,6 +76,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
         otherFieldName="otherWaterFilterAwareness"
         otherValue={values.otherWaterFilterAwareness ?? undefined}
         onOtherChange={handleChange('otherWaterFilterAwareness')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -90,6 +99,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
         otherFieldName="otherWaterFilterNonUseReasons"
         otherValue={values.otherWaterFilterNonUseReasons ?? undefined}
         onOtherChange={handleChange('otherWaterFilterNonUseReasons')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>Do you wash your hands with soap after using the toilet?</Text>
@@ -106,6 +116,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
         otherFieldName="otherHandwashingAfterToilet"
         otherValue={values.otherHandwashingAfterToilet ?? undefined}
         onOtherChange={handleChange('otherHandwashingAfterToilet')}
+        disabled={disabled}
       />
     </View>
   );

@@ -19,52 +19,25 @@ import {
   saveImageLocally,
 } from '~/services/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
-import { PinFormValues } from '../types/PinFormValues';
+import { PinValues } from '../types/';
 import { v4 as uuidv4 } from 'uuid';
 
-const pinSchema = z
-  .object({
-    name: z.string().trim().min(1, 'Name is required'),
-    cityVillage: z.string().default(''),
-    address: z.string().default(''),
-    description: z.string().default(''),
-    type: z.string().default(''),
-    images: z.array(z.string()).default([]),
-    id: z.string().min(1, 'Missing pin id'),
-    lat: z.preprocess(
-      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-      z.number().nullable()
-    ),
-    lng: z.preprocess(
-      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
-      z.number().nullable()
-    ),
-  })
-  .superRefine((val, ctx) => {
-    if (val.lat === null) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Latitude is required', path: ['lat'] });
-    }
-    if (val.lng === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Longitude is required',
-        path: ['lng'],
-      });
-    }
-  });
+const pinSchema = z.looseObject({
+  name: z.string().trim().min(1, 'Name is required'),
+});
 
 type PinFormProps = {
-  onSubmit: (formData: PinFormValues) => void;
-  initialValues: PinFormValues | null;
+  onSubmit: (formData: PinValues) => void;
+  selectedPin: PinValues | null;
   coords?: { lat: number; lng: number };
 };
 
-export const PinForm = ({ onSubmit, initialValues, coords }: PinFormProps) => {
-  const isCreate = initialValues === null;
+export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
+  const isCreate = selectedPin === null;
   const idRef = useRef<string>(uuidv4());
 
-  const createDefaults = useMemo(() => {
-    if (!isCreate) return null;
+  const defaults = useMemo((): PinValues => {
+    if (!isCreate) return selectedPin!;
     if (!coords) throw new Error('coords is required in create mode');
 
     return {
@@ -77,10 +50,8 @@ export const PinForm = ({ onSubmit, initialValues, coords }: PinFormProps) => {
       images: [],
       lat: coords.lat,
       lng: coords.lng,
-    } satisfies PinFormValues;
-  }, [isCreate, coords]);
-
-  const defaults: PinFormValues = isCreate ? createDefaults! : initialValues!;
+    } satisfies PinValues;
+  }, [isCreate, selectedPin, coords]);
 
   const {
     handleSubmit,
@@ -88,17 +59,17 @@ export const PinForm = ({ onSubmit, initialValues, coords }: PinFormProps) => {
     watch,
     reset,
     formState: { errors },
-  } = useForm<PinFormValues>({
+  } = useForm<PinValues>({
     defaultValues: defaults,
-    resolver: zodResolver(pinSchema) as Resolver<PinFormValues>,
+    resolver: zodResolver(pinSchema) as unknown as Resolver<PinValues>,
     mode: 'onBlur',
   });
 
   useEffect(() => {
-    if (!isCreate && initialValues) {
-      reset(initialValues);
+    if (!isCreate && selectedPin) {
+      reset(selectedPin);
     }
-  }, [isCreate, initialValues?.id, reset, initialValues]);
+  }, [isCreate, selectedPin?.id, reset, selectedPin]);
 
   const values = watch();
 
@@ -139,12 +110,12 @@ export const PinForm = ({ onSubmit, initialValues, coords }: PinFormProps) => {
           <TextInput
             style={styles.input}
             onChangeText={(text) =>
-              setValue(name as keyof PinFormValues, text as PinFormValues[keyof PinFormValues], {
+              setValue(name as keyof PinValues, text as PinValues[keyof PinValues], {
                 shouldDirty: true,
                 shouldValidate: true,
               })
             }
-            value={(values[name as keyof PinFormValues] as string) ?? ''}
+            value={(values[name as keyof PinValues] as string) ?? ''}
             placeholder={`Enter ${label.toLowerCase()}`}
           />
           {errors[name as keyof typeof errors]?.message && (

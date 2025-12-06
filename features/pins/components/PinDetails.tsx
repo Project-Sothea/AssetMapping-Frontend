@@ -1,14 +1,17 @@
-import { View, Text, StyleSheet } from 'react-native';
-import type { Pin } from '~/db/schema';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import type { Pin } from 'features/pins/types/';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type PinDetailsProps = {
   pin: Pin;
   isSynced: boolean;
   onImagePress: (index: number) => void;
+  onEdit: () => void;
+  onViewForms: () => void;
 };
 
-export function PinDetails({ pin, isSynced, onImagePress }: PinDetailsProps) {
+export function PinDetails({ pin, isSynced, onImagePress, onEdit, onViewForms }: PinDetailsProps) {
   const badgeColor = isSynced ? '#10B981' : '#e74c3c';
 
   return (
@@ -19,7 +22,6 @@ export function PinDetails({ pin, isSynced, onImagePress }: PinDetailsProps) {
           <Text style={styles.statusText}>{isSynced ? 'Synced' : 'Unsynced'}</Text>
         </View>
       </View>
-
       {pin.images && (
         <FallbackImageList
           images={pin.images}
@@ -35,6 +37,15 @@ export function PinDetails({ pin, isSynced, onImagePress }: PinDetailsProps) {
       <View style={styles.infoCard}>
         <InfoRow label="City/Village" value={pin.cityVillage} />
         <InfoRow label="Address" value={pin.address} />
+      </View>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity onPress={onEdit} style={[styles.iconBtn, styles.editChip]}>
+          <MaterialIcons name="edit" size={22} color="#1d4ed8" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onViewForms} style={[styles.iconBtn, styles.formsChip]}>
+          <MaterialIcons name="description" size={22} color="#065f46" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -67,6 +78,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 12,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+  editChip: {
+    backgroundColor: '#e0ebff',
+  },
+  formsChip: {
+    backgroundColor: '#e7f5ec',
+  },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
   },
   imageScroll: { marginBottom: 12 },
   image: {

@@ -1,17 +1,18 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types';
 
 interface RadioGroupProps {
-  name: keyof Form;
+  name: keyof FormValues;
   options: { label: string; value: string | boolean }[];
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
   errors?: string;
   touched?: boolean;
   otherFieldName?: string;
   otherValue?: string;
   onOtherChange?: (text: string) => void;
+  disabled?: boolean;
 }
 
 export default function RadioGroup({
@@ -24,6 +25,7 @@ export default function RadioGroup({
   otherFieldName,
   otherValue,
   onOtherChange,
+  disabled = false,
 }: RadioGroupProps) {
   return (
     <View>
@@ -36,8 +38,12 @@ export default function RadioGroup({
             <View style={styles.checkboxContainer}>
               <Checkbox
                 value={isSelected}
-                onValueChange={() => setFieldValue(name, opt.value)}
+                onValueChange={() => {
+                  if (disabled) return;
+                  setFieldValue(name, opt.value);
+                }}
                 style={styles.checkbox}
+                disabled={disabled}
               />
               <Text style={styles.label}>{opt.label}</Text>
             </View>
@@ -50,6 +56,7 @@ export default function RadioGroup({
                 onChangeText={onOtherChange}
                 autoFocus
                 returnKeyType="done"
+                editable={!disabled}
               />
             )}
           </View>

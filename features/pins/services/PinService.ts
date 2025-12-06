@@ -9,18 +9,18 @@
  */
 
 import { db } from '~/services/drizzleDb';
-import { pins, type Pin } from '~/db/schema';
+import { pins } from '~/db/schema';
 import { eq } from 'drizzle-orm';
 import { enqueuePin } from '~/services/sync/queue/syncQueue';
 import * as ImageManager from '~/services/images/ImageManager';
 import { mapPinDbToPin, sanitizePinForDb } from '~/db/utils';
-import { PinFormValues } from '..//types/PinFormValues';
+import { Pin, PinUpdate, PinValues } from '..//types';
 
 // ============================================
 // CREATE
 // ============================================
 
-export async function createPin(pin: PinFormValues): Promise<Pin> {
+export async function createPin(pin: PinValues): Promise<Pin> {
   const newPin: Pin = {
     ...pin,
     createdAt: new Date().toISOString(),
@@ -40,7 +40,7 @@ export async function createPin(pin: PinFormValues): Promise<Pin> {
 // UPDATE
 // ============================================
 
-export async function updatePin(id: string, updates: Partial<PinFormValues>): Promise<Pin> {
+export async function updatePin(id: string, updates: PinUpdate): Promise<Pin> {
   const existing = await getPinById(id);
   if (!existing) {
     throw new Error(`Pin ${id} not found`);
@@ -91,6 +91,6 @@ export async function deletePin(id: string): Promise<void> {
 // ============================================
 
 export async function getPinById(id: string): Promise<Pin | null> {
-  const result = await db.select().from(pins).where(eq(pins.id, id)).limit(1);
-  return result[0] ? mapPinDbToPin(result[0]) : null;
+  const result = db.select().from(pins).where(eq(pins.id, id)).limit(1).get();
+  return result ? mapPinDbToPin(result) : null;
 }

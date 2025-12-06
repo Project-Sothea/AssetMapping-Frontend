@@ -1,15 +1,21 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import type { Form } from '~/db/schema';
+import { FormValues } from '../types';
 
 interface HealthSectionProps {
-  values: Form;
-  setFieldValue: (field: keyof Form, value: Form[keyof Form]) => void;
-  handleChange: (field: keyof Form) => (value: string) => void;
+  values: FormValues;
+  setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
+  handleChange: (field: keyof FormValues) => (value: string) => void;
+  disabled?: boolean;
 }
 
-export default function HealthSection({ values, setFieldValue, handleChange }: HealthSectionProps) {
+export default function HealthSection({
+  values,
+  setFieldValue,
+  handleChange,
+  disabled = false,
+}: HealthSectionProps) {
   return (
     <View style={{ gap: 12 }}>
       <Text style={styles.question}>Do you have any long-term conditions?</Text>
@@ -31,6 +37,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherLongTermConditions"
         otherValue={values.otherLongTermConditions ?? undefined}
         onOtherChange={handleChange('otherLongTermConditions')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>How do you manage your condition?</Text>
@@ -48,6 +55,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherManagementMethods"
         otherValue={values.otherManagementMethods ?? undefined}
         onOtherChange={handleChange('otherManagementMethods')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -69,6 +77,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherConditionDifficultyReasons"
         otherValue={values.otherConditionDifficultyReasons ?? undefined}
         onOtherChange={handleChange('otherConditionDifficultyReasons')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -88,6 +97,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherSelfCareActions"
         otherValue={values.otherSelfCareActions ?? undefined}
         onOtherChange={handleChange('otherSelfCareActions')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -106,6 +116,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherKnowWhereToFindDoctor"
         otherValue={values.otherKnowWhereToFindDoctor ?? undefined}
         onOtherChange={handleChange('otherKnowWhereToFindDoctor')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -124,6 +135,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherTransportToClinic"
         otherValue={values.otherTransportToClinic ?? undefined}
         onOtherChange={handleChange('otherTransportToClinic')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>Where do you go to buy your medicine?</Text>
@@ -140,6 +152,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherMedicinePurchaseLocations"
         otherValue={values.otherMedicinePurchaseLocations ?? undefined}
         onOtherChange={handleChange('otherMedicinePurchaseLocations')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>Do you know what the poverty card scheme is about?</Text>
@@ -156,6 +169,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherPovertyCardSchemeAwareness"
         otherValue={values.otherPovertyCardSchemeAwareness ?? undefined}
         onOtherChange={handleChange('otherPovertyCardSchemeAwareness')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>Do you brush your teeth?</Text>
@@ -173,6 +187,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherToothBrushingFrequency"
         otherValue={values.otherToothBrushingFrequency ?? undefined}
         onOtherChange={handleChange('otherToothBrushingFrequency')}
+        disabled={disabled}
       />
 
       <Text style={styles.question}>
@@ -183,6 +198,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         placeholder="Your answer"
         value={values.toothbrushAndToothpasteSource ?? ''}
         onChangeText={handleChange('toothbrushAndToothpasteSource')}
+        editable={!disabled}
       />
       <Text style={styles.question}>If not, why do you not have a toothbrush or toothpaste?</Text>
       <CheckboxGroup
@@ -200,6 +216,7 @@ export default function HealthSection({ values, setFieldValue, handleChange }: H
         otherFieldName="otherNoToothbrushOrToothpasteReasons"
         otherValue={values.otherNoToothbrushOrToothpasteReasons ?? undefined}
         onOtherChange={handleChange('otherNoToothbrushOrToothpasteReasons')}
+        disabled={disabled}
       />
     </View>
   );
