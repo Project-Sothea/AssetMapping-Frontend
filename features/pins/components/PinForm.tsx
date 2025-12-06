@@ -90,7 +90,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
       // Add filename to form
       const existing = Array.isArray(currentFilenames) ? currentFilenames : [];
       setValue('images', [...existing, newFilename], { shouldValidate: true, shouldDirty: true });
-      console.log('📥 Added image:', newFilename);
     } catch (error) {
       console.error('Failed to add image:', error);
     }
@@ -144,7 +143,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
                     onError={(e) =>
                       console.error(`❌ Image ${idx} failed to load:`, e.nativeEvent.error)
                     }
-                    onLoad={() => console.log(`✅ Image ${idx} loaded`)}
                   />
                   <Pressable
                     onPress={() => {
@@ -153,7 +151,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
                         shouldDirty: true,
                         shouldValidate: true,
                       });
-                      console.log('🗑️ Removed from form:', filename);
 
                       deleteImageByFilename(currentId, filename).catch((error) =>
                         console.warn('⚠️ Failed to delete local image', filename, error)

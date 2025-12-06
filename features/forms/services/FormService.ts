@@ -15,7 +15,6 @@ import type { FormUpdate, FormValues } from '../types';
 // ============================================
 
 export async function createForm(values: FormValues): Promise<Form> {
-  console.log('✅ Creating form for pin:', values);
   const newForm: Form = {
     ...values,
     id: v4(),
@@ -59,7 +58,6 @@ export async function updateForm(id: string, updates: FormUpdate): Promise<Form>
     ...existing,
     ...updates,
     updatedAt: new Date(), // Update timestamp
-    version: (existing.version || 1) + 1, // Increment version
     status: 'unsynced', // Mark as unsynced
   };
 

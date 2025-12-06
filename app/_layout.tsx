@@ -14,14 +14,9 @@ import { getDeviceId } from '~/shared/utils/getDeviceId';
 // Helper component to initialize real-time sync and initial data sync
 function SyncInitializer() {
   const deviceId = getDeviceId();
-  const { isLoading: initialSyncLoading, error: initialSyncError } = useInitialSync();
+  const { error: initialSyncError } = useInitialSync();
 
   useRealTimeSync(deviceId);
-
-  // Don't block UI - just log status
-  if (initialSyncLoading) {
-    console.log('🔄 Initial sync in progress...');
-  }
 
   // Show error if initial sync failed, but still allow app to continue
   if (initialSyncError) {
@@ -42,7 +37,6 @@ export default function RootLayout() {
       console.error('Migration error:', error);
     } else if (success) {
       setMigrationStatus('done');
-      console.log('✅ Database migrations completed');
     } else {
       setMigrationStatus('loading');
     }
@@ -55,8 +49,6 @@ export default function RootLayout() {
         try {
           // Add a small delay to ensure Drizzle has fully created tables
           await new Promise((resolve) => setTimeout(resolve, 100));
-
-          console.log('🔄 Running version column migration...');
         } catch (err) {
           console.error('❌ Version migration failed:', err);
           // Migration is idempotent, so failure is not critical

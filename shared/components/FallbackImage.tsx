@@ -67,8 +67,6 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     const exists = fileExistsLocally(pinId, filename);
 
     if (exists && !hasLocalFailed) {
-      console.log('📁 Using local file:', filename);
-      console.log(localPath);
       setSafeState(localPath, false);
       return cleanup;
     }
@@ -76,7 +74,6 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     // File doesn't exist locally or local failed, try remote
     const remoteUrl = await getRemoteUrl(pinId, filename);
     if (remoteUrl) {
-      console.log('🌐 Using remote URL:', filename);
       setSafeState(remoteUrl, false, true); // mark local failed so retries prefer cached/remote
 
       // Cache remote image for offline use (fire and forget)
@@ -121,7 +118,6 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
 
       // If local file failed, mark it and retry (will use remote)
       if (!hasLocalFailed) {
-        console.log('🔄 Local failed, falling back to remote:', filename);
         setHasLocalFailed(true);
         loadImage(); // Retry, will use remote URL this time
       }

@@ -2,12 +2,11 @@
  * Sync Operations - Backend API calls for pins and forms
  */
 
+import { Form, Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { pins, forms } from '~/db/schema';
-import { Form } from '~/features/forms/types';
-import { Pin } from '~/features/pins/types';
 import { fetchPin } from '~/services/api/pinsApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
@@ -63,7 +62,6 @@ export async function syncForm(operation: Operation, data: Form): Promise<void> 
       // Pull latest data from server (will overwrite local changes)
       await pullFormUpdate(data.id);
 
-      console.log(`✅ Replaced local form ${data.id} with server version (Last-Write-Wins)`);
       return; // Success - conflict resolved by accepting server data
     }
 
@@ -80,7 +78,6 @@ export async function syncForm(operation: Operation, data: Form): Promise<void> 
     // Update version from backend response to stay in sync
     if (response.data && typeof response.data === 'object' && 'version' in response.data) {
       updates.version = response.data.version;
-      console.log(`✅ Updated local form version to ${response.data.version}`);
     }
 
     await db.update(forms).set(updates).where(eq(forms.id, data.id));
@@ -153,7 +150,6 @@ async function syncPinToBackend(
       // Pull latest data from server (will overwrite local changes)
       await pullPinUpdate(data.id);
 
-      console.log(`✅ Replaced local pin ${data.id} with server version (Last-Write-Wins)`);
       return; // Success - conflict resolved by accepting server data
     }
 
@@ -187,7 +183,6 @@ async function updateLocalPinAfterSync(
   // Update version from backend response to stay in sync
   if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
     updates.version = syncedData.version;
-    console.log(`✅ Updated local version to ${syncedData.version}`);
   }
 
   await db.update(pins).set(updates).where(eq(pins.id, pinId));
@@ -204,7 +199,6 @@ async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void
     const contentType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
     const key = buildImageKey(pinId, imageId);
 
-    console.log(`⬆️ Uploading image via presigned URL: ${key}`);
     const upload = await getUploadUrl(key, contentType);
     if (!upload.success) {
       throw new Error(upload.error);

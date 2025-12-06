@@ -34,7 +34,6 @@ export async function createPin(pin: PinValues): Promise<Pin> {
 
   await db.insert(pins).values(sanitizePinForDb(newPin));
   await enqueuePin('create', newPin);
-  console.log('✅ Created pin:', newPin.id);
 
   return newPin;
 }
@@ -53,13 +52,11 @@ export async function updatePin(id: string, updates: PinUpdate): Promise<Pin> {
     ...existing,
     ...updates,
     updatedAt: new Date(),
-    version: (existing.version || 1) + 1,
     status: 'unsynced',
   };
 
   await db.update(pins).set(sanitizePinForDb(updated)).where(eq(pins.id, id));
   await enqueuePin('update', updated);
-  console.log('✅ Updated pin:', id);
 
   return updated;
 }
@@ -77,7 +74,6 @@ export async function deletePin(id: string): Promise<void> {
   if (filenames.length > 0) {
     try {
       await ImageManager.deleteImagesByFilename(id, filenames);
-      console.log('🗑️ Deleted pin images:', filenames.length);
     } catch (error) {
       console.error('Failed to delete pin images:', error);
       // Continue anyway
@@ -86,7 +82,6 @@ export async function deletePin(id: string): Promise<void> {
 
   await db.delete(pins).where(eq(pins.id, id));
   await enqueuePin('delete', { id });
-  console.log('✅ Deleted pin:', id);
 }
 
 // ============================================

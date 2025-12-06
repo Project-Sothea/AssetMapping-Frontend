@@ -114,7 +114,6 @@ export default function Map({ initialCoords }: MapProps = {}) {
     try {
       const loc = await MapboxGL.locationManager.getLastKnownLocation();
       const coords = loc?.coords;
-      console.log('📍 User location coords:', coords);
       if (!coords) {
         Alert.alert(
           'Location not ready',

@@ -95,13 +95,10 @@ export async function processQueue(): Promise<void> {
 
     if (!pending.length) return;
 
-    console.log(`🔄 Processing ${pending.length} queued operations`);
-
     for (const op of pending) {
       try {
         await processOperation(op);
         await markCompleted(op.id);
-        console.log(`✅ ${op.operation} ${op.entityType} ${op.entityId.slice(0, 8)}`);
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
         await handleError(op, errorObj);

@@ -32,7 +32,6 @@ export function DownloadedPacksList({ excludePackName, progress }: DownloadedPac
                     onPress: async () => {
                       try {
                         await deletePackMutation(item.name);
-                        console.log('Deleted pack:', item.name);
                       } catch (err) {
                         console.error('Delete error:', err);
                       }

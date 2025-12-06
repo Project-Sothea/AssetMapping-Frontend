@@ -7,15 +7,12 @@
 
 import type { Form, FormDB, Pin, PinDB } from '@assetmapping/shared-types';
 
-import { parseImageFilenames } from '~/services/images/ImageManager';
-
 /**
  * Sanitize data for SQLite - remove undefined values and convert Dates
  */
 export function sanitizeForDb(obj: unknown): unknown {
   if (obj === null || obj === undefined) return null;
   if (typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return obj.toISOString();
   if (Array.isArray(obj)) return obj.map(sanitizeForDb);
 
   const sanitized: Record<string, unknown> = {};
@@ -31,7 +28,7 @@ export function sanitizeForDb(obj: unknown): unknown {
  * Sanitize Pin for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizePinForDb(pin: Pin): PinDB & { id: string } {
+export function sanitizePinForDb(pin: Pin): PinDB {
   return {
     ...pin,
     images: jsonifyArray(pin.images),
@@ -41,7 +38,7 @@ export function sanitizePinForDb(pin: Pin): PinDB & { id: string } {
 export function mapPinDbToPin(pin: PinDB): Pin {
   return {
     ...pin,
-    images: parseImageFilenames(pin.images),
+    images: safeJsonStringParse(pin.images),
   };
 }
 
@@ -84,27 +81,27 @@ export function sanitizeFormForDb(form: Form): FormDB {
 export function mapFormDbToForm(form: FormDB): Form {
   return {
     ...form,
-    longTermConditions: JSON.parse(form.longTermConditions || '[]'),
-    managementMethods: JSON.parse(form.managementMethods || '[]'),
-    conditionDifficultyReasons: JSON.parse(form.conditionDifficultyReasons || '[]'),
-    selfCareActions: JSON.parse(form.selfCareActions || '[]'),
-    noToothbrushOrToothpasteReasons: JSON.parse(form.noToothbrushOrToothpasteReasons || '[]'),
-    diarrhoeaDefinition: JSON.parse(form.diarrhoeaDefinition || '[]'),
-    diarrhoeaActions: JSON.parse(form.diarrhoeaActions || '[]'),
-    commonColdSymptoms: JSON.parse(form.commonColdSymptoms || '[]'),
-    commonColdActions: JSON.parse(form.commonColdActions || '[]'),
-    mskInjuryDefinition: JSON.parse(form.mskInjuryDefinition || '[]'),
-    mskInjuryActions: JSON.parse(form.mskInjuryActions || '[]'),
-    hypertensionDefinition: JSON.parse(form.hypertensionDefinition || '[]'),
-    hypertensionActions: JSON.parse(form.hypertensionActions || '[]'),
-    unhealthyFoodReasons: JSON.parse(form.unhealthyFoodReasons || '[]'),
-    highCholesterolDefinition: JSON.parse(form.highCholesterolDefinition || '[]'),
-    highCholesterolActions: JSON.parse(form.highCholesterolActions || '[]'),
-    diabetesDefinition: JSON.parse(form.diabetesDefinition || '[]'),
-    diabetesActions: JSON.parse(form.diabetesActions || '[]'),
-    waterSources: JSON.parse(form.waterSources || '[]'),
-    unsafeWaterTypes: JSON.parse(form.unsafeWaterTypes || '[]'),
-    waterFilterNonUseReasons: JSON.parse(form.waterFilterNonUseReasons || '[]'),
+    longTermConditions: safeJsonStringParse(form.longTermConditions),
+    managementMethods: safeJsonStringParse(form.managementMethods),
+    conditionDifficultyReasons: safeJsonStringParse(form.conditionDifficultyReasons),
+    selfCareActions: safeJsonStringParse(form.selfCareActions),
+    noToothbrushOrToothpasteReasons: safeJsonStringParse(form.noToothbrushOrToothpasteReasons),
+    diarrhoeaDefinition: safeJsonStringParse(form.diarrhoeaDefinition),
+    diarrhoeaActions: safeJsonStringParse(form.diarrhoeaActions),
+    commonColdSymptoms: safeJsonStringParse(form.commonColdSymptoms),
+    commonColdActions: safeJsonStringParse(form.commonColdActions),
+    mskInjuryDefinition: safeJsonStringParse(form.mskInjuryDefinition),
+    mskInjuryActions: safeJsonStringParse(form.mskInjuryActions),
+    hypertensionDefinition: safeJsonStringParse(form.hypertensionDefinition),
+    hypertensionActions: safeJsonStringParse(form.hypertensionActions),
+    unhealthyFoodReasons: safeJsonStringParse(form.unhealthyFoodReasons),
+    highCholesterolDefinition: safeJsonStringParse(form.highCholesterolDefinition),
+    highCholesterolActions: safeJsonStringParse(form.highCholesterolActions),
+    diabetesDefinition: safeJsonStringParse(form.diabetesDefinition),
+    diabetesActions: safeJsonStringParse(form.diabetesActions),
+    waterSources: safeJsonStringParse(form.waterSources),
+    unsafeWaterTypes: safeJsonStringParse(form.unsafeWaterTypes),
+    waterFilterNonUseReasons: safeJsonStringParse(form.waterFilterNonUseReasons),
   };
 }
 /**
@@ -114,4 +111,14 @@ function jsonifyArray(value: string[]): string {
   if (Array.isArray(value)) return JSON.stringify(value);
   if (value === undefined || value === null) return '[]';
   return typeof value === 'string' ? value : JSON.stringify([value]);
+}
+
+export function safeJsonStringParse(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }

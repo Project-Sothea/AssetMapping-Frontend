@@ -93,25 +93,17 @@ async function fetchAndProcess<T extends Record<string, unknown>>(
   entityType: EntityType,
   fetcher: () => Promise<{ success: boolean; data?: T[]; error?: string }>,
   processor: (item: T) => Promise<void>,
-  operation: string
+  _operation: string
 ): Promise<void> {
-  console.log(`🔄 ${operation}`);
-
   const response = await fetcher();
 
   if (!response.success || !response.data) {
     throw new Error(response.error || `Failed to fetch ${entityType}s`);
   }
 
-  if (response.data.length === 0) {
-    console.log(`✅ No new ${entityType} updates`);
-    return;
-  }
+  if (response.data.length === 0) return;
 
-  const result = await processBatch(entityType, response.data, processor);
-  console.log(
-    `✅ Synced ${result.successCount}/${result.totalCount} ${entityType}s to local database`
-  );
+  await processBatch(entityType, response.data, processor);
 }
 
 /**
@@ -121,10 +113,8 @@ async function fetchAndProcessSingle<T extends Record<string, unknown>>(
   entityType: EntityType,
   fetcher: () => Promise<{ success: boolean; data?: T; error?: string }>,
   processor: (item: T) => Promise<void>,
-  operation: string
+  _operation: string
 ): Promise<void> {
-  console.log(`🔄 ${operation}`);
-
   const response = await fetcher();
 
   if (!response.success || !response.data) {
@@ -132,7 +122,6 @@ async function fetchAndProcessSingle<T extends Record<string, unknown>>(
   }
 
   await processor(response.data);
-  console.log(`✅ Synced ${entityType} to local database`);
 }
 
 // --- Public API ---
@@ -148,7 +137,6 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
       processPinData,
       `Pulling pin update from backend: ${pinId}`
     );
-    console.log(`✅ Updated local pin: ${pinId}`);
   } catch (error) {
     console.error(`❌ Failed to pull pin update: ${error}`);
     throw error;
@@ -166,7 +154,6 @@ export async function pullFormUpdate(formId: string): Promise<void> {
       processFormData,
       `Pulling form update from backend: ${formId}`
     );
-    console.log(`✅ Updated local form: ${formId}`);
   } catch (error) {
     console.error(`❌ Failed to pull form update: ${error}`);
     throw error;

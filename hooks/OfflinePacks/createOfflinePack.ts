@@ -8,13 +8,9 @@ export const CreateOfflinePack = async (
   setProgress: (progress: number) => void,
   setName: (name: string) => void
 ) => {
-  console.log('Creating pack with options:', options);
   try {
     // Create the offline pack
     await offlineManager.createPack(options, (pack, status) => {
-      console.log('Pack created:', pack.metadata);
-      console.log('Initial status:', status);
-
       // update progress + name
       if (status.percentage != null) {
         setProgress(status.percentage);

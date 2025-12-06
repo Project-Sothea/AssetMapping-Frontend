@@ -50,7 +50,6 @@ class WebSocketManager {
    */
   public async connect(userId: string): Promise<void> {
     if (this.userId === userId && this.isConnected()) {
-      console.log('✓ Already connected to WebSocket');
       return;
     }
 
@@ -159,7 +158,6 @@ class WebSocketManager {
       const wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
       const url = `${wsUrl}/ws/notifications?userId=${this.userId}`;
 
-      console.log('🔌 Connecting to WebSocket:', url);
       this.ws = new WebSocket(url);
 
       this.ws.onopen = this.handleOpen.bind(this);
@@ -180,8 +178,6 @@ class WebSocketManager {
    * Handle WebSocket open event
    */
   private handleOpen(): void {
-    console.log('✓ WebSocket connected');
-
     const wasReconnecting = this.status.status === 'reconnecting';
 
     this.updateStatus({
@@ -194,7 +190,6 @@ class WebSocketManager {
 
     // If this was a reconnection, trigger incremental sync
     if (wasReconnecting) {
-      console.log('🔄 Reconnected - triggering incremental sync');
       this.triggerReconnectSync();
     }
   }
@@ -236,8 +231,6 @@ class WebSocketManager {
    * Handle WebSocket close event
    */
   private handleClose(event: CloseEvent): void {
-    console.log('⊘ WebSocket closed:', event.code, event.reason);
-
     this.clearTimers();
 
     const wasConnected = this.status.isConnected;
@@ -272,10 +265,6 @@ class WebSocketManager {
     const delay = Math.min(
       this.baseReconnectDelay * Math.pow(2, this.status.reconnectAttempts),
       this.maxReconnectDelay
-    );
-
-    console.log(
-      `🔄 Reconnecting in ${delay}ms (attempt ${this.status.reconnectAttempts + 1}/${this.maxReconnectAttempts})`
     );
 
     this.updateStatus({

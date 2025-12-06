@@ -58,12 +58,6 @@ export async function enqueue(params: {
     if (existing.length > 0) {
       // Update existing operation with new payload and operation type
       const existingOp = existing[0];
-      console.log('🔄 Updating existing queue entry:', {
-        id: existingOp.id.slice(0, 8),
-        oldOperation: existingOp.operation,
-        newOperation: params.operation,
-        entityId: params.entityId.slice(0, 8),
-      });
 
       await db
         .update(syncQueue)
@@ -78,22 +72,11 @@ export async function enqueue(params: {
         })
         .where(eq(syncQueue.id, existingOp.id));
 
-      console.log(
-        `✅ Updated queue entry ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
-      );
       return existingOp.id;
     }
 
     // No existing operation - create new one
     const operationId = uuidv4();
-
-    console.log('🔍 Enqueueing:', {
-      id: operationId.slice(0, 8),
-      operation: params.operation,
-      entityType: params.entityType,
-      entityId: params.entityId.slice(0, 8),
-      payloadSize: payloadString.length,
-    });
 
     // Insert into queue
     await db.insert(syncQueue).values({
@@ -111,9 +94,6 @@ export async function enqueue(params: {
       createdAt: timestamp,
     });
 
-    console.log(
-      `✅ Queued ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
-    );
     return operationId;
   } catch (error) {
     console.error('❌ Enqueue DB error:', error);

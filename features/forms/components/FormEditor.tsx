@@ -183,7 +183,6 @@ export function FormEditor({
     };
 
   const handleSubmitForm = async (vals: FormValues) => {
-    console.log('✅ Submitting form with values:', vals);
     try {
       if (selectedForm) {
         await updateFormAsync({ id: selectedForm.id, values: vals });

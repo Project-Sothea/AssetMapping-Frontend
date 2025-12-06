@@ -47,19 +47,14 @@ export async function pickImage(): Promise<string | null> {
 // ============================================
 
 export async function saveImageLocally(pinId: string, imageUri: string): Promise<string> {
-  console.log(`💾 saveImageLocally: pinId=${pinId}, uri=${imageUri}`);
-
   const pinDir = new Directory(Paths.document, 'pins', pinId);
-  console.log(`📁 Pin dir: ${pinDir.uri}, exists=${pinDir.exists}`);
 
   if (!pinDir.exists) {
     pinDir.create({ intermediates: true });
-    console.log(`✅ Created directory: ${pinDir.uri}`);
   }
 
   // Extract filename from ImagePicker URI (already has UUID)
   const filename = imageUri.split('/').pop()!;
-  console.log(`🆕 Saving new image as: ${filename}`);
   const destFile = new File(pinDir, filename);
 
   destFile.create();
@@ -83,16 +78,11 @@ export async function deleteImageByFilename(pinId: string, filename: string): Pr
     const pinDir = new Directory(Paths.document, 'pins', pinId);
     const file = new File(pinDir, filename);
     // If file is already gone, treat as success
-    if ((file as any).exists === false) {
-      console.log('🗑️ Already deleted or missing:', filename);
-      return;
-    }
+    if ((file as any).exists === false) return;
     file.delete();
-    console.log('🗑️ Deleted:', filename);
   } catch (error) {
     // Ignore missing file errors, otherwise bubble up
     if (error instanceof Error && error.message.includes('does not exist')) {
-      console.log('🗑️ Already deleted or missing:', filename);
       return;
     }
     console.error('Failed to delete:', filename, error);
@@ -116,19 +106,6 @@ export async function deleteImagesByFilename(pinId: string, filenames: string[])
 // ============================================
 // UTILITIES - FILENAME BASED
 // ============================================
-
-/**
- * Parse image filenames from database
- */
-export function parseImageFilenames(value: string | null): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 /**
  * Get local file path for a filename

@@ -42,7 +42,6 @@ export function useRealTimeSync(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId) {
-      console.log('⊘ Real-time sync: No user ID, skipping connection');
       return;
     }
 
@@ -59,21 +58,16 @@ export function useRealTimeSync(userId: string | undefined) {
     // Subscribe to incoming messages
     const unsubscribe = webSocketManager.onMessage((message) => {
       if (!isSyncNotification(message)) {
-        console.log('📨 Ignoring non-sync notification:', message);
         return;
       }
 
       const notification = message;
-      console.log('🔄 WebSocket notification received:', notification);
 
       // Handle different message types
       switch (notification.type) {
         case 'pin':
-          console.log('📍 Pin update:', notification.action, notification.aggregateId);
-
           // Handle deleted pins differently - just invalidate cache, don't try to pull
           if (notification.action === 'deleted') {
-            console.log('🗑️  Pin deleted, invalidating cache');
             queryClient.invalidateQueries({
               queryKey: ['pins'],
               refetchType: 'active',
@@ -82,8 +76,6 @@ export function useRealTimeSync(userId: string | undefined) {
             // Pull updated pin data from backend and save to local database
             pullPinUpdate(notification.aggregateId)
               .then(() => {
-                console.log('✅ Pin data synced from backend to local DB');
-
                 // Invalidate React Query cache so UI updates from SQLite
                 queryClient.invalidateQueries({
                   queryKey: ['pins'],
@@ -97,20 +89,15 @@ export function useRealTimeSync(userId: string | undefined) {
 
           // Also process any pending local operations
           processQueue()
-            .then(() => {
-              console.log('✅ Auto-sync completed after pin update');
-            })
+            .then(() => {})
             .catch((err) => {
               console.warn('⚠️ Auto-sync failed after pin update:', err);
             });
           break;
 
         case 'form':
-          console.log('📋 Form update:', notification.action, notification.aggregateId);
-
           // Handle deleted forms differently - just invalidate cache, don't try to pull
           if (notification.action === 'deleted') {
-            console.log('🗑️  Form deleted, invalidating cache');
             queryClient.invalidateQueries({
               queryKey: ['forms'],
               refetchType: 'active',
@@ -119,8 +106,6 @@ export function useRealTimeSync(userId: string | undefined) {
             // Pull updated form data from backend and save to local database
             pullFormUpdate(notification.aggregateId)
               .then(() => {
-                console.log('✅ Form data synced from backend to local DB');
-
                 // Invalidate React Query cache so UI updates from SQLite
                 queryClient.invalidateQueries({
                   queryKey: ['forms'],
@@ -134,16 +119,13 @@ export function useRealTimeSync(userId: string | undefined) {
 
           // Also process any pending local operations
           processQueue()
-            .then(() => {
-              console.log('✅ Auto-sync completed after form update');
-            })
+            .then(() => {})
             .catch((err) => {
               console.warn('⚠️ Auto-sync failed after form update:', err);
             });
           break;
 
         default:
-          console.log('📨 Unknown notification:', notification);
       }
     });
 
