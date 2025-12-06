@@ -25,22 +25,13 @@
  * ```
  */
 
-import { useEffect } from 'react';
+import type { SyncNotification } from '@assetmapping/shared-types';
 import { useQueryClient } from '@tanstack/react-query';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { processQueue } from '~/services/sync/queue';
-import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
+import { useEffect } from 'react';
 
-interface NotificationMessage {
-  type: 'pin' | 'form' | 'image' | 'system' | 'welcome' | 'pong';
-  action?: string;
-  eventId?: string;
-  aggregateId?: string;
-  version?: number;
-  timestamp?: string;
-  payload?: any;
-  message?: string;
-}
+import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
+import { processQueue } from '~/services/sync/queue/syncQueue';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 
 /**
  * Connect to real-time notification WebSocket
@@ -51,7 +42,6 @@ export function useRealTimeSync(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId) {
-      console.log('⊘ Real-time sync: No user ID, skipping connection');
       return;
     }
 
@@ -66,109 +56,76 @@ export function useRealTimeSync(userId: string | undefined) {
     connectWebSocket();
 
     // Subscribe to incoming messages
-    const unsubscribe = webSocketManager.onMessage((message: NotificationMessage) => {
-      console.log('🔄 WebSocket notification received:', message);
+    const unsubscribe = webSocketManager.onMessage((message) => {
+      if (!isSyncNotification(message)) {
+        return;
+      }
+
+      const notification = message;
 
       // Handle different message types
-      switch (message.type) {
-        case 'welcome':
-          console.log('📨 Welcome:', message.message);
-          break;
-
-        case 'pong':
-          // Heartbeat response (handled by WebSocketManager)
-          break;
-
+      switch (notification.type) {
         case 'pin':
-          console.log('📍 Pin update:', message.action, message.aggregateId);
-
           // Handle deleted pins differently - just invalidate cache, don't try to pull
-          if (message.action === 'deleted') {
-            console.log('🗑️  Pin deleted, invalidating cache');
+          if (notification.action === 'deleted') {
             queryClient.invalidateQueries({
               queryKey: ['pins'],
               refetchType: 'active',
             });
-          } else if (message.aggregateId) {
+          } else if (notification.aggregateId) {
             // Pull updated pin data from backend and save to local database
-            pullPinUpdate(message.aggregateId)
+            pullPinUpdate(notification.aggregateId)
               .then(() => {
-                console.log('✅ Pin data synced from backend to local DB');
-
                 // Invalidate React Query cache so UI updates from SQLite
                 queryClient.invalidateQueries({
                   queryKey: ['pins'],
                   refetchType: 'active', // Only refetch if component is mounted
                 });
               })
-              .catch((err: any) => {
+              .catch((err) => {
                 console.warn('⚠️ Failed to pull pin update:', err);
               });
           }
 
           // Also process any pending local operations
           processQueue()
-            .then(() => {
-              console.log('✅ Auto-sync completed after pin update');
-            })
-            .catch((err: any) => {
+            .then(() => {})
+            .catch((err) => {
               console.warn('⚠️ Auto-sync failed after pin update:', err);
             });
           break;
 
         case 'form':
-          console.log('📋 Form update:', message.action, message.aggregateId);
-
           // Handle deleted forms differently - just invalidate cache, don't try to pull
-          if (message.action === 'deleted') {
-            console.log('🗑️  Form deleted, invalidating cache');
+          if (notification.action === 'deleted') {
             queryClient.invalidateQueries({
               queryKey: ['forms'],
               refetchType: 'active',
             });
-          } else if (message.aggregateId) {
+          } else if (notification.aggregateId) {
             // Pull updated form data from backend and save to local database
-            pullFormUpdate(message.aggregateId)
+            pullFormUpdate(notification.aggregateId)
               .then(() => {
-                console.log('✅ Form data synced from backend to local DB');
-
                 // Invalidate React Query cache so UI updates from SQLite
                 queryClient.invalidateQueries({
                   queryKey: ['forms'],
                   refetchType: 'active', // Only refetch if component is mounted
                 });
               })
-              .catch((err: any) => {
+              .catch((err) => {
                 console.warn('⚠️ Failed to pull form update:', err);
               });
           }
 
           // Also process any pending local operations
           processQueue()
-            .then(() => {
-              console.log('✅ Auto-sync completed after form update');
-            })
-            .catch((err: any) => {
+            .then(() => {})
+            .catch((err) => {
               console.warn('⚠️ Auto-sync failed after form update:', err);
             });
           break;
 
-        case 'image':
-          console.log('🖼️  Image update:', message.action);
-          // Refetch the entity that owns the image
-          if (message.payload?.entityType && message.payload?.entityId) {
-            queryClient.invalidateQueries({
-              queryKey: [message.payload.entityType + 's', message.payload.entityId],
-            });
-          }
-          break;
-
-        case 'system':
-          console.log('🔔 System notification:', message.message);
-          break;
-
         default:
-          console.log('📨 Unknown notification:', message);
       }
     });
 
@@ -179,4 +136,14 @@ export function useRealTimeSync(userId: string | undefined) {
       // The WebSocketManager handles connection lifecycle
     };
   }, [userId, queryClient]);
+}
+
+function isSyncNotification(message: unknown): message is SyncNotification {
+  if (!message || typeof message !== 'object') return false;
+  const m = message as Record<string, unknown>;
+  return (
+    (m.type === 'pin' || m.type === 'form') &&
+    typeof m.action === 'string' &&
+    typeof m.aggregateId === 'string'
+  );
 }

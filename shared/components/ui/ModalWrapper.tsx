@@ -32,7 +32,7 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ visible, onClose, title, ch
             {children}
 
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={{ color: 'white', fontWeight: 'bold' }}>Cancel</Text>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Close</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     width: '90%',
     maxHeight: '90%',
-    padding: 20,
+    padding: 30,
     borderRadius: 12,
     flex: 1,
   },

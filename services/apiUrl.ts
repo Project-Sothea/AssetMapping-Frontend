@@ -2,9 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL_KEY = 'api_url';
 
-export const getApiUrl = async (): Promise<string | null> => {
+export const getApiUrl = async (): Promise<string> => {
   const storedUrl = await AsyncStorage.getItem(API_URL_KEY);
-  return storedUrl || null;
+  return storedUrl ?? process.env.EXPO_PUBLIC_API_URL ?? '';
 };
 
 export const setApiUrl = async (url: string): Promise<void> => {

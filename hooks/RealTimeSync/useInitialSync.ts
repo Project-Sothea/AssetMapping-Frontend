@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+
 import { performFullSync } from '~/services/sync/syncService';
 import { usePopup } from '~/shared/contexts/PopupContext';
 

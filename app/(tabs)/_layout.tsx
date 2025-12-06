@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { SyncStatusBar } from '~/shared/components/SyncStatusBar';
+import { Tabs } from 'expo-router';
+
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
+import { SyncStatusBar } from '~/shared/components/SyncStatusBar';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -14,30 +15,32 @@ export default function Layout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // completely hide the header "(tabs)""
+        headerShown: false,
       }}>
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Pins',
           headerShown: true,
           headerTitle: () => <SyncStatusBar />,
           headerTitleAlign: 'center',
           headerRight: () => <ReconnectButton />,
-          tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="home" color={color} />,
+          headerRightContainerStyle: { paddingRight: 15 },
+          tabBarIcon: ({ color }) => <TabBarIcon name="map-pin" color={color} />,
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
-          headerShown: false, // keeping this as you had it
-          tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="map" color={color} />,
+          title: 'Map',
+          tabBarIcon: ({ color }) => <TabBarIcon name="map" color={color} />,
         }}
       />
       <Tabs.Screen
         name="download"
         options={{
-          // Remove the title here as well
-          tabBarIcon: ({ color = 'black' }) => <TabBarIcon name="book" color={color} />,
+          title: 'Download',
+          tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
         }}
       />
     </Tabs>

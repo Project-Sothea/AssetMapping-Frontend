@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+
 import { CreateOfflinePack } from './createOfflinePack';
 import { CreateOfflinePackProps } from './types';
 
@@ -17,8 +18,3 @@ export default function useCreatePack() {
 
   return { ...mutation, progress, name };
 }
-
-/*
-Errors:
-1.  ERROR  [Error: Offline pack with name Sre O Primary School already exists.]
-*/

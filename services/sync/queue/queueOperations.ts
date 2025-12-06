@@ -1,20 +1,25 @@
-import { v4 as uuidv4 } from 'uuid';
 import { eq, and, or } from 'drizzle-orm';
-import { db } from '~/services/drizzleDb';
+import { v4 as uuidv4 } from 'uuid';
+
 import { syncQueue } from '~/db/schema';
+import { db } from '~/services/drizzleDb';
+import { safeJsonParse } from '~/shared/utils/parsing';
+
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
-import { sanitizeForDb } from '~/db/utils';
-import { safeJsonParse } from '~/shared/utils/parsing';
 
 /**
  * Sync a queued operation to remote by syncing the entity (pin or form) based on its type and operation.
  * @param op - The operation object from the queue.
  */
-export async function processOperation(op: any): Promise<void> {
+export async function processOperation(op: {
+  entityType: string;
+  operation: string;
+  payload: string;
+}): Promise<void> {
   const payload = safeJsonParse(op.payload, {});
-  if (op.entityType === 'pin') await syncPin(op.operation, payload);
-  else await syncForm(op.operation, payload);
+  if (op.entityType === 'pin') await syncPin(op.operation as Operation, payload as any);
+  else await syncForm(op.operation as Operation, payload as any);
 }
 
 /**
@@ -27,14 +32,13 @@ export async function enqueue(params: {
   operation: Operation;
   entityType: EntityType;
   entityId: string;
-  payload: any;
+  payload: Record<string, unknown>;
 }): Promise<string> {
   try {
     const timestamp = new Date().toISOString();
 
     // Sanitize payload to ensure it's SQLite-safe
-    const sanitizedPayload = sanitizeForDb(params.payload);
-    const payloadString = JSON.stringify(sanitizedPayload);
+    const payloadString = JSON.stringify(params.payload);
 
     // Check if there's an existing pending/failed operation for this entity
     const existing = await db
@@ -52,12 +56,6 @@ export async function enqueue(params: {
     if (existing.length > 0) {
       // Update existing operation with new payload and operation type
       const existingOp = existing[0];
-      console.log('🔄 Updating existing queue entry:', {
-        id: existingOp.id.slice(0, 8),
-        oldOperation: existingOp.operation,
-        newOperation: params.operation,
-        entityId: params.entityId.slice(0, 8),
-      });
 
       await db
         .update(syncQueue)
@@ -72,22 +70,11 @@ export async function enqueue(params: {
         })
         .where(eq(syncQueue.id, existingOp.id));
 
-      console.log(
-        `✅ Updated queue entry ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
-      );
       return existingOp.id;
     }
 
     // No existing operation - create new one
     const operationId = uuidv4();
-
-    console.log('🔍 Enqueueing:', {
-      id: operationId.slice(0, 8),
-      operation: params.operation,
-      entityType: params.entityType,
-      entityId: params.entityId.slice(0, 8),
-      payloadSize: payloadString.length,
-    });
 
     // Insert into queue
     await db.insert(syncQueue).values({
@@ -105,18 +92,17 @@ export async function enqueue(params: {
       createdAt: timestamp,
     });
 
-    console.log(
-      `✅ Queued ${params.operation} ${params.entityType} ${params.entityId.slice(0, 8)}`
-    );
     return operationId;
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Enqueue DB error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      operation: params.operation,
-      entityType: params.entityType,
-    });
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        operation: params.operation,
+        entityType: params.entityType,
+      });
+    }
     throw error;
   }
 }
@@ -137,7 +123,10 @@ export async function markCompleted(operationId: string): Promise<void> {
  * @param op - The operation object that failed.
  * @param error - The error that occurred.
  */
-export async function handleError(op: any, error: Error): Promise<void> {
+export async function handleError(
+  op: { id: string; attempts: number; maxAttempts: number },
+  error: Error
+): Promise<void> {
   const attempts = op.attempts + 1;
   const isRetriable = error.message.includes('network') || error.message.includes('timeout');
   const update = { attempts, lastError: error.message, lastAttemptAt: new Date().toISOString() };

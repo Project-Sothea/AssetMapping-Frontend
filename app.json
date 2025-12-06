@@ -21,12 +21,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Show current location on map."
+          "locationWhenInUsePermission": "Show current location on map.",
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-sqlite",
-      "expo-web-browser",
-      "expo-font",
       [
         "expo-image-picker",
         {
@@ -54,7 +53,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app needs access to your camera",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library"
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library",
+        "NSLocationWhenInUseUsageDescription": "Allow SO'FORM to access your location to show your position on the map"
       }
     },
     "android": {
@@ -65,13 +65,14 @@
       "package": "com.anonymous.AssetMapApp",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3e539786-199b-4155-a9f6-bdbbe1603eb7"
+        "projectId": "d2c9d6b5-4270-44c2-a31b-5ac53cb5f93f"
       }
     }
   }

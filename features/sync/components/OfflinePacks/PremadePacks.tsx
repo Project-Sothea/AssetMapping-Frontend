@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
+
 import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import MapboxGL from '~/services/mapbox';
+import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
 
 interface Props {
   onPress: (options: CreateOfflinePackProps) => void;
-  progress?: number;        // 0..100
-  frameless?: boolean;      // if true, no white card wrapper (use when parent provides a card)
+  progress?: number; // 0..100
+  frameless?: boolean; // if true, no white card wrapper (use when parent provides a card)
 }
 
 const presets: { id: string; title: string; options: CreateOfflinePackProps }[] = [
@@ -21,7 +22,7 @@ const presets: { id: string; title: string; options: CreateOfflinePackProps }[] 
       maxZoom: 22,
       bounds: [
         [103.4002733, 12.8410923], // top-right (lng, lat)
-        [103.3813691, 12.81801],   // bottom-left (lng, lat)
+        [103.3813691, 12.81801], // bottom-left (lng, lat)
       ],
     },
   },
@@ -35,7 +36,7 @@ const presets: { id: string; title: string; options: CreateOfflinePackProps }[] 
       maxZoom: 22,
       bounds: [
         [103.2235287, 12.7260237], // top-right (lng, lat)
-        [103.1956291, 12.695662],  // bottom-left (lng, lat)
+        [103.1956291, 12.695662], // bottom-left (lng, lat)
       ],
     },
   },
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 16
+    marginBottom: 16,
   },
   cell: {
     flexBasis: '48%', // two per row

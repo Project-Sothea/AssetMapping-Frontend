@@ -1,17 +1,16 @@
+import type { Pin } from '@assetmapping/shared-types';
+import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
-import { Stack, useRouter, useFocusEffect } from 'expo-router';
-import { ImageBackground, StyleSheet } from 'react-native';
-import { SearchBar } from '~/shared/components/ui/SearchBar';
+import { ImageBackground, StyleSheet, FlatList, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import backgroundImage from '~/assets/home-background.png';
+import { PinCard } from '~/features/pins/components/PinCard';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
-import { Pin } from '~/db/schema';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 
-// Import your background image
-// Place your image in assets folder, e.g., assets/home-background.png
-const backgroundImage = require('~/assets/home-background.png');
-
-export default function Home() {
-  const { data: pins = [] } = useFetchLocalPins(); // live reactive pins
+export default function PinScreen() {
+  const pins = useFetchLocalPins(); // live reactive pins
   const [query, setQuery] = useState('');
   const router = useRouter();
 
@@ -27,11 +26,10 @@ export default function Home() {
 
   // Filter pins based on search query
   const filteredPins = useMemo(() => {
-    const visiblePins = pins.filter((pin) => !pin.deletedAt); // exclude deleted pins
-    if (!query.trim()) return visiblePins;
+    if (!query.trim()) return pins;
 
     const lowerQuery = query.toLowerCase();
-    return visiblePins.filter((pin) => pin.name?.toLowerCase().includes(lowerQuery));
+    return pins.filter((pin) => pin.name?.toLowerCase().includes(lowerQuery));
   }, [query, pins]);
 
   const handleNavigateToMap = (pin: Pin) => {
@@ -40,28 +38,33 @@ export default function Home() {
       params: {
         lat: pin.lat,
         lng: pin.lng,
-        pinId: pin.id,
       },
     });
   };
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Home' }} />
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
       <ImageBackground
-        source={backgroundImage} // Uncomment when you add your image
+        source={backgroundImage}
         style={styles.background}
         resizeMode="cover"
         imageStyle={styles.backgroundImage}>
-        <SearchBar
+        <TextInput
           placeholder="Find pin..."
-          query={query}
-          onQueryChange={setQuery}
-          results={filteredPins}
-          onNavigateToMap={handleNavigateToMap}
+          value={query}
+          onChangeText={setQuery}
+          style={styles.searchInput}
+          placeholderTextColor="#888"
+        />
+        <FlatList
+          data={filteredPins}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
       </ImageBackground>
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -70,6 +73,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundImage: {
-    opacity: 0.4, // Adjust opacity so content is readable
+    opacity: 0.4,
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 });

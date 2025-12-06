@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Pressable, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
+import React, { useState, useRef, useEffect } from 'react';
+import { Pressable, ActivityIndicator } from 'react-native';
+
 import { useWebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { usePopup } from '~/shared/contexts/PopupContext';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 export function ReconnectButton() {
   const { isConnected } = useWebSocketStatus();
@@ -50,26 +51,10 @@ export function ReconnectButton() {
   }
 
   return (
-    <View style={styles.container}>
-      <Pressable
-        onPress={handleReconnect}
-        style={({ pressed }) => [styles.button, { transform: [{ scale: pressed ? 0.8 : 1 }] }]}>
-        {icon}
-      </Pressable>
-    </View>
+    <Pressable
+      onPress={handleReconnect}
+      style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.8 : 1 }] }]}>
+      {icon}
+    </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-    alignItems: 'center',
-  },
-  button: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

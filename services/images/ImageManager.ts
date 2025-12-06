@@ -1,44 +1,179 @@
 /**
- * ImageManager.ts
- * Facade that provides a simple, high-level API for all image operations.
+ * ImageManager - Simple filename-based image handling
+ *
+ * Key concept: Store only FILENAMES (UUIDs) in database
+ * Construct paths dynamically:
+ * - Local: /pins/{pinId}/{filename}
+ * - Remote: {apiUrl}/uploads/pin/{pinId}/{filename}
+ *
+ * Workflow:
+ * 1. User picks → save with UUID filename → store filename in DB
+ * 2. Display → construct local path from filename
+ * 3. Sync → upload by filename, backend uses same filename
+ * 4. Delete → easy to track (compare filename arrays)
  */
 
-import { pickImage } from './imagePicker/ImagePicker';
-import * as ImageStorage from './imageStorage/ImageStorage';
-import { imageUpload } from './imageUpload/ImageUpload';
+import { fetch } from 'expo/fetch';
+import { Directory, File, Paths } from 'expo-file-system/next';
+import * as ImagePicker from 'expo-image-picker';
 
-/**
- * Download remote images for offline use with error handling and logging
- * Returns local file paths for successfully downloaded images
- */
-async function downloadRemoteImages(entityId: string, remoteUrls: string[]): Promise<string[]> {
-  if (remoteUrls.length === 0) {
-    return [];
+import { getDownloadUrl } from '../api/storageApi';
+
+// ============================================
+// PICK IMAGE
+// ============================================
+
+export async function pickImage(): Promise<string | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    throw new Error('Permission to access media library is required');
   }
 
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: false,
+    quality: 0.8,
+  });
+
+  if (result.canceled) {
+    return null;
+  }
+
+  return result.assets[0].uri;
+}
+
+// ============================================
+// SAVE LOCALLY
+// ============================================
+
+export async function saveImageLocally(pinId: string, imageUri: string): Promise<string> {
+  const pinDir = new Directory(Paths.document, 'pins', pinId);
+
+  if (!pinDir.exists) {
+    pinDir.create({ intermediates: true });
+  }
+
+  // Extract filename from ImagePicker URI (already has UUID)
+  const filename = imageUri.split('/').pop()!;
+  const destFile = new File(pinDir, filename);
+
+  destFile.create();
+  const response = await fetch(imageUri);
+  if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+
+  const bytes = await response.bytes();
+  destFile.write(bytes);
+  return filename;
+}
+
+// ============================================
+// DELETE LOCALLY
+// ============================================
+
+/**
+ * Delete image by filename
+ */
+export async function deleteImageByFilename(pinId: string, filename: string): Promise<void> {
   try {
-    const result = await ImageStorage.saveNewImages(entityId, remoteUrls);
-
-    if (result.fail.length > 0) {
-      console.warn(
-        `⚠️ Entity ${entityId}: Failed to download ${result.fail.length}/${remoteUrls.length} images`
-      );
-    }
-
-    return result.success;
+    const pinDir = new Directory(Paths.document, 'pins', pinId);
+    const file = new File(pinDir, filename);
+    // If file is already gone, treat as success
+    if ((file as any).exists === false) return;
+    file.delete();
   } catch (error) {
-    console.error(`❌ Entity ${entityId}: Failed to download images:`, error);
-    // Return empty array on failure - sync can continue without images
-    return [];
+    // Ignore missing file errors, otherwise bubble up
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      return;
+    }
+    console.error('Failed to delete:', filename, error);
+    throw error;
   }
 }
 
-export const ImageManager = {
-  pick: pickImage,
-  saveImages: ImageStorage.saveNewImages,
-  deleteImages: ImageStorage.deleteImages,
-  uploadImages: imageUpload,
-  downloadRemoteImages,
-};
+/**
+ * Delete multiple images by filename
+ */
+export async function deleteImagesByFilename(pinId: string, filenames: string[]): Promise<void> {
+  for (const filename of filenames) {
+    try {
+      await deleteImageByFilename(pinId, filename);
+    } catch {
+      // Continue with other files
+    }
+  }
+}
 
-export default ImageManager;
+// ============================================
+// UTILITIES - FILENAME BASED
+// ============================================
+
+/**
+ * Get local file path for a filename
+ */
+export function getLocalPath(pinId: string, filename: string): string {
+  const pinDir = new Directory(Paths.document, 'pins', pinId);
+  const file = new File(pinDir, filename);
+  return file.uri;
+}
+
+/**
+ * Get remote URL for a filename
+ */
+export async function getRemoteUrl(pinId: string, filename: string): Promise<string | null> {
+  try {
+    const key = `pins/${pinId}/${filename}`;
+    const response = await getDownloadUrl(key);
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to fetch remote image URL from storage', error);
+  }
+
+  return null;
+}
+
+/**
+ * Download a remote image and cache it locally for offline use.
+ * Returns the local URI on success, or null on failure.
+ */
+export async function cacheRemoteImage(
+  pinId: string,
+  filename: string,
+  remoteUrl: string
+): Promise<string | null> {
+  try {
+    const pinDir = new Directory(Paths.document, 'pins', pinId);
+    if (!pinDir.exists) {
+      pinDir.create({ intermediates: true });
+    }
+
+    const destFile = new File(pinDir, filename);
+    const response = await fetch(remoteUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status}`);
+    }
+
+    destFile.create();
+    const bytes = await response.bytes();
+    destFile.write(bytes);
+    return destFile.uri;
+  } catch (error) {
+    console.warn('⚠️ Failed to cache remote image locally', { pinId, filename, error });
+    return null;
+  }
+}
+
+/**
+ * Check if file exists locally
+ */
+export function fileExistsLocally(pinId: string, filename: string): boolean {
+  try {
+    const pinDir = new Directory(Paths.document, 'pins', pinId);
+    const file = new File(pinDir, filename);
+    return (file as any).exists ?? false;
+  } catch {
+    return false;
+  }
+}

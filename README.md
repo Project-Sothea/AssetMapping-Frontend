@@ -47,7 +47,6 @@ npx expo run:android
 - **Backend API** for sync operations (Express.js)
 - **Supabase** for database (via backend)
 - **React Query** for API state
-- **Jest** for testing
 
 ## Project Structure
 

@@ -13,18 +13,17 @@
  */
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
-import { safeJsonParse } from '~/shared/utils/parsing';
 import { getApiUrl } from '~/services/apiUrl';
+import { performIncrementalSync } from '~/services/sync/syncService';
+import { safeJsonParse } from '~/shared/utils/parsing';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
-type MessageHandler = (message: any) => void;
+type MessageHandler = (message: Record<string, unknown>) => void;
 
 class WebSocketManager {
   private ws: WebSocket | null = null;
   private userId: string | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-  private pingInterval: ReturnType<typeof setInterval> | null = null;
-  private pingStartTime: number | null = null;
 
   // Status tracking
   private status: WebSocketStatus = {
@@ -46,16 +45,11 @@ class WebSocketManager {
   private readonly maxReconnectDelay = 30000; // 30 seconds
   private readonly maxReconnectAttempts = 10;
 
-  constructor() {
-    // apiUrl is now fetched dynamically
-  }
-
   /**
    * Connect to WebSocket server
    */
   public async connect(userId: string): Promise<void> {
     if (this.userId === userId && this.isConnected()) {
-      console.log('✓ Already connected to WebSocket');
       return;
     }
 
@@ -126,7 +120,7 @@ class WebSocketManager {
   /**
    * Send a message through the WebSocket
    */
-  public send(message: any): boolean {
+  public send(message: Record<string, unknown>): boolean {
     if (!this.isConnected()) {
       console.warn('Cannot send message: WebSocket not connected');
       return false;
@@ -164,7 +158,6 @@ class WebSocketManager {
       const wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
       const url = `${wsUrl}/ws/notifications?userId=${this.userId}`;
 
-      console.log('🔌 Connecting to WebSocket:', url);
       this.ws = new WebSocket(url);
 
       this.ws.onopen = this.handleOpen.bind(this);
@@ -185,8 +178,6 @@ class WebSocketManager {
    * Handle WebSocket open event
    */
   private handleOpen(): void {
-    console.log('✓ WebSocket connected');
-
     const wasReconnecting = this.status.status === 'reconnecting';
 
     this.updateStatus({
@@ -199,12 +190,8 @@ class WebSocketManager {
 
     // If this was a reconnection, trigger incremental sync
     if (wasReconnecting) {
-      console.log('🔄 Reconnected - triggering incremental sync');
       this.triggerReconnectSync();
     }
-
-    // Start ping/pong health check
-    this.startPingInterval();
   }
 
   /**
@@ -213,13 +200,6 @@ class WebSocketManager {
   private handleMessage(event: MessageEvent): void {
     try {
       const message = safeJsonParse(event.data, { type: 'unknown' });
-
-      // Handle pong response for latency measurement
-      if (message.type === 'pong' && this.pingStartTime) {
-        const latency = Date.now() - this.pingStartTime;
-        this.updateStatus({ latency });
-        this.pingStartTime = null;
-      }
 
       // Notify all message handlers
       this.messageHandlers.forEach((handler) => {
@@ -251,8 +231,6 @@ class WebSocketManager {
    * Handle WebSocket close event
    */
   private handleClose(event: CloseEvent): void {
-    console.log('⊘ WebSocket closed:', event.code, event.reason);
-
     this.clearTimers();
 
     const wasConnected = this.status.isConnected;
@@ -289,10 +267,6 @@ class WebSocketManager {
       this.maxReconnectDelay
     );
 
-    console.log(
-      `🔄 Reconnecting in ${delay}ms (attempt ${this.status.reconnectAttempts + 1}/${this.maxReconnectAttempts})`
-    );
-
     this.updateStatus({
       status: 'reconnecting',
       reconnectAttempts: this.status.reconnectAttempts + 1,
@@ -306,31 +280,12 @@ class WebSocketManager {
   }
 
   /**
-   * Start ping interval for health monitoring
-   */
-  private startPingInterval(): void {
-    this.clearTimers();
-
-    this.pingInterval = setInterval(() => {
-      if (this.isConnected()) {
-        this.pingStartTime = Date.now();
-        this.send({ type: 'ping' });
-      }
-    }, 30000); // Every 30 seconds
-  }
-
-  /**
    * Clear all timers
    */
   private clearTimers(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
     }
   }
 
@@ -340,8 +295,6 @@ class WebSocketManager {
    */
   private async triggerReconnectSync(): Promise<void> {
     try {
-      // Dynamic import to avoid circular dependency
-      const { performIncrementalSync } = await import('~/services/sync/syncService');
       await performIncrementalSync();
     } catch (error) {
       console.error('Failed to perform incremental sync after reconnect:', error);

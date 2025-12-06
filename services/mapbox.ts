@@ -1,6 +1,4 @@
 import MapboxGL from '@rnmapbox/maps';
 
-MapboxGL.setAccessToken(
-  'pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw'
-);
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_KEY || '');
 export default MapboxGL;

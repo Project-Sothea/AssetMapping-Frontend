@@ -1,11 +1,12 @@
+import type { Pin } from '@assetmapping/shared-types';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Pin } from '~/db/schema';
+
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
-import { MaterialIcons } from '@expo/vector-icons';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type PinCardProps = {
@@ -15,7 +16,7 @@ type PinCardProps = {
 
 export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const router = useRouter();
-  const { data: forms = [] } = useFetchForms(pin.id);
+  const forms = useFetchForms(pin.id);
 
   // Check sync status from operations table
   const isSynced = usePinQueueStatus(pin.id);
@@ -24,7 +25,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   const handleViewForms = () => {
-    router.push({ pathname: '/form/[pinId]', params: { pinId: pin.id, pinName: pin.name } });
+    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
   };
 
   const renderRightActions = () => {
@@ -62,11 +63,10 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
           {pin.description && <Text style={styles.description}>{pin.description}</Text>}
 
           {/* Display images using FallbackImageList */}
-          {(pin.localImages || pin.images) && (
+          {pin.images && (
             <FallbackImageList
-              localImages={pin.localImages}
-              remoteImages={pin.images}
-              entityId={pin.id}
+              images={pin.images}
+              pinId={pin.id}
               imageStyle={styles.thumbnail}
               containerStyle={styles.imageScroll}
             />

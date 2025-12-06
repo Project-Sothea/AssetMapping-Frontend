@@ -2,16 +2,17 @@
  * Pull Updates from Backend
  *
  * Fetches updated entities from backend and saves to local SQLite database
- * Downloads remote images to local storage for offline access
  */
 
-import { db } from '~/services/drizzleDb';
-import { pins, forms } from '~/db/schema';
-import { apiClient } from '~/services/apiClient';
-import { sanitizePinForDb, sanitizeFormForDb } from '~/db/utils';
+import type { Pin, Form } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { ImageManager } from '~/services/images/ImageManager';
-import { parseJsonArray } from '~/shared/utils/parsing';
+
+import { pins, forms } from '~/db/schema';
+import { sanitizePinForDb, sanitizeFormForDb, mapPinDbToPin } from '~/db/utils';
+import { fetchForm, fetchForms, fetchFormsSince } from '~/services/api/formsApi';
+import { fetchPin, fetchPins, fetchPinsSince } from '~/services/api/pinsApi';
+import { db } from '~/services/drizzleDb';
+import { deleteImagesByFilename } from '~/services/images/ImageManager';
 
 // --- Types ---
 type EntityType = 'pin' | 'form';
@@ -25,44 +26,41 @@ interface ProcessResult {
 
 /**
  * Helper: Process and save a single pin to local database
- * Downloads remote images to local storage for offline access
  */
-async function processPinData(pinData: Record<string, unknown>): Promise<void> {
-  const pinId = pinData.id as string;
+async function processPinData(pinData: Pin): Promise<void> {
+  const pinId = pinData.id;
 
-  const remoteUrls = parseJsonArray(pinData.images as string);
-  const localImagePaths = await ImageManager.downloadRemoteImages(pinId, remoteUrls);
+  const sanitized = sanitizePinForDb(pinData);
 
-  const sanitized = sanitizePinForDb({
-    ...pinData,
-    localImages: localImagePaths.length > 0 ? JSON.stringify(localImagePaths) : pinData.localImages,
-  });
+  // Remove local files that no longer exist on the backend
+  const existing = await db.select().from(pins).where(eq(pins.id, pinId)).limit(1);
+  if (existing.length > 0) {
+    const existingPin = mapPinDbToPin(existing[0]);
+    const existingFilenames = existingPin.images || [];
+    const backendSet = new Set(pinData.images || []);
+    const removed = existingFilenames.filter((name: string) => !backendSet.has(name));
+    if (removed.length > 0) {
+      await deleteImagesByFilename(pinId, removed);
+    }
+  }
 
-  await upsertEntity(pins, sanitized, pinId);
+  if (existing.length > 0) {
+    await db.update(pins).set(sanitized).where(eq(pins.id, pinId));
+  } else {
+    await db.insert(pins).values(sanitized);
+  }
 }
 
 /**
  * Helper: Process and save a single form to local database
  */
-async function processFormData(formData: Record<string, unknown>): Promise<void> {
+async function processFormData(formData: Form): Promise<void> {
   const sanitized = sanitizeFormForDb(formData);
-  await upsertEntity(forms, sanitized, sanitized.id);
-}
-
-/**
- * Generic upsert helper - insert or update entity
- */
-async function upsertEntity<T extends { id: string }>(
-  table: typeof pins | typeof forms,
-  data: T,
-  id: string
-): Promise<void> {
-  const existing = await db.select().from(table).where(eq(table.id, id)).limit(1);
-
+  const existing = await db.select().from(forms).where(eq(forms.id, sanitized.id)).limit(1);
   if (existing.length > 0) {
-    await db.update(table).set(data).where(eq(table.id, id));
+    await db.update(forms).set(sanitized).where(eq(forms.id, sanitized.id));
   } else {
-    await db.insert(table).values(data);
+    await db.insert(forms).values(sanitized);
   }
 }
 
@@ -95,25 +93,17 @@ async function fetchAndProcess<T extends Record<string, unknown>>(
   entityType: EntityType,
   fetcher: () => Promise<{ success: boolean; data?: T[]; error?: string }>,
   processor: (item: T) => Promise<void>,
-  operation: string
+  _operation: string
 ): Promise<void> {
-  console.log(`🔄 ${operation}`);
-
   const response = await fetcher();
 
   if (!response.success || !response.data) {
     throw new Error(response.error || `Failed to fetch ${entityType}s`);
   }
 
-  if (response.data.length === 0) {
-    console.log(`✅ No new ${entityType} updates`);
-    return;
-  }
+  if (response.data.length === 0) return;
 
-  const result = await processBatch(entityType, response.data, processor);
-  console.log(
-    `✅ Synced ${result.successCount}/${result.totalCount} ${entityType}s to local database`
-  );
+  await processBatch(entityType, response.data, processor);
 }
 
 /**
@@ -123,10 +113,8 @@ async function fetchAndProcessSingle<T extends Record<string, unknown>>(
   entityType: EntityType,
   fetcher: () => Promise<{ success: boolean; data?: T; error?: string }>,
   processor: (item: T) => Promise<void>,
-  operation: string
+  _operation: string
 ): Promise<void> {
-  console.log(`🔄 ${operation}`);
-
   const response = await fetcher();
 
   if (!response.success || !response.data) {
@@ -134,7 +122,6 @@ async function fetchAndProcessSingle<T extends Record<string, unknown>>(
   }
 
   await processor(response.data);
-  console.log(`✅ Synced ${entityType} to local database`);
 }
 
 // --- Public API ---
@@ -146,11 +133,10 @@ export async function pullPinUpdate(pinId: string): Promise<void> {
   try {
     await fetchAndProcessSingle(
       'pin',
-      () => apiClient.fetchPin(pinId),
+      () => fetchPin(pinId),
       processPinData,
       `Pulling pin update from backend: ${pinId}`
     );
-    console.log(`✅ Updated local pin: ${pinId}`);
   } catch (error) {
     console.error(`❌ Failed to pull pin update: ${error}`);
     throw error;
@@ -164,11 +150,10 @@ export async function pullFormUpdate(formId: string): Promise<void> {
   try {
     await fetchAndProcessSingle(
       'form',
-      () => apiClient.fetchForm(formId),
+      () => fetchForm(formId),
       processFormData,
       `Pulling form update from backend: ${formId}`
     );
-    console.log(`✅ Updated local form: ${formId}`);
   } catch (error) {
     console.error(`❌ Failed to pull form update: ${error}`);
     throw error;
@@ -182,7 +167,7 @@ export async function pullAllPins(): Promise<void> {
   try {
     await fetchAndProcess(
       'pin',
-      () => apiClient.fetchPins(),
+      () => fetchPins(),
       processPinData,
       'Pulling all pins from backend'
     );
@@ -199,7 +184,7 @@ export async function pullAllForms(): Promise<void> {
   try {
     await fetchAndProcess(
       'form',
-      () => apiClient.fetchForms(),
+      () => fetchForms(),
       processFormData,
       'Pulling all forms from backend'
     );
@@ -216,7 +201,7 @@ export async function pullPinsSince(timestamp: number): Promise<void> {
   try {
     await fetchAndProcess(
       'pin',
-      () => apiClient.fetchPinsSince(timestamp),
+      () => fetchPinsSince(timestamp),
       processPinData,
       `Pulling pins updated since ${new Date(timestamp).toISOString()}`
     );
@@ -233,7 +218,7 @@ export async function pullFormsSince(timestamp: number): Promise<void> {
   try {
     await fetchAndProcess(
       'form',
-      () => apiClient.fetchFormsSince(timestamp),
+      () => fetchFormsSince(timestamp),
       processFormData,
       `Pulling forms updated since ${new Date(timestamp).toISOString()}`
     );

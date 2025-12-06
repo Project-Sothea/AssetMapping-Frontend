@@ -1,60 +1,108 @@
-import { createFormDb, updateFormDb, softDeleteFormDb, getFormById } from './formRepository';
-import { prepareFormForInsertion } from './formProcessing';
-import { enqueueForm } from '~/services/sync/queue';
-import { updatePin } from '~/features/pins/services/PinService';
-import { Form } from '~/db/schema';
+import type { Form } from '@assetmapping/shared-types';
+import { eq } from 'drizzle-orm';
+import { v4 } from 'uuid';
 
-export async function createForm(values: Omit<Form, 'id'>): Promise<Form> {
-  const prepared = await prepareFormForInsertion(values);
-  await createFormDb(prepared);
+import { forms } from '~/db/schema';
+import { mapFormDbToForm, sanitizeFormForDb } from '~/db/utils';
+import { updatePin } from '~/features/pins/services/PinService';
+import { db } from '~/services/drizzleDb';
+import { enqueueForm } from '~/services/sync/queue/syncQueue';
+
+import type { FormUpdate, FormValues } from '../types';
+
+// ============================================
+// CREATE
+// ============================================
+
+export async function createForm(values: FormValues): Promise<Form> {
+  const newForm: Form = {
+    ...values,
+    id: v4(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    version: 1,
+    status: 'unsynced',
+  };
+  await db.insert(forms).values(sanitizeFormForDb(newForm));
   // touch parent pin so its updatedAt reflects new form activity
-  if (prepared.pinId) {
+  if (newForm.pinId) {
     try {
       // Update the parent pin's updatedAt using updatePin so the repository
       // and sync queue logic runs consistently (this also enqueues the pin update).
-      const updatedAt = new Date().toISOString();
-      console.debug(`[FormService] createForm: updating pin ${prepared.pinId} updatedAt=${updatedAt} for new form ${prepared.id}`);
-      await updatePin(prepared.pinId, { updatedAt });
+      const updatedAt = new Date();
+      await updatePin(newForm.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] createForm: failed to update pin ${prepared.pinId} for form ${prepared.id}`, err);
+      console.warn(
+        `[FormService] createForm: failed to update pin ${newForm.pinId} for form ${newForm.id}`,
+        err
+      );
     }
   }
-  await enqueueForm('create', prepared);
-  return prepared;
+  await enqueueForm('create', newForm);
+  return newForm;
 }
 
-export async function updateForm(id: string, values: Omit<Form, 'id'>): Promise<Form> {
-  console.log('before: ');
+// ============================================
+// UPDATE
+// ============================================
+
+export async function updateForm(id: string, updates: FormUpdate): Promise<Form> {
   const existing = await getFormById(id);
   if (!existing) throw new Error(`Form ${id} not found`);
 
   // Merge existing form with new values
-  const mergedForm = {
+  const updated = {
     ...existing,
-    ...values,
-    id, // Ensure ID doesn't change
-    updatedAt: new Date().toISOString(), // Update timestamp
+    ...updates,
+    updatedAt: new Date(), // Update timestamp
+    status: 'unsynced', // Mark as unsynced
   };
 
-  const updated = await updateFormDb(mergedForm);
-  console.log('new form data:', updated);
+  await db.update(forms).set(sanitizeFormForDb(updated)).where(eq(forms.id, id));
   // touch parent pin so its updatedAt reflects updated form activity
   if (updated.pinId) {
     try {
-      const updatedAt = new Date().toISOString();
-      console.debug(`[FormService] updateForm: updating pin ${updated.pinId} updatedAt=${updatedAt} for form ${updated.id}`);
+      const updatedAt = new Date();
       await updatePin(updated.pinId, { updatedAt });
     } catch (err) {
-      console.warn(`[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`, err);
+      console.warn(
+        `[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`,
+        err
+      );
     }
   }
   await enqueueForm('update', updated);
   return updated; // Return the updated form data
 }
 
+// ============================================
+// DELETE
+// ============================================
+
 export async function deleteForm(id: string): Promise<void> {
   const existing = await getFormById(id);
   if (!existing) throw new Error(`Form ${id} not found`);
-  await softDeleteFormDb(id);
-  await enqueueForm('delete', { id });
+  await db.delete(forms).where(eq(forms.id, id));
+  // touch parent pin so its updatedAt reflects deleted form activity
+  if (existing.pinId) {
+    try {
+      const updatedAt = new Date();
+      await updatePin(existing.pinId, { updatedAt });
+    } catch (err) {
+      console.warn(
+        `[FormService] deleteForm: failed to update pin ${existing.pinId} for deleted form ${existing.id}`,
+        err
+      );
+    }
+  }
+  await enqueueForm('delete', existing);
+}
+
+// ============================================
+// READ
+// ============================================
+
+export async function getFormById(id: string): Promise<Form | null> {
+  const result = db.select().from(forms).where(eq(forms.id, id)).limit(1).get();
+  return result ? mapFormDbToForm(result) : null;
 }

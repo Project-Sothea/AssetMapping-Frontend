@@ -5,78 +5,34 @@
  * array fields that are stored as JSON strings in SQLite.
  */
 
-import { parseArrayFields as sharedParseArrayFields } from '~/shared/utils/parsing';
+import type { Form, FormDB, Pin, PinDB } from '@assetmapping/shared-types';
 
-/**
- * Parse JSON string arrays back to arrays when reading from SQLite.
- *
- * @param value - Object with potential JSON string fields
- * @returns Object with JSON strings parsed back to arrays
- *
- * @example
- * parseArrayFields({ tags: '["a","b"]', name: 'test' })
- * // Returns: { tags: ['a', 'b'], name: 'test' }
- */
-export function parseArrayFields(value: any): typeof value {
-  return sharedParseArrayFields(value);
-}
-
-/**
- * Sanitize data for SQLite - remove undefined values and convert Dates
- */
-export function sanitizeForDb(obj: any): any {
-  if (obj === null || obj === undefined) return null;
-  if (typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return obj.toISOString();
-  if (Array.isArray(obj)) return obj.map(sanitizeForDb);
-
-  const sanitized: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
-      sanitized[key] = sanitizeForDb(value);
-    }
+function toDateSafe(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
   }
-  return sanitized;
-}
-
-/**
- * Helper: Convert empty strings to null
- */
-const nullIfEmpty = (v: any) => (v === undefined || v === '' ? null : v);
-
-/**
- * Helper: Ensure arrays are JSON strings for SQLite
- */
-function jsonifyArray(value: any) {
-  if (Array.isArray(value)) return JSON.stringify(value);
-  if (value === undefined || value === null) return '[]';
-  return typeof value === 'string' ? value : JSON.stringify([value]);
+  return new Date();
 }
 
 /**
  * Sanitize Pin for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizePinForDb(pin: any): any {
+export function sanitizePinForDb(pin: Pin): PinDB {
   return {
-    id: pin.id,
-    createdAt: pin.createdAt ?? new Date().toISOString(),
-    updatedAt: pin.updatedAt ?? null,
-    deletedAt: pin.deletedAt ?? null,
-    version: pin.version ?? 1,
-    lat: pin.lat,
-    lng: pin.lng,
-    type: nullIfEmpty(pin.type),
-    name: nullIfEmpty(pin.name),
-    address: nullIfEmpty(pin.address),
-    cityVillage: nullIfEmpty(pin.cityVillage),
-    description: nullIfEmpty(pin.description),
+    ...pin,
+    createdAt: toDateSafe((pin as any).createdAt ?? new Date()),
+    updatedAt: toDateSafe((pin as any).updatedAt ?? (pin as any).createdAt ?? new Date()),
     images: jsonifyArray(pin.images),
-    localImages: jsonifyArray(pin.localImages),
-    status: nullIfEmpty(pin.status),
-    failureReason: nullIfEmpty(pin.failureReason),
-    lastSyncedAt: pin.lastSyncedAt ?? null,
-    lastFailedSyncAt: pin.lastFailedSyncAt ?? null,
+  };
+}
+
+export function mapPinDbToPin(pin: PinDB): Pin {
+  return {
+    ...pin,
+    images: safeJsonStringParse(pin.images),
   };
 }
 
@@ -84,64 +40,81 @@ export function sanitizePinForDb(pin: any): any {
  * Sanitize Form for SQLite insertion
  * Handles: undefined -> null, empty strings -> null, arrays -> JSON strings, missing createdAt
  */
-export function sanitizeFormForDb(form: any): any {
+export function sanitizeFormForDb(form: Form): FormDB {
   return {
-    id: form.id,
-    createdAt: form.createdAt ?? new Date().toISOString(),
-    updatedAt: form.updatedAt ?? null,
-    deletedAt: form.deletedAt ?? null,
-    version: form.version ?? 1,
-    pinId: nullIfEmpty(form.pinId),
-    villageId: nullIfEmpty(form.villageId),
-    name: nullIfEmpty(form.name),
-    village: nullIfEmpty(form.village),
-
-    // Text fields
-    brushTeeth: nullIfEmpty(form.brushTeeth),
-    canAttend: nullIfEmpty(form.canAttend),
-    conditionDetails: nullIfEmpty(form.conditionDetails),
-    eatCleanFood: nullIfEmpty(form.eatCleanFood),
-    handAfterToilet: nullIfEmpty(form.handAfterToilet),
-    handBeforeMeal: nullIfEmpty(form.handBeforeMeal),
-    haveToothbrush: nullIfEmpty(form.haveToothbrush),
-    knowDoctor: nullIfEmpty(form.knowDoctor),
-    knowWaterFilters: nullIfEmpty(form.knowWaterFilters),
-    otherBrushTeeth: nullIfEmpty(form.otherBrushTeeth),
-    otherBuyMedicine: nullIfEmpty(form.otherBuyMedicine),
-    otherCondition: nullIfEmpty(form.otherCondition),
-    otherLearning: nullIfEmpty(form.otherLearning),
-    otherManagement: nullIfEmpty(form.otherManagement),
-    otherSickAction: nullIfEmpty(form.otherSickAction),
-    otherWaterFilterReason: nullIfEmpty(form.otherWaterFilterReason),
-    otherWaterSource: nullIfEmpty(form.otherWaterSource),
-    ownTransport: nullIfEmpty(form.ownTransport),
-    povertyCard: nullIfEmpty(form.povertyCard),
-
-    // Array fields (stored as JSON strings)
-    cholesterol: jsonifyArray(form.cholesterol),
-    cholesterolAction: jsonifyArray(form.cholesterolAction),
-    coldAction: jsonifyArray(form.coldAction),
-    coldLookLike: jsonifyArray(form.coldLookLike),
-    diabetes: jsonifyArray(form.diabetes),
-    diabetesAction: jsonifyArray(form.diabetesAction),
-    diarrhoea: jsonifyArray(form.diarrhoea),
-    diarrhoeaAction: jsonifyArray(form.diarrhoeaAction),
-    hypertension: jsonifyArray(form.hypertension),
-    hypertensionAction: jsonifyArray(form.hypertensionAction),
-    mskAction: jsonifyArray(form.mskAction),
-    mskInjury: jsonifyArray(form.mskInjury),
+    ...form,
+    createdAt: toDateSafe((form as any).createdAt ?? new Date()),
+    updatedAt: toDateSafe((form as any).updatedAt ?? (form as any).createdAt ?? new Date()),
+    // Health
     longTermConditions: jsonifyArray(form.longTermConditions),
     managementMethods: jsonifyArray(form.managementMethods),
-    notUsingWaterFilter: jsonifyArray(form.notUsingWaterFilter),
-    unsafeWater: jsonifyArray(form.unsafeWater),
-    waterSources: jsonifyArray(form.waterSources),
-    whatDoWhenSick: jsonifyArray(form.whatDoWhenSick),
-    whereBuyMedicine: jsonifyArray(form.whereBuyMedicine), // ← include if multi-select
+    conditionDifficultyReasons: jsonifyArray(form.conditionDifficultyReasons),
+    selfCareActions: jsonifyArray(form.selfCareActions),
+    noToothbrushOrToothpasteReasons: jsonifyArray(form.noToothbrushOrToothpasteReasons),
 
-    // Sync tracking fields
-    status: nullIfEmpty(form.status),
-    failureReason: nullIfEmpty(form.failureReason),
-    lastSyncedAt: form.lastSyncedAt ?? null,
-    lastFailedSyncAt: form.lastFailedSyncAt ?? null,
+    // Education
+    diarrhoeaDefinition: jsonifyArray(form.diarrhoeaDefinition),
+    diarrhoeaActions: jsonifyArray(form.diarrhoeaActions),
+    commonColdSymptoms: jsonifyArray(form.commonColdSymptoms),
+    commonColdActions: jsonifyArray(form.commonColdActions),
+    mskInjuryDefinition: jsonifyArray(form.mskInjuryDefinition),
+    mskInjuryActions: jsonifyArray(form.mskInjuryActions),
+    hypertensionDefinition: jsonifyArray(form.hypertensionDefinition),
+    hypertensionActions: jsonifyArray(form.hypertensionActions),
+    unhealthyFoodReasons: jsonifyArray(form.unhealthyFoodReasons),
+    highCholesterolDefinition: jsonifyArray(form.highCholesterolDefinition),
+    highCholesterolActions: jsonifyArray(form.highCholesterolActions),
+    diabetesDefinition: jsonifyArray(form.diabetesDefinition),
+    diabetesActions: jsonifyArray(form.diabetesActions),
+
+    // Water
+    waterSources: jsonifyArray(form.waterSources),
+    unsafeWaterTypes: jsonifyArray(form.unsafeWaterTypes),
+    waterFilterNonUseReasons: jsonifyArray(form.waterFilterNonUseReasons),
   };
+}
+
+export function mapFormDbToForm(form: FormDB): Form {
+  return {
+    ...form,
+    longTermConditions: safeJsonStringParse(form.longTermConditions),
+    managementMethods: safeJsonStringParse(form.managementMethods),
+    conditionDifficultyReasons: safeJsonStringParse(form.conditionDifficultyReasons),
+    selfCareActions: safeJsonStringParse(form.selfCareActions),
+    noToothbrushOrToothpasteReasons: safeJsonStringParse(form.noToothbrushOrToothpasteReasons),
+    diarrhoeaDefinition: safeJsonStringParse(form.diarrhoeaDefinition),
+    diarrhoeaActions: safeJsonStringParse(form.diarrhoeaActions),
+    commonColdSymptoms: safeJsonStringParse(form.commonColdSymptoms),
+    commonColdActions: safeJsonStringParse(form.commonColdActions),
+    mskInjuryDefinition: safeJsonStringParse(form.mskInjuryDefinition),
+    mskInjuryActions: safeJsonStringParse(form.mskInjuryActions),
+    hypertensionDefinition: safeJsonStringParse(form.hypertensionDefinition),
+    hypertensionActions: safeJsonStringParse(form.hypertensionActions),
+    unhealthyFoodReasons: safeJsonStringParse(form.unhealthyFoodReasons),
+    highCholesterolDefinition: safeJsonStringParse(form.highCholesterolDefinition),
+    highCholesterolActions: safeJsonStringParse(form.highCholesterolActions),
+    diabetesDefinition: safeJsonStringParse(form.diabetesDefinition),
+    diabetesActions: safeJsonStringParse(form.diabetesActions),
+    waterSources: safeJsonStringParse(form.waterSources),
+    unsafeWaterTypes: safeJsonStringParse(form.unsafeWaterTypes),
+    waterFilterNonUseReasons: safeJsonStringParse(form.waterFilterNonUseReasons),
+  };
+}
+/**
+ * Helper: Ensure arrays are JSON strings for SQLite
+ */
+function jsonifyArray(value: string[]): string {
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (value === undefined || value === null) return '[]';
+  return typeof value === 'string' ? value : JSON.stringify([value]);
+}
+
+export function safeJsonStringParse(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }

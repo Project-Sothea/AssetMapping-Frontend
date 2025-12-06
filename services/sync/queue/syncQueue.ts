@@ -8,26 +8,27 @@
  * - getQueueMetrics() - Get queue health stats
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { Form, Pin } from '@assetmapping/shared-types';
 import { eq, asc } from 'drizzle-orm';
-import { db } from '~/services/drizzleDb';
+
 import { syncQueue } from '~/db/schema';
-import { Operation, QueueMetrics } from './types';
+import { db } from '~/services/drizzleDb';
+
 import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
 import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueState';
+import { Operation, QueueMetrics } from './types';
 
 // ==================== Public API ====================
 
 /**
  * Queue a pin operation
  */
-export async function enqueuePin(operation: Operation, data: any): Promise<string> {
-  const id = data.id || uuidv4();
+export async function enqueuePin(operation: Operation, data: Pin): Promise<string> {
   const operationId = await enqueue({
     operation,
     entityType: 'pin',
-    entityId: id,
-    payload: { ...data, id },
+    entityId: data.id,
+    payload: data,
   });
   scheduleNextProcess(processQueue);
   return operationId;
@@ -36,22 +37,12 @@ export async function enqueuePin(operation: Operation, data: any): Promise<strin
 /**
  * Queue a form operation
  */
-export async function enqueueForm(operation: Operation, data: any): Promise<string> {
-  const id = data.id || uuidv4();
-
-  // Ensure dates are properly serialized
-  const cleanData = {
-    ...data,
-    id,
-    createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
-    updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt,
-  };
-
+export async function enqueueForm(operation: Operation, data: Form): Promise<string> {
   const operationId = await enqueue({
     operation,
     entityType: 'form',
-    entityId: id,
-    payload: cleanData,
+    entityId: data.id,
+    payload: data,
   });
   scheduleNextProcess(processQueue);
   return operationId;
@@ -77,7 +68,7 @@ export async function processQueue(): Promise<void> {
   setIsProcessing(true);
 
   try {
-    const pending = await db
+    const pending = db
       .select()
       .from(syncQueue)
       .where(eq(syncQueue.status, 'pending'))
@@ -87,16 +78,14 @@ export async function processQueue(): Promise<void> {
 
     if (!pending.length) return;
 
-    console.log(`🔄 Processing ${pending.length} queued operations`);
-
     for (const op of pending) {
       try {
         await processOperation(op);
         await markCompleted(op.id);
-        console.log(`✅ ${op.operation} ${op.entityType} ${op.entityId.slice(0, 8)}`);
-      } catch (error: any) {
-        await handleError(op, error);
-        console.error(`❌ ${op.operation} ${op.entityType}: ${error.message}`);
+      } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        await handleError(op, errorObj);
+        console.error(`❌ ${op.operation} ${op.entityType}: ${errorObj.message}`);
       }
     }
   } finally {
@@ -114,18 +103,4 @@ export async function retryFailed(): Promise<void> {
     .set({ status: 'pending', attempts: 0, lastError: null })
     .where(eq(syncQueue.status, 'failed'));
   scheduleNextProcess(processQueue);
-}
-
-/**
- * Clear all completed operations
- */
-export async function cleanupOld(): Promise<void> {
-  await db.delete(syncQueue).where(eq(syncQueue.status, 'completed'));
-}
-
-/**
- * Clear all failed operations
- */
-export async function clearFailed(): Promise<void> {
-  await db.delete(syncQueue).where(eq(syncQueue.status, 'failed'));
 }
