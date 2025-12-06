@@ -1,7 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import type { Pin } from 'features/pins/types/';
-import { FallbackImageList } from '~/shared/components/FallbackImageList';
 import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+
+import type { Pin } from 'features/pins/types/';
+
+import { FallbackImageList } from '~/shared/components/FallbackImageList';
 
 type PinDetailsProps = {
   pin: Pin;

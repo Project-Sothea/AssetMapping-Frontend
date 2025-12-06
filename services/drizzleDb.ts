@@ -1,8 +1,10 @@
 // db/index.ts
-import * as SQLite from 'expo-sqlite';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/expo-sqlite';
-import { forms, pins } from '~/db/schema';
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import * as SQLite from 'expo-sqlite';
+
+import { forms, pins } from '~/db/schema';
+
 import migrations from '../drizzle/migrations';
 //Local DB
 const DATABASE_NAME = 'local.db';

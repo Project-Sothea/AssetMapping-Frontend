@@ -1,7 +1,10 @@
 import { useState } from 'react';
+
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-import { FormEditor } from './FormEditor';
+
 import type { Form } from '../types';
+
+import { FormEditor } from './FormEditor';
 
 type FormModalProps = {
   visible: boolean;

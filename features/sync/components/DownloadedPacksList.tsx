@@ -1,4 +1,5 @@
 import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+
 import { useDeletePack } from '~/hooks/OfflinePacks/useDeletePack';
 import { useFetchPacks } from '~/hooks/OfflinePacks/useFetchPacks';
 import Spacer from '~/shared/components/ui/Spacer';

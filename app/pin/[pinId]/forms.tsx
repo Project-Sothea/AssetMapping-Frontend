@@ -1,13 +1,14 @@
 import { useLocalSearchParams } from 'expo-router';
-import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
-import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
-import type { Form } from '~/features/forms/types';
+import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { FormCard } from '~/features/forms/components/FormCard';
 import { FormModal } from '~/features/forms/components/FormModal';
+import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
+import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
+import type { Form } from '~/features/forms/types';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
@@ -100,12 +101,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
     color: '#2c3e50',
-  },
-  subheading: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#34495e',
   },
   emptyText: {
     fontSize: 14,

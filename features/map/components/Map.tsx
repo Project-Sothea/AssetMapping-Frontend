@@ -1,4 +1,6 @@
 import 'react-native-get-random-values';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
 import {
   Camera,
   CircleLayer,
@@ -9,26 +11,25 @@ import {
   SymbolLayer,
 } from '@rnmapbox/maps';
 import type { OnPressEvent } from '@rnmapbox/maps/lib/typescript/src/types/OnPressEvent';
-import type { Feature, Geometry } from 'geojson';
-import MapboxGL from '~/services/mapbox';
-import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
-import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
+import type { Feature, Geometry } from 'geojson';
+import { useState, useEffect, useRef } from 'react';
+import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+
 import pin from '~/assets/pin.png';
-import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
-import { useIsFocused } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ReconnectButton } from '~/shared/components/ReconnectButton';
-import { PinModal } from '../../pins/components/PinModal';
+import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import type { Pin } from '~/features/pins/types/';
+import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
+import MapboxGL from '~/services/mapbox';
+import { ReconnectButton } from '~/shared/components/ReconnectButton';
+
+import { PinModal } from '../../pins/components/PinModal';
 
 // Default style; can be toggled at runtime
 const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
 
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
-  initialPinId?: string;
 };
 
 type PinModalState =
@@ -36,7 +37,7 @@ type PinModalState =
   | { mode: 'view'; pin: Pin }
   | null;
 
-export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
+export default function Map({ initialCoords }: MapProps = {}) {
   const pins = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
@@ -62,7 +63,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
 
       return () => clearTimeout(timer);
     }
-  }, [initialCoords, initialPinId]);
+  }, [initialCoords]);
 
   useEffect(() => {
     const setupLocation = async () => {
@@ -200,7 +201,6 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
               filter={['!', ['has', 'point_count']]}
               style={{
                 textField: ['get', 'name'],
-                textFont: ['Open Sans Bold'],
                 textSize: 14,
                 textColor: '#111',
                 textHaloColor: '#fff',

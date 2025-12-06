@@ -1,14 +1,15 @@
 import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import QueryProvider from '~/providers/QueryProvider';
 import { Suspense, useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
-import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
-import { PopupProvider } from '~/shared/contexts/PopupContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import { useInitialSync } from '~/hooks/RealTimeSync/useInitialSync';
+import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
+import QueryProvider from '~/providers/QueryProvider';
 import { useRunMigrations } from '~/services/drizzleDb';
+import { PopupProvider } from '~/shared/contexts/PopupContext';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 // Helper component to initialize real-time sync and initial data sync
 function SyncInitializer() {

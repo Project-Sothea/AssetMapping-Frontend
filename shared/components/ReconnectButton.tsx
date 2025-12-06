@@ -1,10 +1,11 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import React, { useState, useRef, useEffect } from 'react';
 import { Pressable, ActivityIndicator } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
+
 import { useWebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { usePopup } from '~/shared/contexts/PopupContext';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 export function ReconnectButton() {
   const { isConnected } = useWebSocketStatus();

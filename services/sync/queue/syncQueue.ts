@@ -8,13 +8,15 @@
  * - getQueueMetrics() - Get queue health stats
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import { eq, asc } from 'drizzle-orm';
-import { db } from '~/services/drizzleDb';
+import { v4 as uuidv4 } from 'uuid';
+
 import { syncQueue } from '~/db/schema';
-import { Operation, QueueMetrics } from './types';
+import { db } from '~/services/drizzleDb';
+
 import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
 import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueState';
+import { Operation, QueueMetrics } from './types';
 
 // ==================== Public API ====================
 

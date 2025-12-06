@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button } from './Button';
 import type { ViewStyle } from 'react-native';
+
+import { Button } from './Button';
 
 type IdempotentButtonProps = {
   title: string;

@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-import { ImageModal } from './ImageModal';
 import { useRouter } from 'expo-router';
-import { PinDetails } from './PinDetails';
+import { useState } from 'react';
+
+import ModalWrapper from '~/shared/components/ui/ModalWrapper';
+
 import { Pin } from '../types/';
+
+import { ImageModal } from './ImageModal';
+import { PinDetails } from './PinDetails';
 import { PinEditor } from './PinEditor';
 
 type CreatePinModalProps = {

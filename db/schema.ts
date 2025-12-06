@@ -19,17 +19,14 @@ import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
  * Stores location pins with health facility/community information
  */
 export const pins = sqliteTable('pins', {
-  // Primary identifier
+  // Metadata
   id: text().primaryKey(),
-
-  // Timestamps
   createdAt: text()
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
-
-  // Version for optimistic concurrency control
-  version: integer('version').notNull().default(1),
+  version: integer().notNull().default(1),
+  status: text(),
 
   // Location
   lat: real().notNull(),
@@ -44,9 +41,6 @@ export const pins = sqliteTable('pins', {
 
   // Images - stored as JSON array of filenames (UUIDs)
   images: text(),
-
-  // Local-only field (sync status)
-  status: text(),
 });
 
 /**
@@ -62,13 +56,14 @@ export const forms = sqliteTable('forms', {
   updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`),
   version: integer().notNull().default(1),
   pinId: text().references(() => pins.id, { onDelete: 'cascade' }), // Foreign key with cascade
+  status: text(),
 
   // General
-  villageId: text(),
-  name: text(),
+  villageId: text().notNull(),
+  name: text().notNull(),
+  village: text().notNull(),
   gender: text(),
   age: integer(),
-  village: text(),
   canAttendHealthScreening: integer({ mode: 'boolean' }),
 
   // Health
@@ -137,9 +132,6 @@ export const forms = sqliteTable('forms', {
   otherWaterFilterNonUseReasons: text(),
   handwashingAfterToilet: text(),
   otherHandwashingAfterToilet: text(),
-
-  // Local-only field (sync status)
-  status: text(),
 });
 
 /**

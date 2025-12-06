@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Checkbox } from 'expo-checkbox';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
+
 import { FormValues } from '../types';
 
 interface RadioGroupProps {

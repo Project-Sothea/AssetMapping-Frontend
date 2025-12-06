@@ -1,5 +1,6 @@
 import { offlineManager } from '@rnmapbox/maps';
 import { Alert } from 'react-native';
+
 import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 
 export const CreateOfflinePack = async (

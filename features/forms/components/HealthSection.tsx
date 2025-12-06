@@ -1,7 +1,9 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+
+import { FormValues } from '../types';
+
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import { FormValues } from '../types';
 
 interface HealthSectionProps {
   values: FormValues;
@@ -223,13 +225,6 @@ export default function HealthSection({
 }
 
 const styles = StyleSheet.create({
-  subheading: {
-    fontWeight: '600',
-    fontSize: 17,
-    marginTop: 14,
-    marginBottom: 6,
-    color: '#444',
-  },
   question: {
     fontSize: 16,
     fontWeight: '500',

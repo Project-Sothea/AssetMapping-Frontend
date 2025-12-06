@@ -1,6 +1,8 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import RadioGroup from './RadioGroup';
+
 import { FormValues } from '../types';
+
+import RadioGroup from './RadioGroup';
 
 interface GeneralSectionProps {
   values: FormValues;

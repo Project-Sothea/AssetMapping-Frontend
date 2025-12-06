@@ -1,7 +1,8 @@
-import Map from '~/features/map/components/Map';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import Map from '~/features/map/components/Map';
 
 export default function MapScreen() {
   const params = useLocalSearchParams();
@@ -13,8 +14,6 @@ export default function MapScreen() {
       params.lat && params.lng ? { lat: Number(params.lat), lng: Number(params.lng) } : undefined,
     [params.lat, params.lng]
   );
-
-  const initialPinId = params.pinId ? String(params.pinId) : undefined;
 
   // Clear params when user navigates away from this tab
   useFocusEffect(
@@ -36,7 +35,7 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-      <Map initialCoords={initialCoords} initialPinId={initialPinId} />
+      <Map initialCoords={initialCoords} />
     </SafeAreaView>
   );
 }

@@ -8,10 +8,11 @@
  * false if there are pending/failed operations (unsynced).
  */
 
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { db } from '~/services/drizzleDb';
-import { syncQueue } from '~/db/schema';
 import { eq, and, or } from 'drizzle-orm';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+
+import { syncQueue } from '~/db/schema';
+import { db } from '~/services/drizzleDb';
 
 export const useOpQueueStatus = (entityId: string, entityType: string) => {
   // Query for any pending or failed operations for this entity

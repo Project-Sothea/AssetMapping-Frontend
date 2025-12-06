@@ -7,6 +7,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+
 import { FallbackImage } from './FallbackImage';
 
 type FallbackImageListProps = {

@@ -5,8 +5,8 @@
  * array fields that are stored as JSON strings in SQLite.
  */
 
-import type { Pin, PinDB } from '~/features/pins/types/';
 import type { Form, FormDB } from '~/features/forms/types/';
+import type { Pin, PinDB } from '~/features/pins/types/';
 import { parseImageFilenames } from '~/services/images/ImageManager';
 
 /**

@@ -13,9 +13,9 @@
  */
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
-import { safeJsonParse } from '~/shared/utils/parsing';
 import { getApiUrl } from '~/services/apiUrl';
 import { performIncrementalSync } from '~/services/sync/syncService';
+import { safeJsonParse } from '~/shared/utils/parsing';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
 type MessageHandler = (message: Record<string, unknown>) => void;

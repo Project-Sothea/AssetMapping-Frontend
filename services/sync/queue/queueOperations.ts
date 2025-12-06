@@ -1,11 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
 import { eq, and, or } from 'drizzle-orm';
-import { db } from '~/services/drizzleDb';
+import { v4 as uuidv4 } from 'uuid';
+
 import { syncQueue } from '~/db/schema';
+import { sanitizeForDb } from '~/db/utils';
+import { db } from '~/services/drizzleDb';
+import { safeJsonParse } from '~/shared/utils/parsing';
+
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
-import { sanitizeForDb } from '~/db/utils';
-import { safeJsonParse } from '~/shared/utils/parsing';
 
 /**
  * Sync a queued operation to remote by syncing the entity (pin or form) based on its type and operation.

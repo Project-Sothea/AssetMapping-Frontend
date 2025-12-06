@@ -1,20 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Alert, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useForm, type Resolver } from 'react-hook-form';
+import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm, type Resolver } from 'react-hook-form';
+import { ScrollView, Alert, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { z } from 'zod';
+
+import Spacer from '~/shared/components/ui/Spacer';
+import { ErrorHandler } from '~/shared/utils/errorHandling';
+
+import { useCreateForm } from '../hooks/useCreateForm';
+import { useDeleteForm } from '../hooks/useDeleteForm';
+import { useUpdateForm } from '../hooks/useUpdateForm';
+import type { Form, FormValues } from '../types';
+
+import EducationSection from './EducationSection';
 import FormSection from './FormSection';
 import GeneralSection from './GeneralSection';
-import WaterSection from './WaterSection';
 import HealthSection from './HealthSection';
-import EducationSection from './EducationSection';
-import { useCreateForm } from '../hooks/useCreateForm';
-import { useUpdateForm } from '../hooks/useUpdateForm';
-import { useDeleteForm } from '../hooks/useDeleteForm';
-import type { Form, FormValues } from '../types';
-import { ErrorHandler } from '~/shared/utils/errorHandling';
-import Spacer from '~/shared/components/ui/Spacer';
-import { MaterialIcons } from '@expo/vector-icons';
+import WaterSection from './WaterSection';
 
 const formSchema = z.looseObject({
   name: z.string().trim().min(1, 'Required'),
@@ -297,12 +300,6 @@ export function FormEditor({
 }
 
 const styles = StyleSheet.create({
-  toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 12,
-  },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

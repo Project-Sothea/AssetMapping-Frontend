@@ -13,9 +13,10 @@
  * 4. Delete → easy to track (compare filename arrays)
  */
 
+import { fetch } from 'expo/fetch';
 import { Directory, File, Paths } from 'expo-file-system/next';
 import * as ImagePicker from 'expo-image-picker';
-import { fetch } from 'expo/fetch';
+
 import { getDownloadUrl } from '../api/storageApi';
 
 // ============================================

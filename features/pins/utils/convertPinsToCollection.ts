@@ -1,5 +1,6 @@
 import { featureCollection, point } from '@turf/helpers';
 import type { FeatureCollection, Point } from 'geojson';
+
 import type { Pin } from '~/db/schema';
 
 // Utility function to convert pins array to point collection

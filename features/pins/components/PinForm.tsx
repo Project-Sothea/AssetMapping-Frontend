@@ -1,3 +1,7 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useMemo, useRef } from 'react';
+import { useForm, type Resolver } from 'react-hook-form';
 import {
   View,
   TextInput,
@@ -8,19 +12,17 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import { useEffect, useMemo, useRef } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+
 import {
   deleteImageByFilename,
   getLocalPath,
   pickImage,
   saveImageLocally,
 } from '~/services/images/ImageManager';
-import { MaterialIcons } from '@expo/vector-icons';
+
 import { PinValues } from '../types/';
-import { v4 as uuidv4 } from 'uuid';
 
 const pinSchema = z.looseObject({
   name: z.string().trim().min(1, 'Name is required'),
@@ -205,26 +207,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#f9f9f9',
   },
-  label: {
-    fontWeight: '600',
-    marginBottom: 4,
-    fontSize: 14,
-  },
   error: {
     color: 'red',
     marginBottom: 8,
     fontSize: 12,
-  },
-  section: {
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -249,22 +235,4 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   saveButtonText: { marginLeft: 8, color: '#2ecc71', fontWeight: 'bold' },
-  imageThumbnailContainer: {
-    position: 'relative',
-    marginRight: 10,
-  },
-  imageThumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 2,
-    zIndex: 1,
-  },
 });

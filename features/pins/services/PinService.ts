@@ -8,12 +8,14 @@
  * 4. Let the form/UI handle image picking and saving
  */
 
-import { db } from '~/services/drizzleDb';
-import { pins } from '~/db/schema';
 import { eq } from 'drizzle-orm';
-import { enqueuePin } from '~/services/sync/queue/syncQueue';
-import * as ImageManager from '~/services/images/ImageManager';
+
+import { pins } from '~/db/schema';
 import { mapPinDbToPin, sanitizePinForDb } from '~/db/utils';
+import { db } from '~/services/drizzleDb';
+import * as ImageManager from '~/services/images/ImageManager';
+import { enqueuePin } from '~/services/sync/queue/syncQueue';
+
 import { Pin, PinUpdate, PinValues } from '..//types';
 
 // ============================================

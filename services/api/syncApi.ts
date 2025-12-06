@@ -1,6 +1,7 @@
+import type { Pin, Form } from '~/db/schema';
+
 import { request } from './client';
 import type { ApiResponse, SyncItemRequest } from './types';
-import type { Pin, Form } from '~/db/schema';
 
 export type { SyncItemRequest } from './types';
 

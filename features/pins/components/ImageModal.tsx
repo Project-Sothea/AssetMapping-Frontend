@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+
 import { FallbackImage } from '~/shared/components/FallbackImage';
 
 type ImageModalProps = {

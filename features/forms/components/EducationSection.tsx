@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
+
+import { FormValues } from '../types';
+
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
-import { FormValues } from '../types';
 
 interface EducationSectionProps {
   values: FormValues;

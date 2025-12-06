@@ -1,12 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ImageBackground, StyleSheet, FlatList, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import backgroundImage from '~/assets/home-background.png';
 import { PinCard } from '~/features/pins/components/PinCard';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import type { Pin } from '~/features/pins/types/';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
-import backgroundImage from '~/assets/home-background.png';
 
 export default function PinScreen() {
   const pins = useFetchLocalPins(); // live reactive pins
@@ -37,7 +38,6 @@ export default function PinScreen() {
       params: {
         lat: pin.lat,
         lng: pin.lng,
-        pinId: pin.id,
       },
     });
   };

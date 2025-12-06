@@ -1,4 +1,5 @@
 import { getApiUrl } from '../apiUrl';
+
 import type { ApiResponse } from './types';
 
 let cachedBaseUrl: string | null = null;

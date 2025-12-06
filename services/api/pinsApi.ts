@@ -1,6 +1,7 @@
+import type { Pin } from '~/db/schema';
+
 import { request } from './client';
 import type { ApiResponse } from './types';
-import type { Pin } from '~/db/schema';
 
 const BULK_TIMEOUT_MS = 120000;
 const DEFAULT_TIMEOUT_MS = 30000;

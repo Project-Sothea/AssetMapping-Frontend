@@ -1,12 +1,14 @@
-import { Text, View, StyleSheet, Alert, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, Alert, TextInput } from 'react-native';
+
 import { getApiUrl, setApiUrl } from '~/services/apiUrl';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { reconnectAndSync } from '~/services/sync/syncService';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
-import Spacer from '~/shared/components/ui/Spacer';
-import { DeviceIdDisplay } from './DeviceIdDisplay';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { Button } from '~/shared/components/ui/Button';
+import Spacer from '~/shared/components/ui/Spacer';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
+
+import { DeviceIdDisplay } from './DeviceIdDisplay';
 
 export function ApiUrlConfiguration() {
   const [apiUrl, setApiUrlState] = useState('');

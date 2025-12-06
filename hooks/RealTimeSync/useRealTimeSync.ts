@@ -25,11 +25,12 @@
  * ```
  */
 
-import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
-import { processQueue } from '~/services/sync/queue/syncQueue';
+import { useEffect } from 'react';
+
 import { pullPinUpdate, pullFormUpdate } from '~/services/sync/pullUpdates';
+import { processQueue } from '~/services/sync/queue/syncQueue';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 
 interface NotificationMessage {
   type: 'pin' | 'form' | 'image' | 'system' | 'welcome' | 'pong';

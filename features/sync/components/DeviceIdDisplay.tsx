@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 export function DeviceIdDisplay() {

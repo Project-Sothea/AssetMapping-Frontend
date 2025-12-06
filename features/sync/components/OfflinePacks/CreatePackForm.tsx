@@ -1,9 +1,10 @@
-import { View, TextInput, StyleSheet, Text } from 'react-native';
-import { useForm, type Resolver } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
+import { useForm, type Resolver } from 'react-hook-form';
+import { View, TextInput, StyleSheet, Text } from 'react-native';
+import { z } from 'zod';
+
+import { CreateOfflinePackProps } from '~/hooks/OfflinePacks/types';
 import MapboxGL from '~/services/mapbox';
 import { IdempotentButton } from '~/shared/components/ui/IdempotentButton';
 
