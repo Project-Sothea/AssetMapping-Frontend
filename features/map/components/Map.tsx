@@ -1,4 +1,5 @@
 import 'react-native-get-random-values';
+import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import {
@@ -18,7 +19,6 @@ import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
 import pin from '~/assets/pin.png';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
-import type { Pin } from '~/features/pins/types/';
 import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
 import MapboxGL from '~/services/mapbox';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
@@ -31,6 +31,10 @@ const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
 };
+
+const DEFAULT_COORDS = { lat: 12.794459, lng: 103.308443 };
+const DEFAULT_ZOOM = 10;
+const PIN_ZOOM = 18;
 
 type PinModalState =
   | { mode: 'create'; coords: [number, number] }
@@ -46,24 +50,22 @@ export default function Map({ initialCoords }: MapProps = {}) {
   const [pinModalState, setPinModalState] = useState<PinModalState>(null);
 
   const screenIsFocused = useIsFocused();
+  const targetCoords = initialCoords ?? DEFAULT_COORDS;
 
   // Open initial pin and center camera if provided
   useEffect(() => {
-    if (initialCoords) {
-      // Add a small delay to ensure camera ref is ready
-      const timer = setTimeout(() => {
-        if (cameraRef.current) {
-          cameraRef.current.setCamera({
-            centerCoordinate: [initialCoords.lng, initialCoords.lat],
-            zoomLevel: 18,
-            animationDuration: 1000,
-          });
-        }
-      }, 300);
+    const timer = setTimeout(() => {
+      if (cameraRef.current && targetCoords.lng && targetCoords.lat) {
+        cameraRef.current.setCamera({
+          centerCoordinate: [targetCoords.lng, targetCoords.lat],
+          zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
+          animationDuration: 1000,
+        });
+      }
+    }, 300);
 
-      return () => clearTimeout(timer);
-    }
-  }, [initialCoords]);
+    return () => clearTimeout(timer);
+  }, [initialCoords, targetCoords.lng, targetCoords.lat]);
 
   useEffect(() => {
     const setupLocation = async () => {
@@ -155,7 +157,13 @@ export default function Map({ initialCoords }: MapProps = {}) {
         compassEnabled
         scaleBarEnabled
         onLongPress={handleDropPin}>
-        <Camera ref={cameraRef} />
+        <Camera
+          ref={cameraRef}
+          defaultSettings={{
+            centerCoordinate: [targetCoords.lng, targetCoords.lat],
+            zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
+          }}
+        />
         <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
         <Images images={{ pin }} />
         {pins && (
