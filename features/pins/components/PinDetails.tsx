@@ -1,31 +1,21 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useState } from 'react';
 import type { Pin } from '~/db/schema';
-import { ImageModal } from './ImageModal';
-import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
 
-type PinDetailsProps = { pin: Pin };
+type PinDetailsProps = {
+  pin: Pin;
+  isSynced: boolean;
+  onImagePress: (index: number) => void;
+};
 
-export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  // Check sync status from operations table
-  const isSynced = usePinQueueStatus(pin.id);
-
-  const openImage = (index: number) => {
-    setActiveIndex(index);
-    setModalVisible(true);
-  };
-
-  const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
+export function PinDetails({ pin, isSynced, onImagePress }: PinDetailsProps) {
+  const badgeColor = isSynced ? '#10B981' : '#e74c3c';
 
   return (
-    <View style={styles.container}>
+    <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{pin.name}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: accentColor }]}>
+        <View style={[styles.statusBadge, { backgroundColor: badgeColor }]}>
           <Text style={styles.statusText}>{isSynced ? 'Synced' : 'Unsynced'}</Text>
         </View>
       </View>
@@ -36,7 +26,7 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
           pinId={pin.id}
           imageStyle={styles.image}
           containerStyle={styles.imageScroll}
-          onImagePress={openImage}
+          onImagePress={onImagePress}
         />
       )}
 
@@ -46,17 +36,6 @@ export default function PinDetailsDisplay({ pin }: PinDetailsProps) {
         <InfoRow label="City/Village" value={pin.cityVillage} />
         <InfoRow label="Address" value={pin.address} />
       </View>
-
-      {/* Swipeable fullscreen image modal */}
-      {modalVisible && (
-        <ImageModal
-          visible={modalVisible}
-          images={pin.images}
-          pinId={pin.id}
-          initialIndex={activeIndex}
-          onClose={() => setModalVisible(false)}
-        />
-      )}
     </View>
   );
 }
@@ -71,7 +50,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  container: { paddingBottom: 16 },
+  card: { paddingBottom: 16 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

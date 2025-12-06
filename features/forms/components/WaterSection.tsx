@@ -83,7 +83,7 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
           'Water filters unavailable',
           'Water filter does not last very long',
           'I do not know',
-          'Others,',
+          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -93,9 +93,14 @@ export default function WaterSection({ values, setFieldValue, handleChange }: Wa
       />
 
       <Text style={styles.question}>Do you wash your hands with soap after using the toilet?</Text>
-      <CheckboxGroup
+      <RadioGroup
         name="handwashingAfterToilet"
-        options={['Yes', 'No', 'I do not know', 'Others']}
+        options={[
+          { label: 'Yes', value: 'yes' },
+          { label: 'No', value: 'no' },
+          { label: 'I do not know', value: 'do_not_know' },
+          { label: 'Others', value: 'others' },
+        ]}
         values={values}
         setFieldValue={setFieldValue}
         otherFieldName="otherHandwashingAfterToilet"

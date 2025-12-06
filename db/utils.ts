@@ -66,10 +66,9 @@ export function sanitizePinForDb(
 }
 
 export function mapPinDbToPin(pin: PinDB): Pin {
-  const { images, ...rest } = pin;
   return {
-    ...rest,
-    images: parseImageFilenames(images),
+    ...pin,
+    images: parseImageFilenames(pin.images),
   };
 }
 

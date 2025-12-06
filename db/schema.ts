@@ -36,11 +36,11 @@ export const pins = sqliteTable('pins', {
   lng: real(),
 
   // Details
-  type: text(),
   name: text(),
   address: text(),
   cityVillage: text(),
   description: text(),
+  type: text(),
 
   // Images - stored as JSON array of filenames (UUIDs)
   images: text(),
@@ -171,6 +171,10 @@ export const syncQueue = sqliteTable('sync_queue', {
 export type PinDB = typeof pins.$inferSelect;
 export type FormDB = typeof forms.$inferSelect;
 
+// Pin represents the runtime application type with parsed images (string[])
+// whereas PinDB has images as JSON strings for database storage
+export type Pin = Omit<PinDB, 'images'> & { images: string[] };
+
 // Form represents the runtime application type with parsed arrays (string[])
 // whereas FormDB has arrays as JSON strings for database storage
 type ArrayFieldKeys =
@@ -197,9 +201,5 @@ type ArrayFieldKeys =
   | 'waterFilterNonUseReasons';
 
 export type Form = Omit<FormDB, ArrayFieldKeys> & {
-  [K in ArrayFieldKeys]?: string[] | null;
+  [K in ArrayFieldKeys]?: string[];
 };
-
-// Pin represents the runtime application type with parsed images (string[])
-// whereas PinDB has images as JSON strings for database storage
-export type Pin = Omit<PinDB, 'images'> & { images?: string[] | null };

@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
-import type { Pin } from '~/db/schema';
 import { createPin } from '../services/PinService';
+import { PinFormValues } from '../types/PinFormValues';
 
 export const useCreatePin = () => {
   const mutation = useMutation({
-    mutationFn: (pin: Pin) => createPin(pin),
+    mutationFn: (pin: PinFormValues) => createPin(pin),
   });
 
   return {

@@ -16,17 +16,11 @@ import { useState, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
 import pin from '~/assets/pin.png';
-import { PinFormModal } from './PinFormModal';
 import { convertPinsToPointCollection } from '~/features/pins/utils/convertPinsToCollection';
-import { PinDetailsModal } from './PinDetailsModal';
 import { useIsFocused } from '@react-navigation/native';
-import type { Pin } from '~/db/schema';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
-import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
-import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
-import type { PinFormValues } from './PinForm';
+import { PinModal } from '../../pins/components/PinModal';
 
 // Default style; can be toggled at runtime
 const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
@@ -36,21 +30,20 @@ type MapProps = {
   initialPinId?: string;
 };
 
+type PinModalState =
+  | { mode: 'create'; coords: [number, number] }
+  | { mode: 'view'; pinId: string }
+  | null;
+
 export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
   const { data: pins } = useFetchLocalPins();
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
   const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
 
-  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
-  const [droppedCoords, setDroppedCoords] = useState<[number, number] | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [pinModalState, setPinModalState] = useState<PinModalState>(null);
 
   const screenIsFocused = useIsFocused();
-  const { createPinAsync } = useCreatePin();
-  const { updatePinAsync } = useUpdatePin();
-  const { deletePinAsync } = useDeletePin();
 
   // Open initial pin and center camera if provided
   useEffect(() => {
@@ -111,70 +104,7 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     const [lng, lat] = feature.geometry.coordinates;
 
     if (lng && lat) {
-      setDroppedCoords([lng, lat]);
-      setModalVisible(true);
-    }
-  };
-
-  const handlePinSubmit = async (values: PinFormValues) => {
-    if (!values.lat || !values.lng) {
-      Alert.alert('Error creating pin');
-      return;
-    }
-
-    try {
-      // Convert PinFormValues to Pin format
-      const pinData: Pin = {
-        id: values.id,
-        name: values.name,
-        cityVillage: values.cityVillage,
-        address: values.address,
-        description: values.description,
-        type: values.type,
-        lat: values.lat,
-        lng: values.lng,
-        images: values.images || [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: 1,
-        status: 'unsynced',
-      };
-      console.log('📤 Creating pin with data:', pinData);
-      await createPinAsync(pinData);
-      Alert.alert('Pin Created!');
-      setModalVisible(false);
-      setDroppedCoords(null);
-    } catch (error) {
-      Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
-    }
-  };
-
-  const handlePinUpdate = async (values: PinFormValues) => {
-    if (!values.lat || !values.lng) {
-      Alert.alert('Error updating pin');
-      return;
-    }
-
-    try {
-      // Simple update - just pass the changed fields
-      await updatePinAsync({
-        id: values.id,
-        updates: {
-          name: values.name,
-          cityVillage: values.cityVillage,
-          address: values.address,
-          description: values.description,
-          type: values.type,
-          lat: values.lat,
-          lng: values.lng,
-          images: values.images || [], // Store filenames
-        },
-      });
-      Alert.alert('Pin Updated!');
-      setDetailsVisible(false);
-      setDroppedCoords(null);
-    } catch (error) {
-      Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
+      setPinModalState({ mode: 'create', coords: [lng, lat] });
     }
   };
 
@@ -202,33 +132,17 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
     }
   };
 
-  const handleDeletePin = async (pin: Pin) => {
-    if (!pin.id) {
-      Alert.alert('Error deleting pin');
-      return;
-    }
-
-    try {
-      await deletePinAsync(pin.id);
-      Alert.alert('Pin Deleted!');
-      setDetailsVisible(false);
-      setDroppedCoords(null);
-    } catch (error) {
-      Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
-    }
-  };
-
   const handleOpenPin = async (event: OnPressEvent) => {
     const pressedFeature = event.features[0];
     if (pressedFeature?.properties) {
       const pinId = pressedFeature.properties.id as string | undefined;
       if (!pinId) return;
 
-      // Store pin ID - the modal will use live query to fetch and auto-update
-      setSelectedPinId(pinId);
-      setDetailsVisible(true);
+      setPinModalState({ mode: 'view', pinId });
     }
   };
+
+  const handleCloseModal = () => setPinModalState(null);
 
   return (
     <View style={{ flex: 1 }}>
@@ -299,27 +213,15 @@ export default function Map({ initialCoords, initialPinId }: MapProps = {}) {
           </ShapeSource>
         )}
       </MapView>
-      {selectedPinId && screenIsFocused && (
-        <PinDetailsModal
-          visible={detailsVisible}
-          pinId={selectedPinId}
-          onClose={() => {
-            setSelectedPinId(null);
-            setDetailsVisible(false);
-          }}
-          onUpdate={handlePinUpdate}
-          onDelete={handleDeletePin}
-        />
+      {pinModalState?.mode === 'view' && screenIsFocused && (
+        <PinModal mode="view" visible pinId={pinModalState.pinId} onClose={handleCloseModal} />
       )}
-      {droppedCoords && (
-        <PinFormModal
-          visible={modalVisible}
-          onClose={() => {
-            setModalVisible(false);
-            setDroppedCoords(null);
-          }}
-          onSubmit={handlePinSubmit}
-          coords={{ lng: droppedCoords[0], lat: droppedCoords[1] }}
+      {pinModalState?.mode === 'create' && (
+        <PinModal
+          mode="create"
+          visible
+          coords={{ lng: pinModalState.coords[0], lat: pinModalState.coords[1] }}
+          onClose={handleCloseModal}
         />
       )}
       <TouchableOpacity style={[styles.refreshButton, { right: 60 }]} onPress={toggleStyle}>

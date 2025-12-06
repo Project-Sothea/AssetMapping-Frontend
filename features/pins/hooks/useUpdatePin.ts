@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
-import type { Pin } from '~/db/schema';
 import { updatePin } from '../services/PinService';
+import { PinFormValues } from '../types/PinFormValues';
 
 export const useUpdatePin = () => {
   const mutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Pin> }) => updatePin(id, updates),
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<PinFormValues> }) =>
+      updatePin(id, updates),
   });
 
   return {

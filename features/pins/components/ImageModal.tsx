@@ -8,11 +8,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { FallbackImage } from '~/shared/components/FallbackImage';
-import { parseImageFilenames } from '~/services/images/ImageManager';
 
 type ImageModalProps = {
   visible: boolean;
-  images?: string | string[] | null;
+  images: string[];
   pinId: string;
   initialIndex?: number;
   onClose: () => void;
@@ -27,10 +26,6 @@ export const ImageModal: React.FC<ImageModalProps> = ({
 }) => {
   const { width, height } = Dimensions.get('window');
 
-  const filenames = parseImageFilenames(images);
-
-  if (filenames.length === 0) return null;
-
   return (
     <Modal visible={visible} transparent onRequestClose={onClose}>
       {/* Entire modal is tappable */}
@@ -44,7 +39,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             contentContainerStyle={{ alignItems: 'center', justifyContent: 'center' }}
             decelerationRate="fast"
             style={{ width, height }}>
-            {filenames.map((filename, i) => (
+            {images.map((filename, i) => (
               <View
                 key={filename}
                 style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>

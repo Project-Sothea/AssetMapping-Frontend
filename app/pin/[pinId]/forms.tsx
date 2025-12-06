@@ -7,7 +7,7 @@ import { useUpdateForm } from '~/features/forms/hooks/useUpdateForm';
 import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
 import type { Form, FormDB } from '~/db/schema';
 import { FormCard } from '~/features/forms/components/FormCard';
-import { FormModal } from '~/features/forms/components/FormModal';
+import { FormEditorModal } from '~/features/forms/components/FormEditorModal';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {
@@ -50,6 +50,8 @@ export default function FormScreen() {
   };
 
   const handleFormSubmit = async (values: Form) => {
+    // Ensure pinId is attached before submit
+    console.log('Submitting form with values:', values);
     try {
       if (selectedForm) {
         // Update existing form
@@ -102,7 +104,7 @@ export default function FormScreen() {
         />
       </View>
 
-      <FormModal
+      <FormEditorModal
         visible={modalVisible}
         pinId={pinId}
         selectedForm={selectedForm}

@@ -8,10 +8,9 @@ import {
   ViewStyle,
 } from 'react-native';
 import { FallbackImage } from './FallbackImage';
-import { parseImageFilenames } from '~/services/images/ImageManager';
 
 type FallbackImageListProps = {
-  images?: string | string[] | null;
+  images: string[];
   pinId: string;
   imageStyle?: StyleProp<ImageStyle>;
   containerStyle?: StyleProp<ViewStyle>;
@@ -43,10 +42,8 @@ export const FallbackImageList: React.FC<FallbackImageListProps> = ({
   horizontal = true,
   maxImages,
 }) => {
-  const filenames = parseImageFilenames(images);
-
   // Limit number of images if specified
-  const displayFilenames = maxImages ? filenames.slice(0, maxImages) : filenames;
+  const displayFilenames = maxImages ? images.slice(0, maxImages) : images;
 
   if (displayFilenames.length === 0) {
     return null;

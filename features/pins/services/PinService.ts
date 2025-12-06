@@ -14,24 +14,33 @@ import { eq } from 'drizzle-orm';
 import { enqueuePin } from '~/services/sync/queue/syncQueue';
 import * as ImageManager from '~/services/images/ImageManager';
 import { mapPinDbToPin, sanitizePinForDb } from '~/db/utils';
+import { PinFormValues } from '..//types/PinFormValues';
 
 // ============================================
 // CREATE
 // ============================================
 
-export async function createPin(pin: Pin): Promise<Pin> {
-  await db.insert(pins).values(sanitizePinForDb(pin));
-  await enqueuePin('create', pin);
-  console.log('✅ Created pin:', pin.id);
+export async function createPin(pin: PinFormValues): Promise<Pin> {
+  const newPin: Pin = {
+    ...pin,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 1,
+    status: 'unsynced',
+  };
 
-  return pin;
+  await db.insert(pins).values(sanitizePinForDb(newPin));
+  await enqueuePin('create', newPin);
+  console.log('✅ Created pin:', newPin.id);
+
+  return newPin;
 }
 
 // ============================================
 // UPDATE
 // ============================================
 
-export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin> {
+export async function updatePin(id: string, updates: Partial<PinFormValues>): Promise<Pin> {
   const existing = await getPinById(id);
   if (!existing) {
     throw new Error(`Pin ${id} not found`);
@@ -41,6 +50,7 @@ export async function updatePin(id: string, updates: Partial<Pin>): Promise<Pin>
     ...existing,
     ...updates,
     updatedAt: new Date().toISOString(),
+    version: (existing.version || 1) + 1,
     status: 'unsynced',
   };
 

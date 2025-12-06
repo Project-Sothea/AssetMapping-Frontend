@@ -8,7 +8,7 @@ import {
   Pressable,
   TouchableOpacity,
 } from 'react-native';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,19 +19,8 @@ import {
   saveImageLocally,
 } from '~/services/images/ImageManager';
 import { MaterialIcons } from '@expo/vector-icons';
-
-export type PinFormValues = {
-  name: string;
-  cityVillage: string;
-  address: string;
-  description: string;
-  type: string;
-  images: string[]; // Array of filenames (UUIDs), not full paths
-  id: string;
-  lat: number | null;
-  lng: number | null;
-  version: number | null; // Include version for conflict detection
-};
+import { PinFormValues } from '../types/PinFormValues';
+import { v4 as uuidv4 } from 'uuid';
 
 const pinSchema = z
   .object({
@@ -50,10 +39,6 @@ const pinSchema = z
       (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
       z.number().nullable()
     ),
-    version: z.preprocess(
-      (v) => (v === '' || v === undefined ? null : Number(v)),
-      z.number().nullable()
-    ),
   })
   .superRefine((val, ctx) => {
     if (val.lat === null) {
@@ -70,12 +55,32 @@ const pinSchema = z
 
 type PinFormProps = {
   onSubmit: (formData: PinFormValues) => void;
-  initialValues: PinFormValues;
+  initialValues: PinFormValues | null;
+  coords?: { lat: number; lng: number };
 };
 
-export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
-  console.log('📋 PinForm - Received initialValues:', initialValues);
-  console.log('📋 PinForm - images (filenames):', initialValues.images);
+export const PinForm = ({ onSubmit, initialValues, coords }: PinFormProps) => {
+  const isCreate = initialValues === null;
+  const idRef = useRef<string>(uuidv4());
+
+  const createDefaults = useMemo(() => {
+    if (!isCreate) return null;
+    if (!coords) throw new Error('coords is required in create mode');
+
+    return {
+      id: idRef.current,
+      name: '',
+      address: '',
+      cityVillage: '',
+      description: '',
+      type: 'normal',
+      images: [],
+      lat: coords.lat,
+      lng: coords.lng,
+    } satisfies PinFormValues;
+  }, [isCreate, coords]);
+
+  const defaults: PinFormValues = isCreate ? createDefaults! : initialValues!;
 
   const {
     handleSubmit,
@@ -84,34 +89,21 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
     reset,
     formState: { errors },
   } = useForm<PinFormValues>({
-    defaultValues: {
-      ...initialValues,
-      name: initialValues.name ?? '',
-      cityVillage: initialValues.cityVillage ?? '',
-      address: initialValues.address ?? '',
-      description: initialValues.description ?? '',
-      type: initialValues.type ?? '',
-      images: initialValues.images ?? [],
-      version: initialValues.version ?? null,
-    },
+    defaultValues: defaults,
     resolver: zodResolver(pinSchema) as Resolver<PinFormValues>,
     mode: 'onBlur',
   });
 
   useEffect(() => {
-    reset({
-      ...initialValues,
-      name: initialValues.name ?? '',
-      cityVillage: initialValues.cityVillage ?? '',
-      address: initialValues.address ?? '',
-      description: initialValues.description ?? '',
-      type: initialValues.type ?? '',
-      images: initialValues.images ?? [],
-      version: initialValues.version ?? null,
-    });
-  }, [initialValues, reset]);
+    if (!isCreate && initialValues) {
+      reset(initialValues);
+    }
+  }, [isCreate, initialValues?.id, reset, initialValues]);
 
   const values = watch();
+
+  // Use the current id from form values for any image operations
+  const currentId = values.id;
 
   const appendNewImage = async (currentFilenames: string[] | null) => {
     try {
@@ -120,7 +112,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
       if (!pickedUri) return;
 
       // Save to pin folder (returns filename)
-      const newFilename = await saveImageLocally(initialValues.id, pickedUri);
+      const newFilename = await saveImageLocally(currentId, pickedUri);
 
       // Add filename to form
       const existing = Array.isArray(currentFilenames) ? currentFilenames : [];
@@ -168,7 +160,7 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
           {values.images &&
             values.images.length > 0 &&
             values.images.map((filename, idx) => {
-              const localPath = getLocalPath(initialValues.id, filename);
+              const localPath = getLocalPath(currentId, filename);
               return (
                 <View
                   key={`image-${idx}-${filename}`}
@@ -183,14 +175,14 @@ export const PinForm = ({ onSubmit, initialValues }: PinFormProps) => {
                   />
                   <Pressable
                     onPress={() => {
-                      const remainingFilenames = values.images.filter((_, i) => i !== idx);
+                      const remainingFilenames = values.images?.filter((_, i) => i !== idx);
                       setValue('images', remainingFilenames, {
                         shouldDirty: true,
                         shouldValidate: true,
                       });
                       console.log('🗑️ Removed from form:', filename);
 
-                      deleteImageByFilename(initialValues.id, filename).catch((error) =>
+                      deleteImageByFilename(currentId, filename).catch((error) =>
                         console.warn('⚠️ Failed to delete local image', filename, error)
                       );
                     }}

@@ -119,9 +119,8 @@ export async function deleteImagesByFilename(pinId: string, filenames: string[])
 /**
  * Parse image filenames from database
  */
-export function parseImageFilenames(value: string | string[] | null | undefined): string[] {
+export function parseImageFilenames(value: string | null): string[] {
   if (!value) return [];
-  if (Array.isArray(value)) return value;
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [];

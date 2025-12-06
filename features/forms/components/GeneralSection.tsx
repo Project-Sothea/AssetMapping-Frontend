@@ -65,7 +65,7 @@ export default function GeneralSection({
       <Text style={styles.question}>How old are you this year?</Text>
       <TextInput
         style={styles.input}
-        onChangeText={(text) => setFieldValue('age', text ? parseInt(text, 10) : '')}
+        onChangeText={(text) => setFieldValue('age', text ? parseInt(text, 10) : null)}
         value={values.age !== null && values.age !== undefined ? String(values.age) : ''}
         keyboardType="numeric"
       />

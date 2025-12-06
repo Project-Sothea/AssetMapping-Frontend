@@ -19,7 +19,7 @@ const validationSchema = z.object({
   villageId: z.string().trim().min(1, 'Required'),
 });
 
-type FormModalProps = {
+type FormEditorModalProps = {
   visible: boolean;
   pinId: string;
   selectedForm: FormDB | null;
@@ -29,7 +29,13 @@ type FormModalProps = {
 
 type SectionOrder = 'general' | 'health' | 'education' | 'water';
 
-export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: FormModalProps) => {
+export const FormEditorModal = ({
+  visible,
+  pinId,
+  onClose,
+  onSubmit,
+  selectedForm,
+}: FormEditorModalProps) => {
   const [expandedSection, setExpandedSection] = useState<SectionOrder>('general');
 
   const toggleSection = useCallback((section: SectionOrder) => {
@@ -174,7 +180,7 @@ export const FormModal = ({ visible, pinId, onClose, onSubmit, selectedForm }: F
   type SetFieldValue = (field: keyof Form, value: Form[keyof Form]) => void;
 
   const setFieldValue: SetFieldValue = (field, value) => {
-    setValue(field, value, { shouldValidate: true, shouldDirty: true });
+    setValue(field, value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
   const handleChange =
