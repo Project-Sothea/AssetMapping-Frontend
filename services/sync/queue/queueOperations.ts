@@ -2,7 +2,6 @@ import { eq, and, or } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { syncQueue } from '~/db/schema';
-import { sanitizeForDb } from '~/db/utils';
 import { db } from '~/services/drizzleDb';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
@@ -39,8 +38,7 @@ export async function enqueue(params: {
     const timestamp = new Date().toISOString();
 
     // Sanitize payload to ensure it's SQLite-safe
-    const sanitizedPayload = sanitizeForDb(params.payload);
-    const payloadString = JSON.stringify(sanitizedPayload);
+    const payloadString = JSON.stringify(params.payload);
 
     // Check if there's an existing pending/failed operation for this entity
     const existing = await db

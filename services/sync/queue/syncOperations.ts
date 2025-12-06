@@ -2,7 +2,7 @@
  * Sync Operations - Backend API calls for pins and forms
  */
 
-import { Form, Pin } from '@assetmapping/shared-types';
+import { Form, OperationType, Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,12 +15,10 @@ import { getLocalPath } from '~/services/images/ImageManager';
 
 import { pullFormUpdate, pullPinUpdate } from '../pullUpdates';
 
-type Operation = 'create' | 'update' | 'delete';
-
 /**
  * Sync pin to backend
  */
-export async function syncPin(operation: Operation, data: Pin): Promise<void> {
+export async function syncPin(operation: OperationType, data: Pin): Promise<void> {
   // Handle delete operations
   if (operation === 'delete') {
     await deletePinOnBackend(data.id);
@@ -36,101 +34,36 @@ export async function syncPin(operation: Operation, data: Pin): Promise<void> {
 /**
  * Sync form to backend
  */
-export async function syncForm(operation: Operation, data: Form): Promise<void> {
-  const { status, ...rest } = data;
-  const response = await sync({
-    idempotencyKey: uuidv4(),
-    entityType: 'form',
-    operation,
-    payload:
-      operation === 'delete'
-        ? { id: data.id }
-        : {
-            ...rest,
-            version: rest.version,
-            updatedAt: rest.updatedAt || new Date().toISOString(),
-          },
-    deviceId: 'mobile-app',
-    timestamp: new Date().toISOString(),
-  });
-
-  // Handle version conflicts - pull latest data
-  if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for form ${data.id} - pulling latest from server`);
-
-      // Pull latest data from server (will overwrite local changes)
-      await pullFormUpdate(data.id);
-
-      return; // Success - conflict resolved by accepting server data
-    }
-
-    // Other errors - throw to trigger retry
-    throw new Error(response.error || 'Sync failed');
+export async function syncForm(operation: OperationType, data: Form): Promise<void> {
+  if (operation === 'delete') {
+    await deleteFormOnBackend(data.id);
+    return;
   }
 
-  // Mark form as synced in local DB and update version from backend (skip for delete operations)
-  if (operation !== 'delete') {
-    const updates: Record<string, unknown> = {
-      status: 'synced',
-    };
-
-    // Update version from backend response to stay in sync
-    if (response.data && typeof response.data === 'object' && 'version' in response.data) {
-      updates.version = response.data.version;
-    }
-
-    await db.update(forms).set(updates).where(eq(forms.id, data.id));
-  }
+  const syncedData = await syncFormToBackend(operation, data);
+  await updateLocalFormAfterSync(data.id, syncedData);
 }
 
 // ========== Helper Functions ==========
-
-/**
- * Delete pin on backend
- */
-async function deletePinOnBackend(pinId: string): Promise<void> {
-  const response = await sync({
-    idempotencyKey: uuidv4(),
-    entityType: 'pin',
-    operation: 'delete',
-    payload: { id: pinId },
-    deviceId: 'mobile-app',
-    timestamp: new Date().toISOString(),
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to delete pin');
-  }
-}
-
 /**
  * Push pin data to backend
  * Returns the synced pin data from backend (includes updated version)
  */
 async function syncPinToBackend(
-  operation: Operation,
-  data: Pin
+  operation: OperationType,
+  payload: Pin
 ): Promise<Record<string, unknown> | undefined> {
-  const { status, ...rest } = data;
-
-  const payload: Record<string, unknown> = {
-    ...rest,
-    version: rest.version, // Include version for conflict detection
-    updatedAt: rest.updatedAt || new Date().toISOString(),
-  };
-
-  const filenames = data.images || [];
+  const filenames = payload.images || [];
   const {
     imagesToUpload,
     imagesToDelete,
   }: {
     imagesToUpload: string[];
     imagesToDelete: string[];
-  } = await determineImageChanges(operation, data.id, filenames);
+  } = await determineImageChanges(operation, payload.id, filenames);
 
   if (imagesToUpload.length > 0) {
-    await uploadImagesToS3(data.id, imagesToUpload);
+    await uploadImagesToS3(payload.id, imagesToUpload);
   }
 
   const response = await sync({
@@ -139,16 +72,16 @@ async function syncPinToBackend(
     operation,
     payload,
     deviceId: 'mobile-app',
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(),
   });
 
   // Handle version conflicts - pull latest data
   if (!response.success) {
     if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for pin ${data.id} - pulling latest from server`);
+      console.warn(`⚠️ Version conflict for pin ${payload.id} - pulling latest from server`);
 
       // Pull latest data from server (will overwrite local changes)
-      await pullPinUpdate(data.id);
+      await pullPinUpdate(payload.id);
 
       return; // Success - conflict resolved by accepting server data
     }
@@ -162,7 +95,7 @@ async function syncPinToBackend(
 
   // Delete removed images from S3 (only after successful sync to avoid drift)
   if (imagesToDelete.length > 0) {
-    await deleteImagesFromS3(data.id, imagesToDelete);
+    await deleteImagesFromS3(payload.id, imagesToDelete);
   }
 
   return synced;
@@ -186,6 +119,79 @@ async function updateLocalPinAfterSync(
   }
 
   await db.update(pins).set(updates).where(eq(pins.id, pinId));
+}
+
+/**
+ * Delete pin on backend
+ */
+async function deletePinOnBackend(pinId: string): Promise<void> {
+  const response = await sync({
+    idempotencyKey: uuidv4(),
+    entityType: 'pin',
+    operation: 'delete',
+    payload: { id: pinId },
+    deviceId: 'mobile-app',
+    timestamp: new Date(),
+  });
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delete pin');
+  }
+}
+
+async function syncFormToBackend(
+  operation: OperationType,
+  payload: Form
+): Promise<Record<string, unknown> | undefined> {
+  const response = await sync({
+    idempotencyKey: uuidv4(),
+    entityType: 'form',
+    operation,
+    payload,
+    deviceId: 'mobile-app',
+    timestamp: new Date(),
+  });
+
+  if (!response.success) {
+    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
+      console.warn(`⚠️ Version conflict for form ${payload.id} - pulling latest from server`);
+      await pullFormUpdate(payload.id);
+      return;
+    }
+    throw new Error(response.error || 'Sync failed');
+  }
+
+  return response.data;
+}
+
+async function deleteFormOnBackend(formId: string): Promise<void> {
+  const response = await sync({
+    idempotencyKey: uuidv4(),
+    entityType: 'form',
+    operation: 'delete',
+    payload: { id: formId },
+    deviceId: 'mobile-app',
+    timestamp: new Date(),
+  });
+
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delete form');
+  }
+}
+
+async function updateLocalFormAfterSync(
+  formId: string,
+  syncedData?: Record<string, unknown>
+): Promise<void> {
+  const updates: Record<string, unknown> = {
+    status: 'synced',
+  };
+
+  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
+    updates.version = (syncedData as Record<string, unknown>).version;
+  }
+
+  await db.update(forms).set(updates).where(eq(forms.id, formId));
 }
 
 function buildImageKey(pinId: string, imageId: string): string {
@@ -240,7 +246,7 @@ async function deleteImagesFromS3(pinId: string, imageIds: string[]): Promise<vo
 }
 
 async function determineImageChanges(
-  operation: Operation,
+  operation: OperationType,
   pinId: string,
   currentImages: string[]
 ): Promise<{ imagesToUpload: string[]; imagesToDelete: string[] }> {

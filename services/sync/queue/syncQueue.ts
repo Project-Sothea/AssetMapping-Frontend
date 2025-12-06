@@ -8,8 +8,8 @@
  * - getQueueMetrics() - Get queue health stats
  */
 
+import { Form, Pin } from '@assetmapping/shared-types';
 import { eq, asc } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 
 import { syncQueue } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
@@ -23,16 +23,12 @@ import { Operation, QueueMetrics } from './types';
 /**
  * Queue a pin operation
  */
-export async function enqueuePin(
-  operation: Operation,
-  data: Record<string, unknown>
-): Promise<string> {
-  const id = (data.id as string) || uuidv4();
+export async function enqueuePin(operation: Operation, data: Pin): Promise<string> {
   const operationId = await enqueue({
     operation,
     entityType: 'pin',
-    entityId: id,
-    payload: { ...data, id },
+    entityId: data.id,
+    payload: data,
   });
   scheduleNextProcess(processQueue);
   return operationId;
@@ -41,25 +37,12 @@ export async function enqueuePin(
 /**
  * Queue a form operation
  */
-export async function enqueueForm(
-  operation: Operation,
-  data: Record<string, unknown>
-): Promise<string> {
-  const id = (data.id as string) || uuidv4();
-
-  // Ensure dates are properly serialized
-  const cleanData = {
-    ...data,
-    id,
-    createdAt: data.createdAt instanceof Date ? data.createdAt.toISOString() : data.createdAt,
-    updatedAt: data.updatedAt instanceof Date ? data.updatedAt.toISOString() : data.updatedAt,
-  };
-
+export async function enqueueForm(operation: Operation, data: Form): Promise<string> {
   const operationId = await enqueue({
     operation,
     entityType: 'form',
-    entityId: id,
-    payload: cleanData,
+    entityId: data.id,
+    payload: data,
   });
   scheduleNextProcess(processQueue);
   return operationId;
@@ -120,18 +103,4 @@ export async function retryFailed(): Promise<void> {
     .set({ status: 'pending', attempts: 0, lastError: null })
     .where(eq(syncQueue.status, 'failed'));
   scheduleNextProcess(processQueue);
-}
-
-/**
- * Clear all completed operations
- */
-export async function cleanupOld(): Promise<void> {
-  await db.delete(syncQueue).where(eq(syncQueue.status, 'completed'));
-}
-
-/**
- * Clear all failed operations
- */
-export async function clearFailed(): Promise<void> {
-  await db.delete(syncQueue).where(eq(syncQueue.status, 'failed'));
 }

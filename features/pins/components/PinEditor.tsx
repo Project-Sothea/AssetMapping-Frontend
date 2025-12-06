@@ -1,11 +1,11 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
-
 
 import type { PinValues } from '../types';
 
@@ -28,6 +28,8 @@ export function PinEditor(props: PinEditorProps) {
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
+  const submitRef = useRef<(() => void) | null>(null);
+  const isCreate = props.mode === 'create';
 
   const handleCreateSubmit = async (values: PinValues) => {
     if (!values.lat || !values.lng) {
@@ -82,44 +84,57 @@ export function PinEditor(props: PinEditorProps) {
     }
   };
 
-  if (props.mode === 'create') {
-    return (
-      <ScrollView>
-        <PinForm onSubmit={handleCreateSubmit} selectedPin={null} coords={props.coords} />
-      </ScrollView>
-    );
-  }
-
   return (
-    <View>
-      <PinForm onSubmit={handleUpdateSubmit} selectedPin={props.pin} />
+    <View style={styles.container}>
+      <PinForm
+        onSubmit={isCreate ? handleCreateSubmit : handleUpdateSubmit}
+        selectedPin={isCreate ? null : props.pin}
+        coords={isCreate ? props.coords : undefined}
+        onSubmitRegister={(fn) => {
+          submitRef.current = fn;
+        }}
+      />
       <View style={styles.toolbar}>
-        <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
-          <MaterialIcons name="visibility" size={22} color="#111" />
+        <TouchableOpacity
+          onPress={() => submitRef.current?.()}
+          style={[styles.iconBtn, styles.primary]}>
+          <MaterialIcons name="save" size={22} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
-          <MaterialIcons name="delete" size={22} color="#fff" />
-        </TouchableOpacity>
+        {!isCreate && (
+          <>
+            <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
+              <MaterialIcons name="visibility" size={22} color="#111" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
+              <MaterialIcons name="delete" size={22} color="#fff" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { paddingBottom: 16 },
   toolbar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
+    gap: 10,
     marginTop: 12,
   },
   iconBtn: {
     padding: 8,
-    borderRadius: 10,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
   },
   muted: {
     backgroundColor: '#e5e7eb',
   },
   danger: {
     backgroundColor: '#ef4444',
+  },
+  primary: {
+    backgroundColor: '#2563eb',
   },
 });

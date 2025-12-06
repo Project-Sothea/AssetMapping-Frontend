@@ -81,7 +81,7 @@ export async function deletePin(id: string): Promise<void> {
   }
 
   await db.delete(pins).where(eq(pins.id, id));
-  await enqueuePin('delete', { id });
+  await enqueuePin('delete', existing);
 }
 
 // ============================================

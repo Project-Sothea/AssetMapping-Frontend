@@ -1,3 +1,4 @@
+import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -7,8 +8,6 @@ import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
-
-import type { Pin } from '../types/';
 
 type PinCardProps = {
   pin: Pin;

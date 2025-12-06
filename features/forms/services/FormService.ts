@@ -30,9 +30,6 @@ export async function createForm(values: FormValues): Promise<Form> {
       // Update the parent pin's updatedAt using updatePin so the repository
       // and sync queue logic runs consistently (this also enqueues the pin update).
       const updatedAt = new Date();
-      console.debug(
-        `[FormService] createForm: updating pin ${newForm.pinId} updatedAt=${updatedAt} for new form ${newForm.id}`
-      );
       await updatePin(newForm.pinId, { updatedAt });
     } catch (err) {
       console.warn(
@@ -66,9 +63,6 @@ export async function updateForm(id: string, updates: FormUpdate): Promise<Form>
   if (updated.pinId) {
     try {
       const updatedAt = new Date();
-      console.debug(
-        `[FormService] updateForm: updating pin ${updated.pinId} updatedAt=${updatedAt} for form ${updated.id}`
-      );
       await updatePin(updated.pinId, { updatedAt });
     } catch (err) {
       console.warn(
@@ -93,9 +87,6 @@ export async function deleteForm(id: string): Promise<void> {
   if (existing.pinId) {
     try {
       const updatedAt = new Date();
-      console.debug(
-        `[FormService] deleteForm: updating pin ${existing.pinId} updatedAt=${updatedAt} for deleted form ${existing.id}`
-      );
       await updatePin(existing.pinId, { updatedAt });
     } catch (err) {
       console.warn(
@@ -104,7 +95,7 @@ export async function deleteForm(id: string): Promise<void> {
       );
     }
   }
-  await enqueueForm('delete', { id });
+  await enqueueForm('delete', existing);
 }
 
 // ============================================

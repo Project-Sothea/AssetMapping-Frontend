@@ -2,12 +2,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 
-import {
-  processQueue,
-  getQueueMetrics,
-  retryFailed,
-  clearFailed,
-} from '~/services/sync/queue/syncQueue';
+import { processQueue, getQueueMetrics, retryFailed } from '~/services/sync/queue/syncQueue';
 import { usePopup } from '~/shared/contexts/PopupContext';
 
 export const SyncStatusBar = () => {
@@ -90,32 +85,6 @@ export const SyncStatusBar = () => {
         [{ text: 'OK' }]
       );
       return;
-    }
-
-    // Development mode only - allow clearing
-    if (__DEV__ && queueFailed > 0) {
-      Alert.alert(
-        'Clear Failed Items (DEV)',
-        `Delete ${queueFailed} failed sync operation${queueFailed > 1 ? 's' : ''}? This cannot be undone.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Clear',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await clearFailed();
-                // const metrics = await getQueueMetrics(); // Removed: not needed
-                showPopup('Failed items cleared', 'green');
-                queryClient.invalidateQueries({ queryKey: ['queueMetrics'] });
-              } catch (err) {
-                console.error('Failed to clear:', err);
-                showPopup('Clear failed!', 'red');
-              }
-            },
-          },
-        ]
-      );
     }
   };
 

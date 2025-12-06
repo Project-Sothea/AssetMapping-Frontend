@@ -1,19 +1,20 @@
+import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-import type { Pin } from 'features/pins/types/';
-
+import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
 
 type PinDetailsProps = {
   pin: Pin;
-  isSynced: boolean;
   onImagePress: (index: number) => void;
   onEdit: () => void;
   onViewForms: () => void;
 };
 
-export function PinDetails({ pin, isSynced, onImagePress, onEdit, onViewForms }: PinDetailsProps) {
+export function PinDetails({ pin, onImagePress, onEdit, onViewForms }: PinDetailsProps) {
+  const isSynced = usePinQueueStatus(pin.id);
+
   const badgeColor = isSynced ? '#10B981' : '#e74c3c';
 
   return (

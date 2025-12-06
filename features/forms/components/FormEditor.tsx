@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
-import { ScrollView, Alert, Text, View, TouchableOpacity, StyleSheet } from 'react-native';
+import { ScrollView, Alert, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { z } from 'zod';
 
 import Spacer from '~/shared/components/ui/Spacer';
@@ -188,7 +188,7 @@ export function FormEditor({
         await updateFormAsync({ id: selectedForm.id, values: vals });
         Alert.alert('Form Updated!');
       } else {
-        await createFormAsync({ ...vals, pinId });
+        await createFormAsync(vals);
         Alert.alert('Form Created!');
       }
       onClose();
@@ -266,19 +266,20 @@ export function FormEditor({
 
       {isEditing ? (
         <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.saveBtn]} onPress={handleSubmit(handleSubmitForm)}>
-            <MaterialIcons name="save" size={22} color="#fff" />
-            <Text style={styles.saveLabel}>Save</Text>
+          <TouchableOpacity
+            style={[styles.iconBtn, styles.save]}
+            onPress={handleSubmit(handleSubmitForm)}>
+            <MaterialIcons name="save" size={24} color="#fff" />
           </TouchableOpacity>
           {!isCreate && (
             <>
               <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
-                <MaterialIcons name="delete" size={22} color="#fff" />
+                <MaterialIcons name="delete" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => onToggleEdit?.(false)}
                 style={[styles.iconBtn, styles.muted]}>
-                <MaterialIcons name="visibility" size={22} color="#111" />
+                <MaterialIcons name="visibility" size={24} color="#111" />
               </TouchableOpacity>
             </>
           )}
@@ -289,7 +290,7 @@ export function FormEditor({
             <TouchableOpacity
               style={[styles.iconBtn, styles.editBtn]}
               onPress={() => onToggleEdit?.(true)}>
-              <MaterialIcons name="edit" size={22} color="#1d4ed8" />
+              <MaterialIcons name="edit" size={24} color="#1d4ed8" />
             </TouchableOpacity>
           </View>
         )
@@ -306,18 +307,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 8,
   },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  save: {
     backgroundColor: '#10b981',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
-  },
-  saveLabel: {
-    color: '#fff',
-    fontWeight: '700',
   },
   iconBtn: {
     padding: 8,

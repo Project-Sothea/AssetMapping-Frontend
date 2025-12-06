@@ -32,9 +32,10 @@ type PinFormProps = {
   onSubmit: (formData: PinValues) => void;
   selectedPin: PinValues | null;
   coords?: { lat: number; lng: number };
+  onSubmitRegister?: (fn: () => void) => void;
 };
 
-export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
+export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: PinFormProps) => {
   const isCreate = selectedPin === null;
   const idRef = useRef<string>(uuidv4());
 
@@ -94,6 +95,12 @@ export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
       console.error('Failed to add image:', error);
     }
   };
+
+  useEffect(() => {
+    if (onSubmitRegister) {
+      onSubmitRegister(() => handleSubmit((data) => onSubmit(data))());
+    }
+  }, [handleSubmit, onSubmit, onSubmitRegister]);
 
   return (
     <View style={styles.container}>
@@ -178,13 +185,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords }: PinFormProps) => {
             <MaterialIcons name="image" size={24} color="blue" />
             <Text style={styles.imagePickerText}>Pick an Image</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSubmit((data) => onSubmit(data))}
-            style={styles.saveButton}>
-            <MaterialIcons name="save" size={24} color="green" />
-            <Text style={styles.saveButtonText}>Save</Text>
-          </TouchableOpacity>
         </View>
 
         {errors.images?.message && <Text style={styles.error}>{errors.images.message}</Text>}
@@ -211,8 +211,9 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginTop: 16,
+    gap: 10,
   },
   imagePickerButton: {
     flexDirection: 'row',
@@ -223,13 +224,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#D0E8FF',
   },
   imagePickerText: { marginLeft: 8, fontWeight: 'bold', color: '#3498db' },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: '#e0f7e9',
-    borderRadius: 12,
-  },
-  saveButtonText: { marginLeft: 8, color: '#2ecc71', fontWeight: 'bold' },
 });

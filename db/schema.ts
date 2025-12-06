@@ -51,7 +51,9 @@ export const forms = sqliteTable('forms', {
   createdAt: integer({ mode: 'timestamp' }).notNull(),
   updatedAt: integer({ mode: 'timestamp' }),
   version: integer().notNull().default(1),
-  pinId: text().references(() => pins.id, { onDelete: 'cascade' }), // Foreign key with cascade
+  pinId: text()
+    .references(() => pins.id, { onDelete: 'cascade' })
+    .notNull(), // Foreign key with cascade
   status: text(),
 
   // General

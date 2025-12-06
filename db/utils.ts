@@ -7,21 +7,13 @@
 
 import type { Form, FormDB, Pin, PinDB } from '@assetmapping/shared-types';
 
-/**
- * Sanitize data for SQLite - remove undefined values and convert Dates
- */
-export function sanitizeForDb(obj: unknown): unknown {
-  if (obj === null || obj === undefined) return null;
-  if (typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(sanitizeForDb);
-
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) {
-      sanitized[key] = sanitizeForDb(value);
-    }
+function toDateSafe(value: unknown): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
   }
-  return sanitized;
+  return new Date();
 }
 
 /**
@@ -31,6 +23,8 @@ export function sanitizeForDb(obj: unknown): unknown {
 export function sanitizePinForDb(pin: Pin): PinDB {
   return {
     ...pin,
+    createdAt: toDateSafe((pin as any).createdAt ?? new Date()),
+    updatedAt: toDateSafe((pin as any).updatedAt ?? (pin as any).createdAt ?? new Date()),
     images: jsonifyArray(pin.images),
   };
 }
@@ -49,6 +43,8 @@ export function mapPinDbToPin(pin: PinDB): Pin {
 export function sanitizeFormForDb(form: Form): FormDB {
   return {
     ...form,
+    createdAt: toDateSafe((form as any).createdAt ?? new Date()),
+    updatedAt: toDateSafe((form as any).updatedAt ?? (form as any).createdAt ?? new Date()),
     // Health
     longTermConditions: jsonifyArray(form.longTermConditions),
     managementMethods: jsonifyArray(form.managementMethods),

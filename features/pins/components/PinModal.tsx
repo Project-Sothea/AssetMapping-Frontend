@@ -1,9 +1,8 @@
+import { Pin } from '@assetmapping/shared-types';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-
-import { Pin } from '../types/';
 
 import { ImageModal } from './ImageModal';
 import { PinDetails } from './PinDetails';
@@ -32,7 +31,6 @@ export function PinModal(props: PinModalProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const isCreate = props.mode === 'create';
   const pin = props.mode === 'view' ? props.pin : null;
-  const isSynced = props.mode === 'view' ? props.pin.status === 'synced' : false;
 
   const openImage = (index: number) => {
     setActiveIndex(index);
@@ -62,7 +60,6 @@ export function PinModal(props: PinModalProps) {
         <>
           <PinDetails
             pin={pin!}
-            isSynced={isSynced}
             onImagePress={openImage}
             onEdit={() => setIsEditing(true)}
             onViewForms={handleViewForms}
