@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Position } from '@rnmapbox/maps/lib/typescript/src/types/Position';
+import type { Position } from 'geojson';
 import { useForm, type Resolver } from 'react-hook-form';
 import { View, TextInput, StyleSheet, Text } from 'react-native';
 import { z } from 'zod';

@@ -11,7 +11,6 @@ import {
   ShapeSource,
   SymbolLayer,
 } from '@rnmapbox/maps';
-import type { OnPressEvent } from '@rnmapbox/maps/lib/typescript/src/types/OnPressEvent';
 import * as Location from 'expo-location';
 import type { Feature, Geometry } from 'geojson';
 import { useState, useEffect, useRef } from 'react';
@@ -135,7 +134,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
     }
   };
 
-  const handleOpenPin = async (event: OnPressEvent) => {
+  const handleOpenPin = async (event: { features: Feature[] }) => {
     const pressedFeature = event.features[0];
     if (pressedFeature?.properties) {
       const pinId = pressedFeature.properties.id as string | undefined;
