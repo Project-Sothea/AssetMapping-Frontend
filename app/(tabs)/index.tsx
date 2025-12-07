@@ -2,7 +2,6 @@ import type { Pin } from '@assetmapping/shared-types';
 import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
 import { ImageBackground, StyleSheet, FlatList, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import backgroundImage from '~/assets/home-background.png';
 import { PinCard } from '~/features/pins/components/PinCard';
@@ -43,28 +42,26 @@ export default function PinScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-      <ImageBackground
-        source={backgroundImage}
-        style={styles.background}
-        resizeMode="cover"
-        imageStyle={styles.backgroundImage}>
-        <TextInput
-          placeholder="Find pin..."
-          value={query}
-          onChangeText={setQuery}
-          style={styles.searchInput}
-          placeholderTextColor="#888"
-        />
-        <FlatList
-          data={filteredPins}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      </ImageBackground>
-    </SafeAreaView>
+    <ImageBackground
+      source={backgroundImage}
+      style={styles.background}
+      resizeMode="cover"
+      imageStyle={styles.backgroundImage}>
+      <TextInput
+        placeholder="Find pin..."
+        value={query}
+        onChangeText={setQuery}
+        style={styles.searchInput}
+        placeholderTextColor="#888"
+      />
+      <FlatList
+        data={filteredPins}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </ImageBackground>
   );
 }
 
