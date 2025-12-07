@@ -72,7 +72,7 @@ export const SyncStatusBar = () => {
     } finally {
       setIsSyncing(false);
       // Invalidate to refresh metrics immediately
-      queryClient.invalidateQueries({ queryKey: ['queueMetrics'] });
+      await queryClient.invalidateQueries({ queryKey: ['queueMetrics'] });
     }
   };
 

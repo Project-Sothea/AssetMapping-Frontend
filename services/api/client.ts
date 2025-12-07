@@ -21,53 +21,56 @@ export async function request<T>(
   options: RequestInit = {},
   timeoutMs: number = 30000
 ): Promise<ApiResponse<T>> {
+  let baseUrl: string;
+
   try {
-    const baseUrl = await resolveBaseUrl();
-    const url = `${baseUrl}${endpoint}`;
-
-    // Create abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        return {
-          success: false,
-          error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
-        };
-      }
-
-      const data = await response.json();
-      return data as ApiResponse<T>;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error(`API request timed out after ${timeoutMs / 1000}s:`, endpoint);
-        return {
-          success: false,
-          error: 'Request timed out. Please check your internet connection.',
-        };
-      }
-      throw error;
-    }
+    baseUrl = await resolveBaseUrl();
   } catch (error) {
     console.error('API request failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Network error',
     };
+  }
+
+  const url = `${baseUrl}${endpoint}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      return {
+        success: false,
+        error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+    return data as ApiResponse<T>;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`API request timed out after ${timeoutMs / 1000}s:`, endpoint);
+      return {
+        success: false,
+        error: 'Request timed out. Please check your internet connection.',
+      };
+    }
+    console.error('API request failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

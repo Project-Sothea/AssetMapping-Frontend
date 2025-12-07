@@ -36,7 +36,7 @@ export function ApiUrlConfiguration() {
 
       // Use the centralized reconnect and sync service
       const deviceId = getDeviceId();
-      await reconnectAndSync(apiUrl, deviceId, webSocketManager);
+      await reconnectAndSync(deviceId, webSocketManager);
 
       Alert.alert('Success', 'API URL updated and data synced successfully!');
     } catch (error) {

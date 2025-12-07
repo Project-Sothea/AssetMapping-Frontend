@@ -230,7 +230,7 @@ class WebSocketManager {
   /**
    * Handle WebSocket close event
    */
-  private handleClose(event: CloseEvent): void {
+  private handleClose(): void {
     this.clearTimers();
 
     const wasConnected = this.status.isConnected;

@@ -1,12 +1,8 @@
 import { Alert } from 'react-native';
 
 export enum ErrorCode {
-  DATABASE_ERROR = 'DATABASE_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
   NOT_FOUND = 'NOT_FOUND',
-  SYNC_ERROR = 'SYNC_ERROR',
-  IMAGE_ERROR = 'IMAGE_ERROR',
   UNKNOWN = 'UNKNOWN',
 }
 

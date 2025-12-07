@@ -17,7 +17,7 @@ export function ReconnectButton() {
     const wasConnected = wasConnectedRef.current;
     wasConnectedRef.current = isConnected;
 
-    if (wasConnected === false && isConnected === true) {
+    if (!wasConnected && isConnected) {
       showPopup('Connected!', '#10B981');
     }
   }, [isConnected, showPopup]);

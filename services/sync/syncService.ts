@@ -80,13 +80,11 @@ export async function performIncrementalSync(): Promise<void> {
 /**
  * Reconnects to the backend with a new API URL and performs full sync
  *
- * @param apiUrl - The new API URL to connect to
  * @param deviceId - The device identifier for WebSocket connection
  * @param webSocketManager - The WebSocket manager instance
  * @throws Error if connection or sync fails
  */
 export async function reconnectAndSync(
-  _apiUrl: string,
   deviceId: string,
   webSocketManager: { connect: (deviceId: string) => Promise<void> }
 ): Promise<void> {

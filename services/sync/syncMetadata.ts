@@ -33,14 +33,3 @@ export async function updateLastSyncTimestamp(): Promise<void> {
     console.error('Failed to update last sync timestamp:', error);
   }
 }
-
-/**
- * Clear the last sync timestamp (forces full sync on next sync)
- */
-export async function clearLastSyncTimestamp(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(LAST_SYNC_KEY);
-  } catch (error) {
-    console.error('Failed to clear last sync timestamp:', error);
-  }
-}

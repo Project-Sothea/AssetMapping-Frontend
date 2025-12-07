@@ -42,7 +42,7 @@ const presets: { id: string; title: string; options: CreateOfflinePackProps }[] 
   },
 ];
 
-const PremadePacks: React.FC<Props> = ({ onPress, progress = 0, frameless = false }) => {
+const PremadePacks: React.FC<Props> = ({ onPress, progress = 0 }) => {
   const p = Math.max(0, Math.min(100, progress));
   const inProgress = p > 0 && p < 100;
 

@@ -13,7 +13,6 @@
  * 4. Delete → easy to track (compare filename arrays)
  */
 
-import { fetch } from 'expo/fetch';
 import { Directory, File, Paths } from 'expo-file-system/next';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -57,12 +56,13 @@ export async function saveImageLocally(pinId: string, imageUri: string): Promise
   const filename = imageUri.split('/').pop()!;
   const destFile = new File(pinDir, filename);
 
-  destFile.create();
-  const response = await fetch(imageUri);
-  if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-
-  const bytes = await response.bytes();
-  destFile.write(bytes);
+  // For local file:// URIs from the picker, copy directly; fall back to download for remote URIs
+  if (imageUri.startsWith('file://')) {
+    const sourceFile = new File(imageUri);
+    sourceFile.copy(destFile);
+  } else {
+    await File.downloadFileAsync(imageUri, destFile, { idempotent: true });
+  }
   return filename;
 }
 
@@ -150,15 +150,8 @@ export async function cacheRemoteImage(
     }
 
     const destFile = new File(pinDir, filename);
-    const response = await fetch(remoteUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.status}`);
-    }
-
-    destFile.create();
-    const bytes = await response.bytes();
-    destFile.write(bytes);
-    return destFile.uri;
+    const downloadedFile = await File.downloadFileAsync(remoteUrl, destFile, { idempotent: true });
+    return downloadedFile.uri;
   } catch (error) {
     console.warn('⚠️ Failed to cache remote image locally', { pinId, filename, error });
     return null;

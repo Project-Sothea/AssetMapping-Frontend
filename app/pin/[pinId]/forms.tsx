@@ -2,7 +2,6 @@ import type { Form } from '@assetmapping/shared-types';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View, Text, ScrollView, Button, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormCard } from '~/features/forms/components/FormCard';
 import { FormModal } from '~/features/forms/components/FormModal';
@@ -25,39 +24,37 @@ export default function FormScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
 
-        {forms?.length === 0 && (
-          <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
-        )}
+      {forms?.length === 0 && (
+        <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
+      )}
 
-        <View style={styles.formsList}>
-          {forms?.map((form) => (
-            <FormCard key={form.id} form={form} onPress={handleFormPress} />
-          ))}
-        </View>
+      <View style={styles.formsList}>
+        {forms?.map((form) => (
+          <FormCard key={form.id} form={form} onPress={handleFormPress} />
+        ))}
+      </View>
 
-        <View style={styles.newFormSection}>
-          <Button
-            title="Create New Form"
-            color="#3498db"
-            onPress={() => {
-              setSelectedForm(null);
-              setModalVisible(true);
-            }}
-          />
-        </View>
-
-        <FormModal
-          visible={modalVisible}
-          pinId={pinId}
-          selectedForm={selectedForm}
-          onClose={handleModalClose}
+      <View style={styles.newFormSection}>
+        <Button
+          title="Create New Form"
+          color="#3498db"
+          onPress={() => {
+            setSelectedForm(null);
+            setModalVisible(true);
+          }}
         />
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      <FormModal
+        visible={modalVisible}
+        pinId={pinId}
+        selectedForm={selectedForm}
+        onClose={handleModalClose}
+      />
+    </ScrollView>
   );
 }
 

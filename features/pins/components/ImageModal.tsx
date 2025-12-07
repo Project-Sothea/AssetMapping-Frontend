@@ -40,7 +40,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             contentContainerStyle={{ alignItems: 'center', justifyContent: 'center' }}
             decelerationRate="fast"
             style={{ width, height }}>
-            {images.map((filename, i) => (
+            {images.map((filename) => (
               <View
                 key={filename}
                 style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>

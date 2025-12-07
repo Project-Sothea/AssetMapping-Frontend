@@ -1,8 +1,11 @@
 import React, { useRef, ReactNode } from 'react';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import ReanimatedSwipeable, {
+  SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import type { SharedValue } from 'react-native-reanimated';
 
 // Store the currently open swipeable
-let currentlyOpenSwipeable: Swipeable | null = null;
+let currentlyOpenSwipeable: SwipeableMethods | null = null;
 
 // Export function to close any open swipeable
 export const closeCurrentSwipeable = () => {
@@ -14,8 +17,16 @@ export const closeCurrentSwipeable = () => {
 
 type SwipeableCardProps = {
   children: ReactNode;
-  renderRightActions?: () => ReactNode;
-  renderLeftActions?: () => ReactNode;
+  renderRightActions?: (
+    progress: SharedValue<number>,
+    translation: SharedValue<number>,
+    swipeableMethods: SwipeableMethods
+  ) => ReactNode;
+  renderLeftActions?: (
+    progress: SharedValue<number>,
+    translation: SharedValue<number>,
+    swipeableMethods: SwipeableMethods
+  ) => ReactNode;
   overshootRight?: boolean;
   overshootLeft?: boolean;
   friction?: number;
@@ -33,7 +44,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   rightThreshold = 40,
   leftThreshold = 40,
 }) => {
-  const swipeableRef = useRef<Swipeable>(null);
+  const swipeableRef = useRef<SwipeableMethods | null>(null);
 
   const handleSwipeableWillOpen = () => {
     // Close the previously open swipeable immediately when a new one starts to open
@@ -48,7 +59,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   };
 
   return (
-    <Swipeable
+    <ReanimatedSwipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
       renderLeftActions={renderLeftActions}
@@ -60,6 +71,6 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
       rightThreshold={rightThreshold}
       leftThreshold={leftThreshold}>
       {children}
-    </Swipeable>
+    </ReanimatedSwipeable>
   );
 };

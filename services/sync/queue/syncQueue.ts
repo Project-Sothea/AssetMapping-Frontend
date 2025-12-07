@@ -52,7 +52,7 @@ export async function enqueueForm(operation: Operation, data: Form): Promise<str
  * Get queue health metrics
  */
 export async function getQueueMetrics(): Promise<QueueMetrics> {
-  const items = await db.select().from(syncQueue).all();
+  const items = db.select().from(syncQueue).all();
   return {
     pending: items.filter((i) => i.status === 'pending').length,
     failed: items.filter((i) => i.status === 'failed').length,

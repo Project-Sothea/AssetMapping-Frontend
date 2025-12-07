@@ -1,5 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
+import React from 'react';
 
 import { ReconnectButton } from '~/shared/components/ReconnectButton';
 import { SyncStatusBar } from '~/shared/components/SyncStatusBar';
@@ -22,9 +23,9 @@ export default function Layout() {
         options={{
           title: 'Pins',
           headerShown: true,
-          headerTitle: () => <SyncStatusBar />,
+          headerTitle: SyncStatusBar,
           headerTitleAlign: 'center',
-          headerRight: () => <ReconnectButton />,
+          headerRight: ReconnectButton,
           headerRightContainerStyle: { paddingRight: 15 },
           tabBarIcon: ({ color }) => <TabBarIcon name="map-pin" color={color} />,
         }}

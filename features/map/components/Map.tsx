@@ -12,7 +12,7 @@ import {
   SymbolLayer,
 } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
-import type { Feature, Geometry } from 'geojson';
+import type { Feature } from 'geojson';
 import { useState, useEffect, useRef } from 'react';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
@@ -100,7 +100,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
     );
   };
 
-  const handleDropPin = async (feature: Feature<Geometry>) => {
+  const handleDropPin = async (feature: Feature) => {
     // Type guard to ensure it's a Point geometry
     if (feature.geometry.type !== 'Point') return;
 
