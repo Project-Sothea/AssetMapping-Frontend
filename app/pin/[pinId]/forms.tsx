@@ -35,11 +35,7 @@ export default function FormScreen() {
 
         <View style={styles.formsList}>
           {forms?.map((form) => (
-            <FormCard
-              key={form.id}
-              form={form}
-              onPress={handleFormPress}
-            />
+            <FormCard key={form.id} form={form} onPress={handleFormPress} />
           ))}
         </View>
 
