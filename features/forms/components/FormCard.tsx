@@ -1,16 +1,14 @@
+import type { Form } from '@assetmapping/shared-types';
 import { Text, StyleSheet, Pressable } from 'react-native';
 
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 
-import type { Form } from '../types';
-
 type FormCardProps = {
   form: Form;
   onPress: (form: Form) => void;
-  onDelete: (formId: string) => void;
 };
 
-export const FormCard = ({ form, onPress, onDelete }: FormCardProps) => {
+export const FormCard = ({ form, onPress }: FormCardProps) => {
   // Determine border color based on sync status from operations table
   const isSynced = useFormQueueStatus(form.id);
   const borderColor = isSynced ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced

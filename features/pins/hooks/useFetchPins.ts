@@ -1,11 +1,10 @@
+import { Pin } from '@assetmapping/shared-types';
 import { desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 import * as schema from '~/db/schema';
 import { mapPinDbToPin } from '~/db/utils';
 import { db } from '~/services/drizzleDb';
-
-import { Pin } from '../types';
 
 export const useFetchLocalPins = (): Pin[] => {
   // Order pins by last updated time (most recent first) so activity like form create/update

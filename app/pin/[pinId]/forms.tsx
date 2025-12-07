@@ -1,22 +1,18 @@
 import type { Form } from '@assetmapping/shared-types';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { View, Text, ScrollView, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, Button, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormCard } from '~/features/forms/components/FormCard';
 import { FormModal } from '~/features/forms/components/FormModal';
-import { useDeleteForm } from '~/features/forms/hooks/useDeleteForm';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { ErrorHandler } from '~/shared/utils/errorHandling';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const forms = useFetchForms(pinId);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-
-  const { deleteFormAsync } = useDeleteForm();
 
   const handleModalClose = () => {
     setSelectedForm(null);
@@ -26,25 +22,6 @@ export default function FormScreen() {
   const handleFormPress = (form: Form) => {
     setSelectedForm(form);
     setModalVisible(true);
-  };
-
-  const handleFormDelete = (formId: string) => {
-    Alert.alert('Confirm Delete', 'Are you sure you want to delete this form?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteFormAsync(formId);
-            Alert.alert('Form Deleted!');
-          } catch (error) {
-            const appError = ErrorHandler.handle(error, 'Failed to delete form');
-            ErrorHandler.showAlert(appError, 'Error');
-          }
-        },
-      },
-    ]);
   };
 
   return (
@@ -62,7 +39,6 @@ export default function FormScreen() {
               key={form.id}
               form={form}
               onPress={handleFormPress}
-              onDelete={handleFormDelete}
             />
           ))}
         </View>

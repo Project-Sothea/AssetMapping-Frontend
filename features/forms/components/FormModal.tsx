@@ -1,8 +1,7 @@
+import type { Form } from '@assetmapping/shared-types';
 import { useState } from 'react';
 
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
-
-import type { Form } from '../types';
 
 import { FormEditor } from './FormEditor';
 
