@@ -9,18 +9,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://assetmapping.up.railway.app",
-        "EXPO_PUBLIC_MAPBOX_KEY": "pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://assetmapping.up.railway.app",
-        "EXPO_PUBLIC_MAPBOX_KEY": "pk.eyJ1IjoicHJvamVjdHNvdGhlYSIsImEiOiJjbWJzbjVxZngwbmZuMm5vZ3h0eXBnYnlrIn0.Ro_wtGTUXWsJ2cfjNdQ1iw"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
