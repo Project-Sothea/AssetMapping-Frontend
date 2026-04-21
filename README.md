@@ -42,17 +42,15 @@ Copy `.env.example` to `.env` and fill in the required values:
 |----------------------------|--------------------------------------------------------------------------------------|
 | `EXPO_PUBLIC_MAPBOX_KEY`   | Mapbox public token (`pk.*`) — used at runtime to render maps and make API requests  |
 | `EXPO_PUBLIC_API_URL`      | Default backend API URL (can be overridden in-app)                                   |
-| `MAPBOX_DOWNLOAD_TOKEN`    | Mapbox secret token (`sk.*`) — used at build time to download the Mapbox SDK         |
 | `EAS_PROJECT_ID`           | Your Expo project ID — each developer sets this to their own EAS project             |
 
 The backend API URL defaults to `EXPO_PUBLIC_API_URL` but can be overridden at runtime via the Download tab in the app, where it is persisted locally on device.
 
 ### Mapbox Tokens
 
-Two separate Mapbox tokens are required:
+A single Mapbox public token is required:
 
 - **Public token** (`pk.*`): create or find this in the [Mapbox dashboard](https://account.mapbox.com/access-tokens/). Used by the app at runtime.
-- **Download token** (`sk.*`): create a new secret token in the Mapbox dashboard with the **`DOWNLOADS:READ`** scope only. Used at build time to pull the Mapbox SDK from their private registry.
 
 ### EAS Secrets (for CI/CD builds)
 
@@ -61,7 +59,6 @@ For EAS builds, set these as EAS Secrets rather than committing them to `eas.jso
 ```bash
 eas secret:create --scope project --name EXPO_PUBLIC_MAPBOX_KEY --value <your-value>
 eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value <your-value>
-eas secret:create --scope project --name MAPBOX_DOWNLOAD_TOKEN --value <your-value>
 eas secret:create --scope project --name EAS_PROJECT_ID --value <your-value>
 ```
 
