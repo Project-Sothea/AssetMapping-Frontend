@@ -1,3 +1,5 @@
+import 'react-native-get-random-values';
+
 import { Stack } from 'expo-router';
 import { Suspense, useEffect, useState } from 'react';
 import { ActivityIndicator, View, Text } from 'react-native';
