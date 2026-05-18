@@ -1,4 +1,5 @@
 # Asset Mapping Frontend
+
 ### Last Updated: 12 Apr, 2026
 
 ## Overview
@@ -38,11 +39,11 @@ Before you begin, ensure you have the following installed:
 
 Copy `.env.example` to `.env` and fill in the required values:
 
-| Variable                   | Description                                                                          |
-|----------------------------|--------------------------------------------------------------------------------------|
-| `EXPO_PUBLIC_MAPBOX_KEY`   | Mapbox public token (`pk.*`) — used at runtime to render maps and make API requests  |
-| `EXPO_PUBLIC_API_URL`      | Default backend API URL (can be overridden in-app)                                   |
-| `EAS_PROJECT_ID`           | Your Expo project ID — each developer sets this to their own EAS project             |
+| Variable                 | Description                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_MAPBOX_KEY` | Mapbox public token (`pk.*`) — used at runtime to render maps and make API requests |
+| `EXPO_PUBLIC_API_URL`    | Default backend API URL (can be overridden in-app)                                  |
+| `EAS_PROJECT_ID`         | Your Expo project ID — each developer sets this to their own EAS project            |
 
 The backend API URL defaults to `EXPO_PUBLIC_API_URL` but can be overridden at runtime via the Download tab in the app, where it is persisted locally on device.
 
@@ -136,6 +137,7 @@ The sync queue entry structure:
 ```
 
 Key sync files:
+
 - `services/sync/syncService.ts` — orchestrates the full sync lifecycle
 - `services/sync/queue/syncQueue.ts` — queue management
 - `services/sync/pullUpdates.ts` — pulls latest state from the backend

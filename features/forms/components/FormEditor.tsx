@@ -21,9 +21,8 @@ import HealthSection from './HealthSection';
 import WaterSection from './WaterSection';
 
 const formSchema = z.looseObject({
-  name: z.string().trim().min(1, 'Required'),
   village: z.string().trim().min(1, 'Required'),
-  villageId: z.string().trim().min(1, 'Required'),
+  householdNumber: z.string().trim().min(1, 'Required'),
 });
 
 type FormEditorProps = {
@@ -34,7 +33,7 @@ type FormEditorProps = {
   onToggleEdit?: (next: boolean) => void;
 };
 
-type SectionOrder = 'general' | 'health' | 'education' | 'water';
+type SectionOrder = 'general' | 'conflict' | 'health' | 'education' | 'water';
 
 export function FormEditor({
   pinId,
@@ -56,10 +55,15 @@ export function FormEditor({
       pinId,
       villageId: '',
       name: '',
+      householdNumber: '',
       gender: '',
       age: null,
       village: '',
       canAttendHealthScreening: null,
+      conflictHealthcareAccess: '',
+      conflictHealthManagement: '',
+      conflictCleanWaterAccess: '',
+      conflictCostOfLiving: '',
       longTermConditions: [],
       otherLongTermConditions: '',
       managementMethods: [],
@@ -72,7 +76,7 @@ export function FormEditor({
       otherKnowWhereToFindDoctor: '',
       transportToClinic: '',
       otherTransportToClinic: '',
-      medicinePurchaseLocations: '',
+      medicinePurchaseLocations: [],
       otherMedicinePurchaseLocations: '',
       povertyCardSchemeAwareness: '',
       otherPovertyCardSchemeAwareness: '',
@@ -115,12 +119,18 @@ export function FormEditor({
       otherWaterSources: '',
       unsafeWaterTypes: [],
       otherUnsafeWaterTypes: '',
+      waterHealthConsequences: '',
+      waterSocioeconomicConsequences: '',
       waterFilterAwareness: '',
       otherWaterFilterAwareness: '',
+      waterFilterExperience: '',
       waterFilterNonUseReasons: [],
       otherWaterFilterNonUseReasons: '',
       handwashingAfterToilet: '',
       otherHandwashingAfterToilet: '',
+      handwashingBeforeMeals: '',
+      handwashingBeforeMealsReason: '',
+      pressingHealthNeed: '',
     };
   }, [isCreate, selectedForm, pinId]);
 
@@ -184,11 +194,18 @@ export function FormEditor({
 
   const handleSubmitForm = async (vals: FormValues) => {
     try {
+      const householdNumber = vals.householdNumber?.trim() || vals.villageId?.trim() || '';
+      const submissionValues: FormValues = {
+        ...vals,
+        householdNumber,
+        villageId: householdNumber,
+        name: householdNumber ? `Household ${householdNumber}` : vals.name,
+      };
       if (selectedForm) {
-        await updateFormAsync({ id: selectedForm.id, values: vals });
+        await updateFormAsync({ id: selectedForm.id, values: submissionValues });
         Alert.alert('Form Updated!');
       } else {
-        await createFormAsync(vals);
+        await createFormAsync(submissionValues);
         Alert.alert('Form Created!');
       }
       onClose();
@@ -225,6 +242,21 @@ export function FormEditor({
           errors={fieldErrors}
           touched={touched}
           disabled={!isEditing}
+        />
+      </FormSection>
+
+      <FormSection
+        title="Conflict Impact"
+        isOpen={expandedSection === 'conflict'}
+        onPress={() => setExpandedSection('conflict')}>
+        <GeneralSection
+          values={values}
+          setFieldValue={setFieldValue}
+          handleChange={handleChange}
+          errors={fieldErrors}
+          touched={touched}
+          disabled={!isEditing}
+          mode="conflict"
         />
       </FormSection>
 

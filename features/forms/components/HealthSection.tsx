@@ -24,14 +24,14 @@ export default function HealthSection({
       <CheckboxGroup
         name="longTermConditions"
         options={[
-          'MSK Conditions',
-          'Gastrointestinal Conditions',
+          'Musculoskeletal (MSK)',
+          'Gastrointestinal',
           'Eye/Visual Acuity',
           'Hypertension',
           'Diabetes Mellitus',
           'High Cholesterol',
-          'Neurological (Headache/Dementia/Epilepsy)',
-          'Do not have any',
+          'Neurological (e.g., headache, dementia, epilepsy)',
+          'No, do not have',
           'Others',
         ]}
         values={values}
@@ -46,10 +46,10 @@ export default function HealthSection({
       <CheckboxGroup
         name="managementMethods"
         options={[
-          "Go to the doctor's",
+          'Go to the doctor',
           'Get medicine',
-          'I do not manage',
-          'I do not know how to manage',
+          'I do not manage it',
+          "I don't know how to manage it",
           'Others',
         ]}
         values={values}
@@ -61,28 +61,6 @@ export default function HealthSection({
       />
 
       <Text style={styles.question}>
-        Is it difficult to manage your condition? If so, what makes it hard?
-      </Text>
-      <CheckboxGroup
-        name="conditionDifficultyReasons"
-        options={[
-          'Too expensive',
-          'Medicine not available (in nearby places)',
-          'No transportation',
-          'Do not know what to do',
-          'Doctor said it is unnecessary to treat',
-          'I think it is unnecessary to treat',
-          'Others',
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-        otherFieldName="otherConditionDifficultyReasons"
-        otherValue={values.otherConditionDifficultyReasons ?? undefined}
-        onOtherChange={handleChange('otherConditionDifficultyReasons')}
-        disabled={disabled}
-      />
-
-      <Text style={styles.question}>
         What do you do when you are sick and Project Sothea is not around to help?
       </Text>
       <CheckboxGroup
@@ -90,8 +68,7 @@ export default function HealthSection({
         options={[
           'Do not do anything about it and just hope I will get better over time',
           'Seek medical help',
-          'Take herbal or traditional medicine available in the village',
-          'I do not know what to do',
+          'Take herbal/traditional medicine',
           'Others',
         ]}
         values={values}
@@ -110,8 +87,7 @@ export default function HealthSection({
         options={[
           { label: 'Yes', value: 'yes' },
           { label: 'No', value: 'no' },
-          { label: 'I do not find a doctor', value: 'do_not_find' },
-          { label: 'Others', value: 'others' },
+          { label: "I do not go to the doctor when I'm unwell", value: 'do_not_go' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -122,15 +98,13 @@ export default function HealthSection({
       />
 
       <Text style={styles.question}>
-        Do you have your own means of transport to visit a clinic when you are unwell?
+        Do you have your own means of transport to visit a clinic?
       </Text>
       <RadioGroup
         name="transportToClinic"
         options={[
           { label: 'Yes', value: 'yes' },
           { label: 'No', value: 'no' },
-          { label: 'I do not know how to get there', value: 'do_not_know' },
-          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -145,8 +119,12 @@ export default function HealthSection({
         name="medicinePurchaseLocations"
         options={[
           'Pharmacy',
-          'I do not wish to buy medicine',
-          'I do not know where to go',
+          'Hospital',
+          'Clinic',
+          'Online',
+          'Village clinic',
+          "Don't know",
+          "I don't wish to buy medicine",
           'Others',
         ]}
         values={values}
@@ -164,7 +142,6 @@ export default function HealthSection({
           { label: 'Yes and I use it', value: 'use' },
           { label: 'Yes but I do not use it', value: 'do_not_use' },
           { label: 'No', value: 'no' },
-          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -172,6 +149,18 @@ export default function HealthSection({
         otherValue={values.otherPovertyCardSchemeAwareness ?? undefined}
         onOtherChange={handleChange('otherPovertyCardSchemeAwareness')}
         disabled={disabled}
+      />
+
+      <Text style={styles.question}>
+        Why do you not use the poverty card even if you have it? Only ask if they have the card but
+        do not use it.
+      </Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Your answer"
+        value={values.povertyCardNonUseReasons ?? ''}
+        onChangeText={handleChange('povertyCardNonUseReasons')}
+        editable={!disabled}
       />
 
       <Text style={styles.question}>Do you brush your teeth?</Text>

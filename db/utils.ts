@@ -50,6 +50,7 @@ export function sanitizeFormForDb(form: Form): FormDB {
     managementMethods: jsonifyArray(form.managementMethods),
     conditionDifficultyReasons: jsonifyArray(form.conditionDifficultyReasons),
     selfCareActions: jsonifyArray(form.selfCareActions),
+    medicinePurchaseLocations: jsonifyArray(form.medicinePurchaseLocations),
     noToothbrushOrToothpasteReasons: jsonifyArray(form.noToothbrushOrToothpasteReasons),
 
     // Education
@@ -81,6 +82,7 @@ export function mapFormDbToForm(form: FormDB): Form {
     managementMethods: safeJsonStringParse(form.managementMethods),
     conditionDifficultyReasons: safeJsonStringParse(form.conditionDifficultyReasons),
     selfCareActions: safeJsonStringParse(form.selfCareActions),
+    medicinePurchaseLocations: safeJsonStringParse(form.medicinePurchaseLocations),
     noToothbrushOrToothpasteReasons: safeJsonStringParse(form.noToothbrushOrToothpasteReasons),
     diarrhoeaDefinition: safeJsonStringParse(form.diarrhoeaDefinition),
     diarrhoeaActions: safeJsonStringParse(form.diarrhoeaActions),
