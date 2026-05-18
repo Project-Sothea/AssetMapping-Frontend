@@ -26,12 +26,10 @@ export default function EducationSection({
         name="diarrhoeaDefinition"
         options={[
           'Back pain',
-          'Water and loose stools',
+          'Watery and loose stools',
           'Nose bleed',
           'Hearing loss',
           'Toothache',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -41,7 +39,7 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>What should I do if I have diarrhoea?</Text>
+      <Text style={styles.question}>What should you do if you have diarrhoea?</Text>
       <CheckboxGroup
         name="diarrhoeaActions"
         options={[
@@ -50,9 +48,6 @@ export default function EducationSection({
           'Eat cold foods',
           'Drink alcohol',
           'Exercise more',
-          'I do not know what diarrhoea is',
-          'I do not know what to do',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -63,7 +58,7 @@ export default function EducationSection({
       />
 
       <Text style={styles.subheading}>Common Cold</Text>
-      <Text style={styles.question}>How does a regular common cold present itself?</Text>
+      <Text style={styles.question}>How does a common cold present?</Text>
       <CheckboxGroup
         name="commonColdSymptoms"
         options={[
@@ -72,8 +67,6 @@ export default function EducationSection({
           'Eye swelling',
           'Bloody stools',
           'Ringing in the ears',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -83,18 +76,15 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>If I have a common cold, what should I do?</Text>
+      <Text style={styles.question}>If you have a common cold, what should you do?</Text>
       <CheckboxGroup
         name="commonColdActions"
         options={[
           'Drink more cold water',
-          'Cover my mouth when I cough and sneeze',
+          'Cover your mouth when coughing/sneezing',
           'Stand in the rain',
-          'Engage in strenuous exercise',
-          'Wear a mask to prevent spread of infection',
-          'I do not know what a common cold is',
-          'I do not know what to do',
-          'Others',
+          'Exercise strenuously',
+          'Wear a mask to prevent infection spread',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -105,7 +95,7 @@ export default function EducationSection({
       />
 
       <Text style={styles.subheading}>MSK</Text>
-      <Text style={styles.question}>What is a musculoskeletal related injury?</Text>
+      <Text style={styles.question}>What is a musculoskeletal injury?</Text>
       <CheckboxGroup
         name="mskInjuryDefinition"
         options={[
@@ -114,8 +104,6 @@ export default function EducationSection({
           'Hand tremors',
           'Constipation',
           'Blurry vision',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -125,18 +113,15 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>How should I approach my musculoskeletal injury?</Text>
+      <Text style={styles.question}>How should you manage a musculoskeletal injury?</Text>
       <CheckboxGroup
         name="mskInjuryActions"
         options={[
-          'Prevent exertion with exercise',
+          'Prevent exertion',
           'Get medical help',
           'Increase movement',
-          'Press aggressively on the area of pain',
-          'Gently rotate the joint (if not severely painful) a few times a day',
-          'I do not know what a musculoskeletal injury is',
-          'I do not know what to do',
-          'Others',
+          'Press aggressively',
+          'Gently rotate the joint (if not very painful)',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -156,8 +141,6 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -167,20 +150,15 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>
-        What should I do if I have been diagnosed with hypertension?
-      </Text>
+      <Text style={styles.question}>If you have hypertension, what should you do?</Text>
       <CheckboxGroup
         name="hypertensionActions"
         options={[
           'Exercise more',
           'Eat less salty food',
           'Eat more fried food',
-          'Consume more coffee',
-          'Consume more fruits and vegetables',
-          'I do not know what hypertension is',
-          'I do not know what to do',
-          'Others',
+          'Drink more coffee',
+          'Eat more fruits/vegetables',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -198,11 +176,9 @@ export default function EducationSection({
       <RadioGroup
         name="healthyFoodFrequency"
         options={[
-          { label: 'Often (5-7 days a week)', value: 'often' },
+          { label: 'Yes, most of the time (5-7 days a week)', value: 'most_of_the_time' },
           { label: 'Sometimes (2-4 days a week)', value: 'sometimes' },
-          { label: 'Rarely (0-1 day a week)', value: 'rarely' },
-          { label: 'I do not know', value: 'do_not_know' },
-          { label: 'Others', value: 'others' },
+          { label: 'No, not really', value: 'no_not_really' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -217,11 +193,11 @@ export default function EducationSection({
         name="unhealthyFoodReasons"
         options={[
           'Healthy food is too expensive',
-          'It is hard to find healthy food in the village',
-          'I do not have time to prepare/get healthy food',
+          "It's hard to find in the village",
+          "I don't have time to cook/get healthy food",
           'I prefer salty or oily food',
-          'I do not know what foods are healthy',
-          'Others',
+          "I don't know what foods are healthy",
+          'I eat healthily most of the time',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -241,8 +217,6 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -252,20 +226,15 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>
-        What should I do if I have been diagnosed with high cholesterol?
-      </Text>
+      <Text style={styles.question}>If you have high cholesterol, what should you do?</Text>
       <CheckboxGroup
         name="highCholesterolActions"
         options={[
           'Rest more by increasing sedentary activity',
-          'Decrease intake of fatty foods and sugary drinks',
+          'Decreasing intake of fatty foods and sugary drinks',
           'Try to lose weight to stay within the healthy range',
           'Quit smoking',
           'Stop consuming fruits and vegetables',
-          'I do not know what high cholesterol is',
-          'I do not know what to do',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -285,8 +254,6 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
-          'I do not know',
-          'Others',
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -296,18 +263,15 @@ export default function EducationSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>What should I do if I have been diagnosed with diabetes?</Text>
+      <Text style={styles.question}>If you have diabetes, what should you do?</Text>
       <CheckboxGroup
         name="diabetesActions"
         options={[
           'Drink sweet drinks',
-          'Regular exercise',
-          'Consume more fried food',
+          'Exercise regularly',
+          'Eat more fried food',
           'Avoid skipping meals',
-          'Consume more alcohol',
-          'I do not know what diabetes is',
-          'I do not know what to do',
-          'Others',
+          'Drink alcohol',
         ]}
         values={values}
         setFieldValue={setFieldValue}

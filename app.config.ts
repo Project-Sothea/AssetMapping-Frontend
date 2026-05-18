@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "SO'FORM",
   slug: 'AssetMapApp',
-  version: '1.0.0',
+  version: '1.0.2',
   scheme: 'sotheaassets',
   web: {
     bundler: 'metro',

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dab28c06-c9ef-48db-9d16-157c4ec31af0",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "2868c6bf-b4fc-4e1c-a1aa-62c80e306ebe",
+  "prevId": "dab28c06-c9ef-48db-9d16-157c4ec31af0",
   "tables": {
     "forms": {
       "name": "forms",
@@ -16,19 +16,17 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "autoincrement": false
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "autoincrement": false
         },
         "version": {
           "name": "version",
@@ -42,6 +40,13 @@
           "name": "pinId",
           "type": "text",
           "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
@@ -49,11 +54,25 @@
           "name": "villageId",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "village": {
+          "name": "village",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "householdNumber": {
+          "name": "householdNumber",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -73,16 +92,37 @@
           "notNull": false,
           "autoincrement": false
         },
-        "village": {
-          "name": "village",
+        "canAttendHealthScreening": {
+          "name": "canAttendHealthScreening",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "conflictHealthcareAccess": {
+          "name": "conflictHealthcareAccess",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "canAttendHealthScreening": {
-          "name": "canAttendHealthScreening",
-          "type": "integer",
+        "conflictHealthManagement": {
+          "name": "conflictHealthManagement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "conflictCleanWaterAccess": {
+          "name": "conflictCleanWaterAccess",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "conflictCostOfLiving": {
+          "name": "conflictCostOfLiving",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -472,6 +512,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "waterHealthConsequences": {
+          "name": "waterHealthConsequences",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "waterSocioeconomicConsequences": {
+          "name": "waterSocioeconomicConsequences",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "waterFilterAwareness": {
           "name": "waterFilterAwareness",
           "type": "text",
@@ -481,6 +535,13 @@
         },
         "otherWaterFilterAwareness": {
           "name": "otherWaterFilterAwareness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "waterFilterExperience": {
+          "name": "waterFilterExperience",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -514,8 +575,22 @@
           "notNull": false,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
+        "handwashingBeforeMeals": {
+          "name": "handwashingBeforeMeals",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "handwashingBeforeMealsReason": {
+          "name": "handwashingBeforeMealsReason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pressingHealthNeed": {
+          "name": "pressingHealthNeed",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -550,19 +625,17 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "autoincrement": false
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
+          "autoincrement": false
         },
         "version": {
           "name": "version",
@@ -572,32 +645,32 @@
           "autoincrement": false,
           "default": 1
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "lat": {
           "name": "lat",
           "type": "real",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "lng": {
           "name": "lng",
           "type": "real",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "address": {
@@ -621,15 +694,15 @@
           "notNull": false,
           "autoincrement": false
         },
-        "images": {
-          "name": "images",
+        "type": {
+          "name": "type",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
+        "images": {
+          "name": "images",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

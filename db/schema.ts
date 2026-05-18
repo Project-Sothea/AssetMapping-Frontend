@@ -60,9 +60,16 @@ export const forms = sqliteTable('forms', {
   villageId: text().notNull(),
   name: text().notNull(),
   village: text().notNull(),
+  householdNumber: text(),
   gender: text(),
   age: integer(),
   canAttendHealthScreening: integer({ mode: 'boolean' }),
+
+  // Conflict Impact
+  conflictHealthcareAccess: text(),
+  conflictHealthManagement: text(),
+  conflictCleanWaterAccess: text(),
+  conflictCostOfLiving: text(),
 
   // Health
   longTermConditions: text(),
@@ -124,12 +131,18 @@ export const forms = sqliteTable('forms', {
   otherWaterSources: text(),
   unsafeWaterTypes: text(),
   otherUnsafeWaterTypes: text(),
+  waterHealthConsequences: text(),
+  waterSocioeconomicConsequences: text(),
   waterFilterAwareness: text(),
   otherWaterFilterAwareness: text(),
+  waterFilterExperience: text(),
   waterFilterNonUseReasons: text(),
   otherWaterFilterNonUseReasons: text(),
   handwashingAfterToilet: text(),
   otherHandwashingAfterToilet: text(),
+  handwashingBeforeMeals: text(),
+  handwashingBeforeMealsReason: text(),
+  pressingHealthNeed: text(),
 });
 
 /**
