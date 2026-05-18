@@ -59,6 +59,7 @@ export function FormEditor({
       gender: '',
       age: null,
       village: '',
+      otherVillage: '',
       canAttendHealthScreening: null,
       conflictHealthcareAccess: '',
       conflictHealthManagement: '',

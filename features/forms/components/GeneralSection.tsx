@@ -89,10 +89,13 @@ export default function GeneralSection({
         options={[
           { label: 'Krang Savt', value: 'Krang Savt' },
           { label: 'Srae Ou', value: 'Srae Ou' },
-          { label: 'Other', value: 'Other' },
+          { label: 'Other', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
+        otherFieldName="otherVillage"
+        otherValue={values.otherVillage ?? undefined}
+        onOtherChange={handleChange('otherVillage')}
         errors={errors.village}
         touched={touched.village}
         disabled={disabled}

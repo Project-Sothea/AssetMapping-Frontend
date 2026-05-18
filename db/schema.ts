@@ -60,6 +60,7 @@ export const forms = sqliteTable('forms', {
   villageId: text().notNull(),
   name: text().notNull(),
   village: text().notNull(),
+  otherVillage: text(),
   householdNumber: text(),
   gender: text(),
   age: integer(),
