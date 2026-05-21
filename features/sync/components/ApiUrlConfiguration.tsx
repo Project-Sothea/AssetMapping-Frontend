@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Alert, TextInput } from 'react-native';
 
+import { resetApiBaseUrlCache } from '~/services/api/client';
 import { getApiUrl, setApiUrl } from '~/services/apiUrl';
 import { reconnectAndSync } from '~/services/sync/syncService';
 import { webSocketManager } from '~/services/websocket/WebSocketManager';
@@ -33,6 +34,7 @@ export function ApiUrlConfiguration() {
 
       // Save the new API URL
       await setApiUrl(apiUrl);
+      resetApiBaseUrlCache();
 
       // Use the centralized reconnect and sync service
       const deviceId = getDeviceId();

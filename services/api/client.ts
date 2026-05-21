@@ -4,6 +4,10 @@ import { getApiUrl } from '../apiUrl';
 
 let cachedBaseUrl: string | null = null;
 
+export function resetApiBaseUrlCache(): void {
+  cachedBaseUrl = null;
+}
+
 async function resolveBaseUrl(): Promise<string> {
   if (!cachedBaseUrl) {
     cachedBaseUrl = await getApiUrl();
