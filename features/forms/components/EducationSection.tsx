@@ -5,6 +5,8 @@ import { FormValues } from '../types';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
 
+const EDUCATION_EXTRA_OPTIONS = ['Taking medications', "I don't know", 'Others'];
+
 interface EducationSectionProps {
   values: FormValues;
   setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
@@ -30,6 +32,7 @@ export default function EducationSection({
           'Nose bleed',
           'Hearing loss',
           'Toothache',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -48,6 +51,7 @@ export default function EducationSection({
           'Eat cold foods',
           'Drink alcohol',
           'Exercise more',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -67,6 +71,7 @@ export default function EducationSection({
           'Eye swelling',
           'Bloody stools',
           'Ringing in the ears',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -85,6 +90,7 @@ export default function EducationSection({
           'Stand in the rain',
           'Exercise strenuously',
           'Wear a mask to prevent infection spread',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -104,6 +110,7 @@ export default function EducationSection({
           'Hand tremors',
           'Constipation',
           'Blurry vision',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -122,6 +129,7 @@ export default function EducationSection({
           'Increase movement',
           'Press aggressively',
           'Gently rotate the joint (if not very painful)',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -141,6 +149,7 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -159,6 +168,7 @@ export default function EducationSection({
           'Eat more fried food',
           'Drink more coffee',
           'Eat more fruits/vegetables',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -179,6 +189,9 @@ export default function EducationSection({
           { label: 'Yes, most of the time (5-7 days a week)', value: 'most_of_the_time' },
           { label: 'Sometimes (2-4 days a week)', value: 'sometimes' },
           { label: 'No, not really', value: 'no_not_really' },
+          { label: 'Taking medications', value: 'taking_medications' },
+          { label: "I don't know", value: 'do_not_know' },
+          { label: 'Others', value: 'others' },
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -198,6 +211,7 @@ export default function EducationSection({
           'I prefer salty or oily food',
           "I don't know what foods are healthy",
           'I eat healthily most of the time',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -217,6 +231,7 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -235,6 +250,7 @@ export default function EducationSection({
           'Try to lose weight to stay within the healthy range',
           'Quit smoking',
           'Stop consuming fruits and vegetables',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -254,6 +270,7 @@ export default function EducationSection({
           'High blood fat',
           'Stomach pain',
           'Headache',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}
@@ -272,6 +289,7 @@ export default function EducationSection({
           'Eat more fried food',
           'Avoid skipping meals',
           'Drink alcohol',
+          ...EDUCATION_EXTRA_OPTIONS,
         ]}
         values={values}
         setFieldValue={setFieldValue}

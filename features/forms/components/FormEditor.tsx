@@ -22,7 +22,7 @@ import WaterSection from './WaterSection';
 
 const formSchema = z.looseObject({
   village: z.string().trim().min(1, 'Required'),
-  householdNumber: z.string().trim().min(1, 'Required'),
+  dataCollectionDate: z.string().trim().min(1, 'Required'),
 });
 
 type FormEditorProps = {
@@ -34,6 +34,13 @@ type FormEditorProps = {
 };
 
 type SectionOrder = 'general' | 'conflict' | 'health' | 'education' | 'water';
+
+const formatCollectionDate = () =>
+  new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
 export function FormEditor({
   pinId,
@@ -50,11 +57,21 @@ export function FormEditor({
   const isCreate = selectedForm === null;
 
   const defaults = useMemo((): FormValues => {
-    if (!isCreate) return selectedForm!;
+    if (!isCreate) {
+      return {
+        ...selectedForm!,
+        dataCollectionDate:
+          selectedForm!.dataCollectionDate ||
+          selectedForm!.householdNumber ||
+          selectedForm!.villageId ||
+          formatCollectionDate(),
+      };
+    }
     return {
       pinId,
       villageId: '',
       name: '',
+      dataCollectionDate: formatCollectionDate(),
       householdNumber: '',
       gender: '',
       age: null,
@@ -148,11 +165,7 @@ export function FormEditor({
   });
 
   useEffect(() => {
-    if (selectedForm) {
-      reset(selectedForm);
-    } else {
-      reset(defaults);
-    }
+    reset(defaults);
   }, [selectedForm, reset, defaults]);
 
   useEffect(() => {
@@ -195,12 +208,17 @@ export function FormEditor({
 
   const handleSubmitForm = async (vals: FormValues) => {
     try {
-      const householdNumber = vals.householdNumber?.trim() || vals.villageId?.trim() || '';
+      const dataCollectionDate =
+        vals.dataCollectionDate?.trim() ||
+        vals.householdNumber?.trim() ||
+        vals.villageId?.trim() ||
+        '';
       const submissionValues: FormValues = {
         ...vals,
-        householdNumber,
-        villageId: householdNumber,
-        name: householdNumber ? `Household ${householdNumber}` : vals.name,
+        dataCollectionDate,
+        householdNumber: vals.householdNumber?.trim() || dataCollectionDate,
+        villageId: vals.villageId?.trim() || dataCollectionDate,
+        name: dataCollectionDate ? `Date collected ${dataCollectionDate}` : vals.name,
       };
       if (selectedForm) {
         await updateFormAsync({ id: selectedForm.id, values: submissionValues });

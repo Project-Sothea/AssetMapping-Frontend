@@ -101,16 +101,16 @@ export default function GeneralSection({
         disabled={disabled}
       />
 
-      <Text style={styles.question}>What is your household number?*</Text>
+      <Text style={styles.question}>Date of data collection*</Text>
       <TextInput
         style={styles.input}
-        onChangeText={handleChange('householdNumber')}
-        value={values.householdNumber ?? ''}
-        placeholder="Household number"
+        onChangeText={handleChange('dataCollectionDate')}
+        value={values.dataCollectionDate ?? ''}
+        placeholder="e.g. 22 May 2026"
         editable={!disabled}
       />
-      {errors.householdNumber && touched.householdNumber && (
-        <Text style={styles.error}>{errors.householdNumber}</Text>
+      {errors.dataCollectionDate && touched.dataCollectionDate && (
+        <Text style={styles.error}>{errors.dataCollectionDate}</Text>
       )}
 
       <Text style={styles.question}>

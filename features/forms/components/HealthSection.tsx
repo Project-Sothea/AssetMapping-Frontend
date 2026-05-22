@@ -61,6 +61,29 @@ export default function HealthSection({
       />
 
       <Text style={styles.question}>
+        Is it difficult to manage your condition, and what makes it hard? Only ask if they have
+        health conditions.
+      </Text>
+      <CheckboxGroup
+        name="conditionDifficultyReasons"
+        options={[
+          'Too expensive',
+          'Medicine not available nearby',
+          'No transportation',
+          'Do not know what to do',
+          'Doctor said it is unnecessary to treat',
+          'I think it is unnecessary to treat',
+          'Others',
+        ]}
+        values={values}
+        setFieldValue={setFieldValue}
+        otherFieldName="otherConditionDifficultyReasons"
+        otherValue={values.otherConditionDifficultyReasons ?? undefined}
+        onOtherChange={handleChange('otherConditionDifficultyReasons')}
+        disabled={disabled}
+      />
+
+      <Text style={styles.question}>
         What do you do when you are sick and Project Sothea is not around to help?
       </Text>
       <CheckboxGroup
