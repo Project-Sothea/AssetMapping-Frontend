@@ -87,7 +87,7 @@ export default function GeneralSection({
       <RadioGroup
         name="village"
         options={[
-          { label: 'Krang Savt', value: 'Krang Savt' },
+          { label: 'Krang Svat', value: 'Krang Svat' },
           { label: 'Srae Ou', value: 'Srae Ou' },
           { label: 'Other', value: 'others' },
         ]}

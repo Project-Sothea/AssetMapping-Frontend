@@ -28,9 +28,9 @@ const presets: { id: string; title: string; options: CreateOfflinePackProps }[] 
   },
   {
     id: 'krang-svat',
-    title: 'Krang Savt',
+    title: 'Krang Svat',
     options: {
-      name: 'Krang Savt Pack',
+      name: 'Krang Svat Pack',
       styleURL: MapboxGL.StyleURL.Street,
       minZoom: 16,
       maxZoom: 22,
