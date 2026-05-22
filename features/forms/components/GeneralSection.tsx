@@ -101,6 +101,37 @@ export default function GeneralSection({
         disabled={disabled}
       />
 
+      <Text style={styles.question}>What is your name?</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('name')}
+        value={values.name ?? ''}
+        placeholder="Name"
+        editable={!disabled}
+      />
+
+      <Text style={styles.question}>What is your gender?</Text>
+      <RadioGroup
+        name="gender"
+        options={[
+          { label: 'Male', value: 'Male' },
+          { label: 'Female', value: 'Female' },
+        ]}
+        values={values}
+        setFieldValue={setFieldValue}
+        disabled={disabled}
+      />
+
+      <Text style={styles.question}>How old are you this year?</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={(value) => setFieldValue('age', value.trim() === '' ? null : Number(value))}
+        value={values.age === null || values.age === undefined ? '' : String(values.age)}
+        placeholder="Age"
+        keyboardType="number-pad"
+        editable={!disabled}
+      />
+
       <Text style={styles.question}>Date of data collection*</Text>
       <TextInput
         style={styles.input}

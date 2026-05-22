@@ -215,10 +215,11 @@ export function FormEditor({
         '';
       const submissionValues: FormValues = {
         ...vals,
+        name:
+          vals.name?.trim() || (dataCollectionDate ? `Date collected ${dataCollectionDate}` : ''),
         dataCollectionDate,
         householdNumber: vals.householdNumber?.trim() || dataCollectionDate,
         villageId: vals.villageId?.trim() || dataCollectionDate,
-        name: dataCollectionDate ? `Date collected ${dataCollectionDate}` : vals.name,
       };
       if (selectedForm) {
         await updateFormAsync({ id: selectedForm.id, values: submissionValues });
