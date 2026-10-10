@@ -7,8 +7,7 @@ import { mapPinDbToPin } from '~/db/utils';
 import { db } from '~/services/drizzleDb';
 
 export const useFetchLocalPins = (): Pin[] => {
-  // Order pins by last updated time (most recent first) so activity like form create/update
-  // moves the parent pin to the top of the list.
+  // Stable fetch order. The home screen filters by the village dropdown and sorts by name.
   const query = db.select().from(schema.pins).orderBy(desc(schema.pins.updatedAt));
   // useLiveQuery returns an object like { data, error, isLoading }
   const result = useLiveQuery(query) ?? { data: [] };

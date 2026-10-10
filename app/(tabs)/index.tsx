@@ -1,16 +1,24 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { useRouter, useFocusEffect } from 'expo-router';
 import React, { useState, useMemo, useCallback } from 'react';
-import { ImageBackground, StyleSheet, FlatList, TextInput } from 'react-native';
+import { ImageBackground, StyleSheet, FlatList, Text, TextInput } from 'react-native';
 
 import backgroundImage from '~/assets/home-background.png';
 import { PinCard } from '~/features/pins/components/PinCard';
+import { VillageDropdown } from '~/features/pins/components/VillageDropdown';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
+import {
+  ALL_VILLAGES_KEY,
+  comparePinNames,
+  listVillageOptions,
+  villageKey,
+} from '~/features/pins/utils/groupPinsByVillage';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 
 export default function PinScreen() {
   const pins = useFetchLocalPins(); // live reactive pins
   const [query, setQuery] = useState('');
+  const [selectedVillage, setSelectedVillage] = useState(ALL_VILLAGES_KEY);
   const router = useRouter();
 
   // Close any open swipeable when leaving this screen
@@ -23,13 +31,24 @@ export default function PinScreen() {
     }, [])
   );
 
-  // Filter pins based on search query
-  const filteredPins = useMemo(() => {
-    if (!query.trim()) return pins;
+  const villageOptions = useMemo(() => listVillageOptions(pins), [pins]);
+  const activeVillage = villageOptions.some((option) => option.key === selectedVillage)
+    ? selectedVillage
+    : ALL_VILLAGES_KEY;
 
-    const lowerQuery = query.toLowerCase();
-    return pins.filter((pin) => pin.name?.toLowerCase().includes(lowerQuery));
-  }, [query, pins]);
+  const visiblePins = useMemo(() => {
+    const trimmedQuery = query.trim().toLowerCase();
+
+    return pins
+      .filter((pin) => {
+        if (activeVillage !== ALL_VILLAGES_KEY && villageKey(pin) !== activeVillage) {
+          return false;
+        }
+        if (!trimmedQuery) return true;
+        return (pin.name?.toLowerCase() ?? '').includes(trimmedQuery);
+      })
+      .sort(comparePinNames);
+  }, [pins, query, activeVillage]);
 
   const handleNavigateToMap = (pin: Pin) => {
     router.push({
@@ -47,6 +66,11 @@ export default function PinScreen() {
       style={styles.background}
       resizeMode="cover"
       imageStyle={styles.backgroundImage}>
+      <VillageDropdown
+        options={villageOptions}
+        value={activeVillage}
+        onChange={setSelectedVillage}
+      />
       <TextInput
         placeholder="Find pin..."
         value={query}
@@ -55,11 +79,20 @@ export default function PinScreen() {
         placeholderTextColor="#888"
       />
       <FlatList
-        data={filteredPins}
+        data={visiblePins}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            {query.trim()
+              ? 'No pins match that search.'
+              : activeVillage === ALL_VILLAGES_KEY
+                ? 'No pins yet.'
+                : 'No pins in this village.'}
+          </Text>
+        }
       />
     </ImageBackground>
   );
@@ -90,5 +123,11 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#4B5563',
+    textAlign: 'center',
+    marginTop: 24,
   },
 });
