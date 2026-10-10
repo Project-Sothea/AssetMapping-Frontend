@@ -5,6 +5,7 @@
  * Provides a single responsibility point for sync operations.
  */
 
+import { resetLocalDataOnce } from './localDataReset';
 import { pullAllPins, pullAllForms, pullPinsSince, pullFormsSince } from './pullUpdates';
 import { processQueue } from './queue/syncQueue';
 import { getLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
@@ -19,6 +20,9 @@ import { getLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 export async function performFullSync(): Promise<void> {
   // Add a small delay to ensure database is ready
   await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Clear stale offline records before the queue can push them.
+  await resetLocalDataOnce();
 
   // Process any pending local operations (outbox) - do this first
   await processQueue();
@@ -49,6 +53,9 @@ export async function performFullSync(): Promise<void> {
 export async function performIncrementalSync(): Promise<void> {
   // Add a small delay to ensure database is ready
   await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // This must run before reading the cursor or processing the outbox.
+  await resetLocalDataOnce();
 
   // Get last sync timestamp
   const lastSyncTimestamp = await getLastSyncTimestamp();

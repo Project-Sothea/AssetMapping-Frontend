@@ -10,6 +10,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const LAST_SYNC_KEY = 'lastSync';
 
 /**
+ * Clear the sync cursor so the next sync downloads a complete server snapshot.
+ */
+export async function clearLastSyncTimestamp(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(LAST_SYNC_KEY);
+  } catch (error) {
+    console.error('Failed to clear last sync timestamp:', error);
+    throw error;
+  }
+}
+
+/**
  * Get the last sync timestamp
  * Returns 0 if no sync has occurred yet
  */
