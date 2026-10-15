@@ -4,7 +4,6 @@
 
 import { Form, OperationType, Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 
 import { pins, forms } from '~/db/schema';
 import { fetchPin } from '~/services/api/pinsApi';
@@ -13,20 +12,22 @@ import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 import { getLocalPath } from '~/services/images/ImageManager';
 
-import { pullFormUpdate, pullPinUpdate } from '../pullUpdates';
-
 /**
  * Sync pin to backend
  */
-export async function syncPin(operation: OperationType, data: Pin): Promise<void> {
+export async function syncPin(
+  operation: OperationType,
+  data: Pin,
+  idempotencyKey: string
+): Promise<void> {
   // Handle delete operations
   if (operation === 'delete') {
-    await deletePinOnBackend(data.id);
+    await deletePinOnBackend(data.id, idempotencyKey);
     return;
   }
 
   // Handle create/update operations with image upload
-  const syncedData = await syncPinToBackend(operation, data);
+  const syncedData = await syncPinToBackend(operation, data, idempotencyKey);
 
   await updateLocalPinAfterSync(data.id, syncedData);
 }
@@ -34,13 +35,17 @@ export async function syncPin(operation: OperationType, data: Pin): Promise<void
 /**
  * Sync form to backend
  */
-export async function syncForm(operation: OperationType, data: Form): Promise<void> {
+export async function syncForm(
+  operation: OperationType,
+  data: Form,
+  idempotencyKey: string
+): Promise<void> {
   if (operation === 'delete') {
-    await deleteFormOnBackend(data.id);
+    await deleteFormOnBackend(data.id, idempotencyKey);
     return;
   }
 
-  const syncedData = await syncFormToBackend(operation, data);
+  const syncedData = await syncFormToBackend(operation, data, idempotencyKey);
   await updateLocalFormAfterSync(data.id, syncedData);
 }
 
@@ -51,7 +56,8 @@ export async function syncForm(operation: OperationType, data: Form): Promise<vo
  */
 async function syncPinToBackend(
   operation: OperationType,
-  payload: Pin
+  payload: Pin,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const filenames = payload.images || [];
   const {
@@ -67,7 +73,7 @@ async function syncPinToBackend(
   }
 
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation,
     payload,
@@ -77,15 +83,6 @@ async function syncPinToBackend(
 
   // Handle version conflicts - pull latest data
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for pin ${payload.id} - pulling latest from server`);
-
-      // Pull latest data from server (will overwrite local changes)
-      await pullPinUpdate(payload.id);
-
-      return; // Success - conflict resolved by accepting server data
-    }
-
     // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
@@ -124,9 +121,9 @@ async function updateLocalPinAfterSync(
 /**
  * Delete pin on backend
  */
-async function deletePinOnBackend(pinId: string): Promise<void> {
+async function deletePinOnBackend(pinId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation: 'delete',
     payload: { id: pinId },
@@ -141,10 +138,11 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
 
 async function syncFormToBackend(
   operation: OperationType,
-  payload: Form
+  payload: Form,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation,
     payload,
@@ -153,20 +151,15 @@ async function syncFormToBackend(
   });
 
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for form ${payload.id} - pulling latest from server`);
-      await pullFormUpdate(payload.id);
-      return;
-    }
     throw new Error(response.error || 'Sync failed');
   }
 
   return response.data;
 }
 
-async function deleteFormOnBackend(formId: string): Promise<void> {
+async function deleteFormOnBackend(formId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation: 'delete',
     payload: { id: formId },

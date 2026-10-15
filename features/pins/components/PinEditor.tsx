@@ -6,6 +6,7 @@ import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
+import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 
 import type { PinValues } from '../types';
 
@@ -25,6 +26,7 @@ type PinEditorProps =
     };
 
 export function PinEditor(props: PinEditorProps) {
+  const { busy } = useTransferState();
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
@@ -38,7 +40,7 @@ export function PinEditor(props: PinEditorProps) {
     }
     try {
       await createPinAsync(values);
-      Alert.alert('Pin Created!');
+      Alert.alert('Saved on this device');
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
@@ -62,7 +64,7 @@ export function PinEditor(props: PinEditorProps) {
           images: values.images,
         },
       });
-      Alert.alert('Pin Updated!');
+      Alert.alert('Saved on this device');
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
@@ -77,7 +79,7 @@ export function PinEditor(props: PinEditorProps) {
     }
     try {
       await deletePinAsync(props.pin.id);
-      Alert.alert('Pin Deleted!');
+      Alert.alert('Deleted on this device', 'The deletion will be sent when you upload.');
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
@@ -85,7 +87,7 @@ export function PinEditor(props: PinEditorProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents={busy ? 'none' : 'auto'}>
       <PinForm
         onSubmit={isCreate ? handleCreateSubmit : handleUpdateSubmit}
         selectedPin={isCreate ? null : props.pin}
@@ -96,6 +98,7 @@ export function PinEditor(props: PinEditorProps) {
       />
       <View style={styles.toolbar}>
         <TouchableOpacity
+          disabled={busy}
           onPress={() => submitRef.current?.()}
           style={[styles.iconBtn, styles.primary]}>
           <MaterialIcons name="save" size={22} color="#fff" />
@@ -105,7 +108,10 @@ export function PinEditor(props: PinEditorProps) {
             <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
               <MaterialIcons name="visibility" size={22} color="#111" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
+            <TouchableOpacity
+              disabled={busy}
+              onPress={handleDelete}
+              style={[styles.iconBtn, styles.danger]}>
               <MaterialIcons name="delete" size={22} color="#fff" />
             </TouchableOpacity>
           </>

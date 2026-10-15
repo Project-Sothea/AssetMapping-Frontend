@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Alert, TextInput } from 'react-native';
 
+import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 import { resetApiBaseUrlCache } from '~/services/api/client';
 import { getApiUrl, setApiUrl } from '~/services/apiUrl';
-import { reconnectAndSync } from '~/services/sync/syncService';
-import { webSocketManager } from '~/services/websocket/WebSocketManager';
+import { runTransfer } from '~/services/sync/transferCoordinator';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 import { DeviceIdDisplay } from './DeviceIdDisplay';
 
 export function ApiUrlConfiguration() {
+  const { busy } = useTransferState();
   const [apiUrl, setApiUrlState] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -33,20 +33,14 @@ export function ApiUrlConfiguration() {
       setIsSyncing(true);
 
       // Save the new API URL
-      await setApiUrl(apiUrl);
-      resetApiBaseUrlCache();
-
-      // Use the centralized reconnect and sync service
-      const deviceId = getDeviceId();
-      await reconnectAndSync(deviceId, webSocketManager);
-
-      Alert.alert('Success', 'API URL updated and data synced successfully!');
+      await runTransfer('setup', async () => {
+        await setApiUrl(apiUrl.trim());
+        resetApiBaseUrlCache();
+      });
+      Alert.alert('Saved', 'API URL updated. No data was uploaded or downloaded.');
     } catch (error) {
-      console.error('❌ Failed to connect or sync:', error);
-      Alert.alert(
-        'Sync Failed',
-        'API URL was saved, but failed to sync data. Please check your connection and try again.'
-      );
+      console.error('Failed to save API URL:', error);
+      Alert.alert('Save Failed', 'Could not save the API URL. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -61,15 +55,16 @@ export function ApiUrlConfiguration() {
       <Spacer />
       <TextInput
         style={styles.input}
-        placeholder="https://assetmapping-backend.onrender.com"
+        placeholder="https://assetmapping-backend.up.railway.app"
+        editable={!busy && !isSyncing}
         value={apiUrl}
         onChangeText={setApiUrlState}
       />
       <Spacer />
       <Button
-        title={isSyncing ? 'Connecting & Syncing...' : 'Save API URL'}
+        title={isSyncing ? 'Saving...' : 'Save API URL'}
         onPress={saveApiUrl}
-        disabled={isSyncing}
+        disabled={isSyncing || busy}
         style={isSyncing ? styles.saveButtonDisabled : undefined}
       />
       {!apiUrl && (
