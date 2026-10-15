@@ -210,6 +210,12 @@ export function FormEditor({
 
   const handleSubmitForm = async (vals: FormValues) => {
     try {
+      const parentPinId = selectedForm ? selectedForm.pinId : pinId;
+      if (typeof parentPinId !== 'string' || !parentPinId.trim()) {
+        throw new Error(
+          'Please reopen the pin before saving this form. Your answers are still here.'
+        );
+      }
       const dataCollectionDate =
         vals.dataCollectionDate?.trim() ||
         vals.householdNumber?.trim() ||
@@ -217,6 +223,8 @@ export function FormEditor({
         '';
       const submissionValues: FormValues = {
         ...vals,
+        // Relationship IDs come from the open record, not editable form state.
+        pinId: parentPinId,
         name:
           vals.name?.trim() || (dataCollectionDate ? `Date collected ${dataCollectionDate}` : ''),
         dataCollectionDate,

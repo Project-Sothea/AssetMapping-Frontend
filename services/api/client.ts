@@ -52,10 +52,16 @@ export async function request<T>(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      const errorData = await response.json().catch(() => null);
+      const detail =
+        typeof errorData?.error === 'string'
+          ? errorData.error
+          : typeof errorData?.message === 'string'
+            ? errorData.message
+            : response.statusText || 'Request failed';
       return {
         success: false,
-        error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        error: `HTTP ${response.status}: ${detail}`,
       };
     }
 
