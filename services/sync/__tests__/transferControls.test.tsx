@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, Text, View, StyleSheet } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 import { DataTransferControls } from '~/features/sync/components/DataTransferControls';
@@ -59,6 +59,12 @@ test('download and clearing are disabled while local unsent work exists', async 
   expect(button('Download latest data').props.disabled).toBe(true);
   expect(button('Clear local data').props.disabled).toBe(true);
   expect(text()).toContain('3 pending');
+});
+
+test('transfer text has an opaque light surface over the dark Download background', async () => {
+  await mount();
+  const section = renderer.root.findByType(DataTransferControls).findAllByType(View)[0];
+  expect(StyleSheet.flatten(section.props.style).backgroundColor).toBe('#fff');
 });
 
 test('partial upload reports failures instead of claiming all uploaded', async () => {

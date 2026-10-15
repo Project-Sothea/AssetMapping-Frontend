@@ -107,12 +107,12 @@ Tasks 1-4 and Task 5's code, documentation, and automated checks are complete.
 Related implementation changes are kept in one coherent local commit because
 removing automatic sync exports affects the queue, startup, and UI together.
 
-- 37 tests pass, including real in-memory SQLite transactions with checked-in migrations, manual-control rendering, timeout/lost-ack retries, persisted-database restart, and all six mutation guards.
+- 38 tests pass, including real in-memory SQLite transactions with checked-in migrations, manual-control rendering and contrast, timeout/lost-ack retries, persisted-database restart, and all six mutation guards.
 - TypeScript, ESLint, Prettier, and git diff checks pass.
 - Local iOS and Android Hermes bundle exports pass with dummy API/map settings, using Node 22. These are bundle checks, not native builds or deployments.
 - Independent review identified malformed snapshot normalization and unexpected-marker clearing. Both were reproduced with failing tests, fixed, and verified in the full passing suite.
 - Runtime answer-field metadata stays local because Metro cannot resolve the sibling shared-types package at runtime; a test checks exact alignment with the shared field list.
-- Native lifecycle, actual Expo SQLite driver behavior, mounted native-editor transitions, and visual layout smoke tests remain pending before release. No iOS simulator was booted and Android adb was unavailable. Mocked tests are not a substitute for these checks.
+- Subsequent isolated iOS simulator validation exercised the actual Expo SQLite driver, native form save, failure/retry, background/resume, cold restart, update installation, protected clear, and empty-only download. A transfer-panel contrast issue was reproduced and fixed with a regression test. See [native test results](../../testing/2026-10-15-ios-manual-transfer.md) for observations and remaining coverage. Android native testing remains pending at the user's request.
 
 The existing legacy reset remains destructive for devices without version '1'.
 No production services were mutated during implementation or tests. The earlier

@@ -148,7 +148,14 @@ export function DataTransferControls() {
 }
 
 const styles = StyleSheet.create({
-  section: { paddingVertical: 16, gap: 10, borderBottomWidth: 1, borderBottomColor: '#cbd5e1' },
+  section: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+  },
   heading: { fontSize: 20, fontWeight: '700', color: '#111827' },
   commands: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   command: {
