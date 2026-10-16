@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import backgroundImage from '~/assets/download-background.png';
 import { ApiUrlConfiguration } from '~/features/sync/components/ApiUrlConfiguration';
+import { DataTransferControls } from '~/features/sync/components/DataTransferControls';
 import { DownloadedPacksList } from '~/features/sync/components/DownloadedPacksList';
 import { CreatePackForm } from '~/features/sync/components/OfflinePacks/CreatePackForm';
 import PremadePacks from '~/features/sync/components/OfflinePacks/PremadePacks';
@@ -26,6 +27,7 @@ export default function DownloadScreen() {
 
           {/* API URL Configuration with Device ID */}
           <ApiUrlConfiguration />
+          <DataTransferControls />
 
           {/* Premade Packs */}
           <View style={styles.card}>

@@ -1,56 +1,19 @@
-/**
- * Simplified Sync Queue
- *
- * Public API:
- * - enqueuePin(operation, data) - Queue pin sync
- * - enqueueForm(operation, data) - Queue form sync
- * - processQueue() - Process pending operations
- * - getQueueMetrics() - Get queue health stats
- */
-
-import { Form, Pin } from '@assetmapping/shared-types';
-import { eq, asc } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 import { syncQueue } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
 
-import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
-import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueState';
-import { Operation, QueueMetrics } from './types';
+import { runTransfer } from '../transferCoordinator';
 
-// ==================== Public API ====================
+import {
+  processOperation,
+  markCompleted,
+  handleError,
+  outstanding,
+  QueueRow,
+} from './queueOperations';
+import type { QueueMetrics, UploadResult } from './types';
 
-/**
- * Queue a pin operation
- */
-export async function enqueuePin(operation: Operation, data: Pin): Promise<string> {
-  const operationId = await enqueue({
-    operation,
-    entityType: 'pin',
-    entityId: data.id,
-    payload: data,
-  });
-  scheduleNextProcess(processQueue);
-  return operationId;
-}
-
-/**
- * Queue a form operation
- */
-export async function enqueueForm(operation: Operation, data: Form): Promise<string> {
-  const operationId = await enqueue({
-    operation,
-    entityType: 'form',
-    entityId: data.id,
-    payload: data,
-  });
-  scheduleNextProcess(processQueue);
-  return operationId;
-}
-
-/**
- * Get queue health metrics
- */
 export async function getQueueMetrics(): Promise<QueueMetrics> {
   const items = db.select().from(syncQueue).all();
   return {
@@ -60,47 +23,70 @@ export async function getQueueMetrics(): Promise<QueueMetrics> {
   };
 }
 
-/**
- * Process pending queue operations
- */
-export async function processQueue(): Promise<void> {
-  if (getIsProcessing()) return;
-  setIsProcessing(true);
-
-  try {
-    const pending = db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.status, 'pending'))
-      .orderBy(asc(syncQueue.sequenceNumber))
-      .limit(10)
-      .all();
-
-    if (!pending.length) return;
-
-    for (const op of pending) {
-      try {
-        await processOperation(op);
-        await markCompleted(op.id);
-      } catch (error) {
-        const errorObj = error instanceof Error ? error : new Error(String(error));
-        await handleError(op, errorObj);
-        console.error(`❌ ${op.operation} ${op.entityType}: ${errorObj.message}`);
-      }
-    }
-  } finally {
-    setIsProcessing(false);
-    scheduleNextProcess(processQueue);
-  }
+function rank(op: QueueRow) {
+  if (op.operation === 'delete') return op.entityType === 'form' ? 2 : 3;
+  return op.entityType === 'pin' ? 0 : 1;
 }
 
-/**
- * Retry all failed operations
- */
-export async function retryFailed(): Promise<void> {
-  await db
-    .update(syncQueue)
-    .set({ status: 'pending', attempts: 0, lastError: null })
-    .where(eq(syncQueue.status, 'failed'));
-  scheduleNextProcess(processQueue);
+export async function uploadPendingChanges(
+  onProgress?: (done: number, total: number) => void
+): Promise<UploadResult> {
+  return runTransfer('upload', async () => {
+    const snapshot = db
+      .select()
+      .from(syncQueue)
+      .where(outstanding)
+      .orderBy(asc(syncQueue.sequenceNumber))
+      .all()
+      .sort((a, b) => rank(a) - rank(b));
+    const result: UploadResult = { uploaded: 0, failed: 0, blocked: 0, remaining: 0, errors: [] };
+    const failedPins = new Set<string>();
+    onProgress?.(0, snapshot.length);
+    for (const [index, op] of snapshot.entries()) {
+      try {
+        const payload = JSON.parse(op.payload);
+        if (op.entityType === 'form' && failedPins.has(payload.pinId)) {
+          result.blocked++;
+          const message = 'Parent pin failed to upload. Retry after resolving its error.';
+          db.update(syncQueue).set({ lastError: message }).where(eq(syncQueue.id, op.id)).run();
+          result.errors.push({
+            entityId: op.entityId,
+            entityType: op.entityType,
+            name: payload.name || op.entityId,
+            message,
+          });
+        } else {
+          // Persist before sending: a killed app cannot know whether Apple/Android
+          // stopped us before or after the backend committed the request.
+          db.update(syncQueue)
+            .set({ attempts: op.attempts + 1, lastAttemptAt: new Date().toISOString() })
+            .where(eq(syncQueue.id, op.id))
+            .run();
+          await processOperation(op);
+          await markCompleted(op.id);
+          result.uploaded++;
+        }
+      } catch (error) {
+        const failure = error instanceof Error ? error : new Error(String(error));
+        await handleError(op, failure);
+        if (op.entityType === 'pin') failedPins.add(op.entityId);
+        result.failed++;
+        let name = op.entityId;
+        try {
+          name = JSON.parse(op.payload).name || name;
+        } catch {
+          /* Keep the record ID for malformed payloads. */
+        }
+        result.errors.push({
+          entityId: op.entityId,
+          entityType: op.entityType,
+          name,
+          message: failure.message,
+        });
+      }
+      onProgress?.(index + 1, snapshot.length);
+    }
+    result.remaining = db.select().from(syncQueue).where(outstanding).all().length;
+    return result;
+  });
 }

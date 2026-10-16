@@ -6,6 +6,7 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { ScrollView, Alert, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { z } from 'zod';
 
+import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 import Spacer from '~/shared/components/ui/Spacer';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
@@ -49,6 +50,7 @@ export function FormEditor({
   isEditing,
   onToggleEdit,
 }: FormEditorProps) {
+  const { busy } = useTransferState();
   const { createFormAsync } = useCreateForm();
   const { updateFormAsync } = useUpdateForm();
   const { deleteFormAsync } = useDeleteForm();
@@ -196,7 +198,7 @@ export function FormEditor({
   type SetFieldValue = (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
 
   const setFieldValue: SetFieldValue = (field, value) => {
-    if (!isEditing) return;
+    if (!isEditing || busy) return;
     setValue(field, value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
@@ -223,10 +225,10 @@ export function FormEditor({
       };
       if (selectedForm) {
         await updateFormAsync({ id: selectedForm.id, values: submissionValues });
-        Alert.alert('Form Updated!');
+        Alert.alert('Saved on this device');
       } else {
         await createFormAsync(submissionValues);
-        Alert.alert('Form Created!');
+        Alert.alert('Saved on this device');
       }
       onClose();
       onToggleEdit?.(!selectedForm);
@@ -240,7 +242,7 @@ export function FormEditor({
     if (!selectedForm) return;
     try {
       await deleteFormAsync(selectedForm.id);
-      Alert.alert('Form Deleted!');
+      Alert.alert('Deleted on this device', 'The deletion will be sent when you upload.');
       onClose();
       onToggleEdit?.(false);
     } catch (error) {
@@ -261,7 +263,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing}
+          disabled={!isEditing || busy}
         />
       </FormSection>
 
@@ -275,7 +277,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing}
+          disabled={!isEditing || busy}
           mode="conflict"
         />
       </FormSection>
@@ -288,7 +290,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing}
+          disabled={!isEditing || busy}
         />
       </FormSection>
 
@@ -300,7 +302,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing}
+          disabled={!isEditing || busy}
         />
       </FormSection>
 
@@ -312,20 +314,24 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing}
+          disabled={!isEditing || busy}
         />
       </FormSection>
 
       {isEditing ? (
         <View style={styles.actionRow}>
           <TouchableOpacity
+            disabled={busy}
             style={[styles.iconBtn, styles.save]}
             onPress={handleSubmit(handleSubmitForm)}>
             <MaterialIcons name="save" size={24} color="#fff" />
           </TouchableOpacity>
           {!isCreate && (
             <>
-              <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
+              <TouchableOpacity
+                disabled={busy}
+                onPress={handleDelete}
+                style={[styles.iconBtn, styles.danger]}>
                 <MaterialIcons name="delete" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity

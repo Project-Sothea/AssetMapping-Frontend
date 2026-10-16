@@ -14,7 +14,6 @@
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 import { getApiUrl } from '~/services/apiUrl';
-import { performIncrementalSync } from '~/services/sync/syncService';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
@@ -178,8 +177,6 @@ class WebSocketManager {
    * Handle WebSocket open event
    */
   private handleOpen(): void {
-    const wasReconnecting = this.status.status === 'reconnecting';
-
     this.updateStatus({
       status: 'connected',
       isConnected: true,
@@ -187,11 +184,6 @@ class WebSocketManager {
       lastError: null,
       lastConnectedAt: new Date(),
     });
-
-    // If this was a reconnection, trigger incremental sync
-    if (wasReconnecting) {
-      this.triggerReconnectSync();
-    }
   }
 
   /**
@@ -286,19 +278,6 @@ class WebSocketManager {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-  }
-
-  /**
-   * Trigger incremental sync after reconnection
-   * Runs async without blocking WebSocket operations
-   */
-  private async triggerReconnectSync(): Promise<void> {
-    try {
-      await performIncrementalSync();
-    } catch (error) {
-      console.error('Failed to perform incremental sync after reconnect:', error);
-      // Don't throw - sync failure shouldn't break WebSocket
     }
   }
 
