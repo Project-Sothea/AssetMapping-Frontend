@@ -1,7 +1,7 @@
 import 'react-native-get-random-values';
 
 import { Stack } from 'expo-router';
-import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { ActivityIndicator, View, Text, Button } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { useInitialSync } from '~/hooks/RealTimeSync/useInitialSync';
 import { useRealTimeSync } from '~/hooks/RealTimeSync/useRealTimeSync';
 import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 import QueryProvider from '~/providers/QueryProvider';
-import { useRunMigrations } from '~/services/drizzleDb';
+import { DatabaseGate } from '~/shared/components/DatabaseGate';
 import { PopupProvider } from '~/shared/contexts/PopupContext';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 
@@ -40,55 +40,13 @@ function SyncInitializer({ children }: { children: ReactNode }) {
 }
 
 export default function RootLayout() {
-  const { success, error } = useRunMigrations();
-  const [migrationStatus, setMigrationStatus] = useState<'idle' | 'loading' | 'error' | 'done'>(
-    'idle'
-  );
-  useEffect(() => {
-    if (error) {
-      setMigrationStatus('error');
-      console.error('Migration error:', error);
-    } else if (success) {
-      setMigrationStatus('done');
-    } else {
-      setMigrationStatus('loading');
-    }
-  }, [success, error]);
-
-  // Run version column migration after Drizzle migrations complete
-  useEffect(() => {
-    if (success) {
-      const runVersionMigration = async () => {
-        try {
-          // Add a small delay to ensure Drizzle has fully created tables
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        } catch (err) {
-          console.error('❌ Version migration failed:', err);
-          // Migration is idempotent, so failure is not critical
-        }
-      };
-      runVersionMigration();
-    }
-  }, [success]);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {migrationStatus === 'loading' && (
-        <View style={{ backgroundColor: '#fffae6', padding: 8 }}>
-          <Text>Database migration in progress...</Text>
-        </View>
-      )}
-      {migrationStatus === 'error' && (
-        <View style={{ backgroundColor: '#ffdddd', padding: 8 }}>
-          <Text>Warning: Database migration failed. Some features may not work correctly.</Text>
-        </View>
-      )}
-
       <Suspense fallback={<ActivityIndicator size={'large'} />}>
         <QueryProvider>
           <SafeAreaProvider>
             <PopupProvider>
-              {migrationStatus === 'done' && (
+              <DatabaseGate>
                 <SyncInitializer>
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -104,7 +62,7 @@ export default function RootLayout() {
                     />
                   </Stack>
                 </SyncInitializer>
-              )}
+              </DatabaseGate>
             </PopupProvider>
           </SafeAreaProvider>
         </QueryProvider>

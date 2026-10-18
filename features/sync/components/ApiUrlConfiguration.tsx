@@ -5,8 +5,10 @@ import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 import { resetApiBaseUrlCache } from '~/services/api/client';
 import { getApiUrl, setApiUrl } from '~/services/apiUrl';
 import { runTransfer } from '~/services/sync/transferCoordinator';
+import { webSocketManager } from '~/services/websocket/WebSocketManager';
 import { Button } from '~/shared/components/ui/Button';
 import Spacer from '~/shared/components/ui/Spacer';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 import { DeviceIdDisplay } from './DeviceIdDisplay';
 
@@ -24,7 +26,20 @@ export function ApiUrlConfiguration() {
   }, []);
 
   const saveApiUrl = async () => {
-    if (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://')) {
+    let normalizedUrl: string;
+    try {
+      const parsed = new URL(apiUrl.trim());
+      if (
+        !['http:', 'https:'].includes(parsed.protocol) ||
+        !parsed.hostname ||
+        parsed.search ||
+        parsed.hash ||
+        parsed.username ||
+        parsed.password
+      )
+        throw new Error('Invalid API URL');
+      normalizedUrl = parsed.toString().replace(/\/+$/, '');
+    } catch {
       Alert.alert('Invalid URL', 'Please enter a valid URL starting with http:// or https://');
       return;
     }
@@ -34,8 +49,10 @@ export function ApiUrlConfiguration() {
 
       // Save the new API URL
       await runTransfer('setup', async () => {
-        await setApiUrl(apiUrl.trim());
+        await setApiUrl(normalizedUrl);
         resetApiBaseUrlCache();
+        setApiUrlState(normalizedUrl);
+        await webSocketManager.connect(getDeviceId(), true);
       });
       Alert.alert('Saved', 'API URL updated. No data was uploaded or downloaded.');
     } catch (error) {

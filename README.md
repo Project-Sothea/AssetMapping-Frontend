@@ -158,9 +158,10 @@ The sync queue entry structure:
 
 Key sync files:
 
-- `services/sync/syncService.ts` — orchestrates the full sync lifecycle
-- `services/sync/queue/syncQueue.ts` — queue management
-- `services/sync/pullUpdates.ts` — pulls latest state from the backend
+- `services/sync/syncService.ts` — one-time legacy setup; no routine automatic transfers
+- `services/sync/queue/syncQueue.ts` — explicit upload sessions and retry results
+- `services/sync/localDataTransfer.ts` — empty-only downloads and protected local clearing
+- `services/sync/transferCoordinator.ts` — transfer exclusion and local-write protection
 
 ## Directory Structure
 
