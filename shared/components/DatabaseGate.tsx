@@ -13,8 +13,7 @@ function MigrationAttempt({ children, onRetry }: { children: ReactNode; onRetry:
       <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 16 }}>
         <Text accessibilityRole="header">Database setup could not finish</Text>
         <Text>
-          Retrying will not clear your local records. If this continues, contact the app team before
-          reinstalling.
+          Do not uninstall the app or clear its data. If retry keeps failing, contact the app team.
         </Text>
         <Button title="Retry Database Setup" onPress={onRetry} />
       </View>
