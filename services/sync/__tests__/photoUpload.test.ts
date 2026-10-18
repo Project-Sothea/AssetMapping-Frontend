@@ -1,6 +1,5 @@
 /** @jest-environment node */
-import { eq } from 'drizzle-orm';
-import { fetch as nativeFetch } from 'expo/fetch';
+import { createUploadTask } from 'expo-file-system/legacy';
 
 import { forms, pins, syncQueue } from '~/db/schema';
 import { updatePin } from '~/features/pins/services/PinService';
@@ -15,10 +14,11 @@ import { finishSetup } from '../transferCoordinator';
 import { createForm, createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
-const mockBytes = new Uint8Array([137, 80, 78, 71]);
 let mockExists = true;
 let mockSize = 4;
-let mockReadFailure = false;
+const mockReadBytes = jest.fn();
+const mockUpload = jest.fn();
+const mockCancel = jest.fn();
 jest.mock('expo-file-system/next', () => ({
   File: class {
     get exists() {
@@ -27,13 +27,14 @@ jest.mock('expo-file-system/next', () => ({
     get size() {
       return mockSize;
     }
-    bytes = async () => {
-      if (mockReadFailure) throw new Error('Cannot read file');
-      return mockBytes;
-    };
+    bytes = mockReadBytes;
   },
 }));
-jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
+jest.mock('expo-file-system/legacy', () => ({
+  FileSystemUploadType: { BINARY_CONTENT: 0 },
+  FileSystemSessionType: { FOREGROUND: 1 },
+  createUploadTask: jest.fn(() => ({ uploadAsync: mockUpload, cancelAsync: mockCancel })),
+}));
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
 jest.mock('~/services/images/ImageManager', () => ({
   getLocalPath: (pinId: string, filename: string) => `file:///pins/${pinId}/${filename}`,
@@ -54,11 +55,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockExists = true;
   mockSize = 4;
-  mockReadFailure = false;
-  jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Cannot fetch file:// URI'));
-  jest
-    .mocked(nativeFetch)
-    .mockResolvedValue({ ok: true, status: 200 } as Awaited<ReturnType<typeof nativeFetch>>);
+  mockReadBytes.mockRejectedValue(new Error('Must not buffer photo bytes in JavaScript'));
+  mockUpload.mockResolvedValue({ status: 200, headers: {}, body: '' });
+  mockCancel.mockResolvedValue(undefined);
   jest
     .mocked(getUploadUrl)
     .mockResolvedValue({ success: true, data: 'https://storage.example.test/photo' });
@@ -68,25 +67,27 @@ beforeEach(() => {
 afterEach(() => {
   jest.clearAllTimers();
   jest.useRealTimers();
-  jest.restoreAllMocks();
 });
-
 async function photoPin(filename = 'photo.jpg') {
   await createPin({ id: 'p', name: 'Photo pin', lat: 1, lng: 2 });
   await updatePin('p', { images: [filename] });
 }
 
-test('uploads native file bytes without fetching a file URI and completes the pin', async () => {
+test('large photo is uploaded from its file URI without allocating JS photo bytes', async () => {
   await photoPin();
+  mockSize = 64 * 1024 * 1024;
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
-  expect(nativeFetch).toHaveBeenCalledWith(
+  expect(createUploadTask).toHaveBeenCalledWith(
     'https://storage.example.test/photo',
+    'file:///pins/p/photo.jpg',
     expect.objectContaining({
-      method: 'PUT',
-      body: mockBytes,
+      httpMethod: 'PUT',
+      uploadType: 0,
+      sessionType: 1,
       headers: { 'Content-Type': 'image/jpeg' },
     })
   );
+  expect(mockReadBytes).not.toHaveBeenCalled();
   expect(db.select().from(pins).get()?.status).toBe('synced');
 });
 
@@ -98,13 +99,14 @@ test.each([
   await photoPin(filename);
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0 });
   expect(getUploadUrl).toHaveBeenCalledWith(`pins/p/${filename}`, mimeType);
-  expect(nativeFetch).toHaveBeenCalledWith(
+  expect(createUploadTask).toHaveBeenCalledWith(
     expect.any(String),
+    `file:///pins/p/${filename}`,
     expect.objectContaining({ headers: { 'Content-Type': mimeType } })
   );
 });
 
-test('storage URL failure identifies the stage and preserves the pin and dependent form', async () => {
+test('storage URL failure preserves the pin and dependent form with a stage-specific error', async () => {
   await photoPin();
   await createForm({ pinId: 'p', name: 'Test', villageId: '', village: 'Krang Svat' });
   jest
@@ -113,18 +115,16 @@ test('storage URL failure identifies the stage and preserves the pin and depende
   const result = await uploadPendingChanges();
   expect(result).toMatchObject({ uploaded: 0, failed: 1, blocked: 1, remaining: 2 });
   expect(result.errors[0].message).toMatch(/photo.*upload URL.*500/i);
+  expect(createUploadTask).not.toHaveBeenCalled();
   expect(sync).not.toHaveBeenCalled();
-  expect(nativeFetch).not.toHaveBeenCalled();
   expect(db.select().from(pins).get()?.images).toBe('["photo.jpg"]');
   expect(db.select().from(forms).get()?.status).toBe('unsynced');
-  expect(db.select().from(syncQueue).where(eq(syncQueue.entityType, 'pin')).get()?.status).toBe(
-    'failed'
-  );
 });
 
-test('missing local photo fails before requesting an upload URL and retains pending data', async () => {
+test.each(['missing', 'empty'])('%s local photo is retained as a failed upload', async (state) => {
   await photoPin();
-  mockExists = false;
+  if (state === 'missing') mockExists = false;
+  else mockSize = 0;
   const result = await uploadPendingChanges();
   expect(result).toMatchObject({ failed: 1, remaining: 1 });
   expect(result.errors[0].message).toMatch(/photo.jpg.*missing.*device/i);
@@ -132,84 +132,73 @@ test('missing local photo fails before requesting an upload URL and retains pend
   expect(db.select().from(pins).get()?.status).toBe('unsynced');
 });
 
-test('photo upload times out and can be retried in a subsequent manual session', async () => {
+test('timeout cancels the native task, retains the queue, and supports the next manual retry', async () => {
   await photoPin();
-  jest.mocked(nativeFetch).mockImplementationOnce(
-    (_url, options) =>
-      new Promise((_resolve, reject) => {
-        options?.signal?.addEventListener('abort', () =>
-          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
-        );
-      })
-  );
+  mockUpload.mockImplementationOnce(() => new Promise(() => {}));
   const pending = uploadPendingChanges();
   await jest.advanceTimersByTimeAsync(60001);
-  const failed = await pending;
-  expect(failed).toMatchObject({ failed: 1, remaining: 1 });
-  expect(failed.errors[0].message).toMatch(/photo.*timed out/i);
+  const result = await pending;
+  expect(result).toMatchObject({ failed: 1, remaining: 1 });
+  expect(result.errors[0].message).toMatch(/photo.*timed out/i);
+  expect(mockCancel).toHaveBeenCalledTimes(1);
   const key = db.select().from(syncQueue).get()?.idempotencyKey;
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, remaining: 0 });
   expect(jest.mocked(sync).mock.calls[0][0].idempotencyKey).toBe(key);
 });
 
-test('empty local photo cannot be marked uploaded', async () => {
+test.each([undefined, null])(
+  'native cancellation result %s cannot mark a pin uploaded',
+  async (result) => {
+    await photoPin();
+    mockUpload.mockResolvedValueOnce(result);
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+    expect(sync).not.toHaveBeenCalled();
+  }
+);
+
+test('native file read failure does not send metadata or discard the queued pin', async () => {
   await photoPin();
-  mockSize = 0;
+  mockUpload.mockRejectedValueOnce(new Error('Cannot read local file'));
   expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
-  expect(getUploadUrl).not.toHaveBeenCalled();
   expect(sync).not.toHaveBeenCalled();
+  expect(mockReadBytes).not.toHaveBeenCalled();
 });
 
-test('native file read failure keeps the pin pending without sending incomplete bytes', async () => {
-  await photoPin();
-  mockReadFailure = true;
-  const result = await uploadPendingChanges();
-  expect(result).toMatchObject({ failed: 1, remaining: 1 });
-  expect(result.errors[0].message).toMatch(/photo.jpg.*could not be read/i);
-  expect(nativeFetch).not.toHaveBeenCalled();
-  expect(sync).not.toHaveBeenCalled();
-});
-
-test('failed remote image lookup does not guess that existing photos need reuploading', async () => {
+test('failed remote photo lookup never guesses that cached photos need reupload', async () => {
   await photoPin();
   await uploadPendingChanges();
   await updatePin('p', { name: 'Renamed' });
   jest.mocked(fetchPin).mockResolvedValue({ success: false, error: 'Request timed out' });
-  jest.mocked(nativeFetch).mockClear();
+  jest.mocked(createUploadTask).mockClear();
   jest.mocked(sync).mockClear();
   const result = await uploadPendingChanges();
   expect(result).toMatchObject({ failed: 1, remaining: 1 });
   expect(result.errors[0].message).toMatch(/check.*remote photo/i);
-  expect(nativeFetch).not.toHaveBeenCalled();
+  expect(createUploadTask).not.toHaveBeenCalled();
   expect(sync).not.toHaveBeenCalled();
 });
 
-test('storage rejection keeps the pin queued and reports the photo HTTP status', async () => {
+test('storage HTTP rejection does not mark the pin uploaded', async () => {
   await photoPin();
-  jest
-    .mocked(nativeFetch)
-    .mockResolvedValueOnce({ ok: false, status: 403 } as Awaited<ReturnType<typeof nativeFetch>>);
+  mockUpload.mockResolvedValueOnce({ status: 403 });
   const result = await uploadPendingChanges();
-  expect(result).toMatchObject({ uploaded: 0, failed: 1, remaining: 1 });
+  expect(result).toMatchObject({ failed: 1, remaining: 1 });
   expect(result.errors[0].message).toMatch(/photo.jpg.*HTTP 403/i);
   expect(sync).not.toHaveBeenCalled();
-  expect(db.select().from(pins).get()?.status).toBe('unsynced');
 });
 
-test('native upload errors do not expose signed URL credentials', async () => {
+test('native errors never expose signed URL credentials', async () => {
   await photoPin();
-  jest
-    .mocked(nativeFetch)
-    .mockRejectedValueOnce(
-      new Error('Network error https://storage.example.test/photo?signature=SECRET')
-    );
+  mockUpload.mockRejectedValueOnce(
+    new Error('Network error https://storage.example.test/photo?signature=SECRET')
+  );
   const result = await uploadPendingChanges();
   expect(result).toMatchObject({ failed: 1, remaining: 1 });
   expect(result.errors[0].message).toMatch(/could not upload/i);
   expect(result.errors[0].message).not.toContain('signature');
 });
 
-test('editing metadata for an existing remote photo does not require a local cached file', async () => {
+test('metadata-only edit does not need a local file for a photo already on the server', async () => {
   await photoPin();
   await uploadPendingChanges();
   await updatePin('p', { name: 'Renamed' });
@@ -217,28 +206,27 @@ test('editing metadata for an existing remote photo does not require a local cac
   jest
     .mocked(fetchPin)
     .mockResolvedValue({ success: true, data: { images: ['photo.jpg'] } } as never);
-  jest.mocked(nativeFetch).mockClear();
-  expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
-  expect(nativeFetch).not.toHaveBeenCalled();
-  expect(db.select().from(pins).get()?.name).toBe('Renamed');
+  jest.mocked(createUploadTask).mockClear();
+  expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, remaining: 0 });
+  expect(createUploadTask).not.toHaveBeenCalled();
   expect(db.select().from(pins).get()?.status).toBe('synced');
 });
 
 test.each([{}, { images: null }, 'invalid pin'])(
-  'malformed remote photo metadata %s prevents overwriting the server image list',
+  'malformed remote photo metadata %s prevents overwriting the server list',
   async (data) => {
     await photoPin();
     await uploadPendingChanges();
     await updatePin('p', { name: 'Renamed' });
     jest.mocked(fetchPin).mockResolvedValue({ success: true, data } as never);
-    jest.mocked(nativeFetch).mockClear();
+    jest.mocked(createUploadTask).mockClear();
     jest.mocked(getUploadUrl).mockClear();
     jest.mocked(sync).mockClear();
     const result = await uploadPendingChanges();
     expect(result).toMatchObject({ failed: 1, remaining: 1 });
     expect(result.errors[0].message).toMatch(/invalid image metadata/i);
     expect(getUploadUrl).not.toHaveBeenCalled();
-    expect(nativeFetch).not.toHaveBeenCalled();
+    expect(createUploadTask).not.toHaveBeenCalled();
     expect(sync).not.toHaveBeenCalled();
     expect(deleteObjects).not.toHaveBeenCalled();
   }

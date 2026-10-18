@@ -4,7 +4,11 @@
 
 import { Form, OperationType, Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { fetch as nativeFetch } from 'expo/fetch';
+import {
+  createUploadTask,
+  FileSystemSessionType,
+  FileSystemUploadType,
+} from 'expo-file-system/legacy';
 import { File } from 'expo-file-system/next';
 
 import { pins, forms } from '~/db/schema';
@@ -195,7 +199,8 @@ function buildImageKey(pinId: string, imageId: string): string {
 
 async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void> {
   for (const imageId of imageIds) {
-    const file = new File(getLocalPath(pinId, imageId));
+    const uri = getLocalPath(pinId, imageId);
+    const file = new File(uri);
     if (!file.exists || file.size <= 0) {
       throw new Error(
         `Photo ${imageId} is missing or empty on this device. Restore or replace it before uploading.`
@@ -223,28 +228,34 @@ async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void
     }
     const uploadUrl = upload.data;
 
-    let bytes: Uint8Array<ArrayBuffer>;
+    const task = createUploadTask(uploadUrl, uri, {
+      httpMethod: 'PUT',
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+      sessionType: FileSystemSessionType.FOREGROUND,
+      headers: { 'Content-Type': contentType },
+    });
+    let timedOut = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      bytes = await file.bytes();
-    } catch {
-      throw new Error(
-        `Photo ${imageId} could not be read on this device. Restore or replace it before uploading.`
-      );
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
-    try {
-      const response = await nativeFetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': contentType },
-        body: bytes,
-        signal: controller.signal,
-      });
-      if (!response.ok) {
+      // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
+      const response = await Promise.race([
+        task.uploadAsync(),
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => {
+            timedOut = true;
+            void task.cancelAsync().catch(() => {});
+            reject(new Error('Upload timed out'));
+          }, 60000);
+        }),
+      ]);
+      if (!response) throw new Error('Upload cancelled');
+      if (response.status < 200 || response.status >= 300) {
         throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
       }
     } catch (error) {
-      if (controller.signal.aborted) {
+      // Expo removes progress subscriptions on resolution, but not rejection.
+      if (!timedOut) void task.cancelAsync().catch(() => {});
+      if (timedOut) {
         throw new Error(
           `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
         );
