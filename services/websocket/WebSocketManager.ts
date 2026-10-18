@@ -23,6 +23,7 @@ class WebSocketManager {
   private ws: WebSocket | null = null;
   private userId: string | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private connectionVersion = 0;
 
   // Status tracking
   private status: WebSocketStatus = {
@@ -47,8 +48,8 @@ class WebSocketManager {
   /**
    * Connect to WebSocket server
    */
-  public async connect(userId: string): Promise<void> {
-    if (this.userId === userId && this.isConnected()) {
+  public async connect(userId: string, forceReconnect = false): Promise<void> {
+    if (!forceReconnect && this.userId === userId && this.isConnected()) {
       return;
     }
 
@@ -62,9 +63,14 @@ class WebSocketManager {
    * Disconnect from WebSocket server
    */
   public disconnect(): void {
+    this.connectionVersion++;
     this.clearTimers();
 
     if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.onopen = null;
+      this.ws.onerror = null;
+      this.ws.onmessage = null;
       this.ws.close();
       this.ws = null;
     }
@@ -138,6 +144,7 @@ class WebSocketManager {
    * Create WebSocket connection
    */
   private async createConnection(): Promise<void> {
+    const version = this.connectionVersion;
     if (!this.userId) {
       console.error('Cannot connect: No user ID provided');
       return;
@@ -145,6 +152,7 @@ class WebSocketManager {
 
     try {
       const apiUrl = await getApiUrl();
+      if (version !== this.connectionVersion) return;
       if (!apiUrl) {
         console.error('Cannot connect: No API URL configured');
         this.updateStatus({
@@ -164,6 +172,7 @@ class WebSocketManager {
       this.ws.onerror = this.handleError.bind(this);
       this.ws.onclose = this.handleClose.bind(this);
     } catch (error) {
+      if (version !== this.connectionVersion) return;
       console.error('Failed to create WebSocket:', error);
       this.updateStatus({
         status: 'error',

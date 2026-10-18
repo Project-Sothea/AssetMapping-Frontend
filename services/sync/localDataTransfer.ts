@@ -8,6 +8,7 @@ import { fetchForms } from '~/services/api/formsApi';
 import { fetchPins } from '~/services/api/pinsApi';
 import { db } from '~/services/drizzleDb';
 import { deleteImageByFilename } from '~/services/images/ImageManager';
+import { assertSafeImageComponent } from '~/services/images/imagePaths';
 
 import { outstanding } from './queue/queueOperations';
 import { clearLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
@@ -78,6 +79,8 @@ export async function downloadSnapshotIntoEmptyDatabase(): Promise<{
   const localPins = pinResponse.data.map((pin) => {
     if (!pin || !Array.isArray(pin.images) || pin.images.some((image) => typeof image !== 'string'))
       throw new Error('Invalid pin images.');
+    assertSafeImageComponent(pin.id);
+    pin.images.forEach(assertSafeImageComponent);
     validateRawDates(pin);
     const row = sanitizePinForDb({ ...pin, status: 'synced' });
     validateRow(pins, row);

@@ -24,7 +24,8 @@ export function SyncStatusBar() {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Open data transfer"
+      accessibilityLabel={`${label}. Open data transfer`}
+      accessibilityLiveRegion="polite"
       onPress={() => router.push('/(tabs)/download')}
       style={styles.status}>
       <Text numberOfLines={2} style={styles.text}>

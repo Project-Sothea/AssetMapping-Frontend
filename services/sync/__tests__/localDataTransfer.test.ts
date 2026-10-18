@@ -120,6 +120,17 @@ test('a SQLite insertion failure rolls back the entire snapshot', async () => {
   expect(db.select().from(pins).all()).toHaveLength(0);
 });
 
+test.each([{ images: ['../../SQLite/local.db'] }, { id: '../SQLite' }])(
+  'unsafe downloaded file references reject the entire snapshot: %j',
+  async (invalid) => {
+    jest
+      .mocked(fetchPins)
+      .mockResolvedValue({ success: true, data: [{ ...serverPin, ...invalid }] } as never);
+    await expect(downloadLatest()).rejects.toThrow(/unsafe|invalid/i);
+    expect(db.select().from(pins).all()).toHaveLength(0);
+  }
+);
+
 test('clearing is blocked by unsent work including orphaned unsynced records', async () => {
   await createPin({ id: 'p', name: 'A', lat: 1, lng: 2 });
   await expect(clearLocalData()).rejects.toThrow();
