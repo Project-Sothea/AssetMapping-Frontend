@@ -24,6 +24,8 @@ import {
 
 import { PinValues } from '../types/';
 
+import { VillageSelect } from './VillageSelect';
+
 const pinSchema = z.looseObject({
   name: z.string().trim().min(1, 'Name is required'),
 });
@@ -104,31 +106,41 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
 
   return (
     <View style={styles.container}>
+      <View>
+        <Text>Name *</Text>
+        <TextInput
+          style={styles.input}
+          onChangeText={(text) =>
+            setValue('name', text, { shouldDirty: true, shouldValidate: true })
+          }
+          value={values.name ?? ''}
+          placeholder="Enter name"
+        />
+        {errors.name?.message && <Text style={styles.error}>{String(errors.name.message)}</Text>}
+      </View>
+      <View>
+        <Text>Village</Text>
+        <VillageSelect
+          value={values.cityVillage ?? ''}
+          onChange={(village) =>
+            setValue('cityVillage', village, { shouldDirty: true, shouldValidate: true })
+          }
+        />
+      </View>
       {[
-        { name: 'name', label: 'Name', required: true },
-        { name: 'cityVillage', label: 'City/Village' },
-        { name: 'address', label: 'Address' },
-        { name: 'description', label: 'Description' },
-      ].map(({ name, label, required }) => (
+        { name: 'address' as const, label: 'Address' },
+        { name: 'description' as const, label: 'Description' },
+      ].map(({ name, label }) => (
         <View key={name}>
-          <Text>
-            {label}
-            {required ? ' *' : ''}
-          </Text>
+          <Text>{label}</Text>
           <TextInput
             style={styles.input}
             onChangeText={(text) =>
-              setValue(name as keyof PinValues, text as PinValues[keyof PinValues], {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
+              setValue(name, text, { shouldDirty: true, shouldValidate: true })
             }
-            value={(values[name as keyof PinValues] as string) ?? ''}
+            value={values[name] ?? ''}
             placeholder={`Enter ${label.toLowerCase()}`}
           />
-          {errors[name as keyof typeof errors]?.message && (
-            <Text style={styles.error}>{String(errors[name as keyof typeof errors]?.message)}</Text>
-          )}
         </View>
       ))}
 

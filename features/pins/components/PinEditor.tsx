@@ -1,7 +1,6 @@
 import type { Pin } from '@assetmapping/shared-types';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Alert, Text } from 'react-native';
 
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
@@ -96,17 +95,27 @@ export function PinEditor(props: PinEditorProps) {
       />
       <View style={styles.toolbar}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Save pin"
           onPress={() => submitRef.current?.()}
-          style={[styles.iconBtn, styles.primary]}>
-          <MaterialIcons name="save" size={22} color="#fff" />
+          style={[styles.actionButton, styles.primary]}>
+          <Text style={styles.actionText}>Save</Text>
         </TouchableOpacity>
         {!isCreate && (
           <>
-            <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
-              <MaterialIcons name="visibility" size={22} color="#111" />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="View pin"
+              onPress={props.onCancel}
+              style={[styles.actionButton, styles.muted]}>
+              <Text style={[styles.actionText, styles.mutedText]}>View</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
-              <MaterialIcons name="delete" size={22} color="#fff" />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Delete pin"
+              onPress={handleDelete}
+              style={[styles.actionButton, styles.danger]}>
+              <Text style={styles.actionText}>Delete</Text>
             </TouchableOpacity>
           </>
         )}
@@ -118,21 +127,26 @@ export function PinEditor(props: PinEditorProps) {
 const styles = StyleSheet.create({
   container: { paddingBottom: 16 },
   toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 10,
     marginTop: 12,
   },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
+  actionButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   muted: {
     backgroundColor: '#e5e7eb',
   },
+  mutedText: {
+    color: '#111',
+  },
   danger: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#e74c3c',
   },
   primary: {
     backgroundColor: '#2563eb',

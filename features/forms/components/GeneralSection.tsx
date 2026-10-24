@@ -1,5 +1,7 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
+import { VILLAGES } from '~/shared/constants/villages';
+
 import { FormValues } from '../types';
 
 import RadioGroup from './RadioGroup';
@@ -87,8 +89,7 @@ export default function GeneralSection({
       <RadioGroup
         name="village"
         options={[
-          { label: 'Krang Svat', value: 'Krang Svat' },
-          { label: 'Srae Ou', value: 'Srae Ou' },
+          ...VILLAGES.map((village) => ({ label: village, value: village })),
           { label: 'Other', value: 'others' },
         ]}
         values={values}

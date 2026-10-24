@@ -1,5 +1,4 @@
 import type { Pin } from '@assetmapping/shared-types';
-import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
@@ -42,12 +41,20 @@ export function PinDetails({ pin, onImagePress, onEdit, onViewForms }: PinDetail
         <InfoRow label="Address" value={pin.address} />
       </View>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity onPress={onEdit} style={[styles.iconBtn, styles.editChip]}>
-          <MaterialIcons name="edit" size={22} color="#1d4ed8" />
+      <View style={styles.actions}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Edit pin"
+          onPress={onEdit}
+          style={[styles.actionButton, styles.editButton]}>
+          <Text style={styles.actionText}>Edit</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onViewForms} style={[styles.iconBtn, styles.formsChip]}>
-          <MaterialIcons name="description" size={22} color="#065f46" />
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="View forms"
+          onPress={onViewForms}
+          style={[styles.actionButton, styles.formsButton]}>
+          <Text style={styles.actionText}>Forms</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -82,22 +89,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
-  actionRow: {
-    flexDirection: 'row',
+  actions: {
     gap: 10,
-    justifyContent: 'flex-end',
     marginTop: 12,
   },
-  editChip: {
-    backgroundColor: '#e0ebff',
+  actionButton: {
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  formsChip: {
-    backgroundColor: '#e7f5ec',
+  actionText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
+  editButton: {
+    backgroundColor: '#2563eb',
+  },
+  formsButton: {
+    backgroundColor: '#047857',
   },
   imageScroll: { marginBottom: 12 },
   image: {
