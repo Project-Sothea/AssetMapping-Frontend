@@ -11,6 +11,9 @@ import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import type { FormUpdate, FormValues } from '../types';
 
 function touchParent(tx: LocalTransaction, pinId: string) {
+  if (typeof pinId !== 'string' || !pinId.trim()) {
+    throw new Error('Please reopen the pin before saving this form. The pin link is missing.');
+  }
   const parent = tx.select().from(pins).where(eq(pins.id, pinId)).get();
   if (!parent) throw new Error('The parent pin is missing. Save the pin before saving a form.');
   const updated = { ...mapPinDbToPin(parent), updatedAt: new Date(), status: 'unsynced' };

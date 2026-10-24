@@ -76,6 +76,22 @@ test('saving a form on an unsent pin retains parent create', async () => {
   );
 });
 
+test.each([undefined, null, '', ['pin-1']])(
+  'invalid parent ID %s fails before any form or queue write',
+  async (pinId) => {
+    await expect(
+      createForm({
+        pinId: pinId as unknown as string,
+        name: 'Test',
+        villageId: '',
+        village: 'Krang Svat',
+      })
+    ).rejects.toThrow(/reopen.*pin/i);
+    expect(db.select().from(forms).all()).toHaveLength(0);
+    expect(db.select().from(syncQueue).all()).toHaveLength(0);
+  }
+);
+
 test('queue insert failure rolls back the local pin save', async () => {
   db.run(
     "CREATE TRIGGER fail_queue BEFORE INSERT ON sync_queue BEGIN SELECT RAISE(ABORT, 'queue failed'); END"
