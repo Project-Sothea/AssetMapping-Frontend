@@ -14,7 +14,7 @@ import {
 import * as Location from 'expo-location';
 import type { Feature } from 'geojson';
 import { useState, useEffect, useRef } from 'react';
-import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppState, View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
 import pin from '~/assets/pin.png';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
@@ -87,6 +87,19 @@ export default function Map({ initialCoords }: MapProps = {}) {
       MapboxGL.locationManager.stop();
     };
   }, []);
+
+  // Recreate the native map surface after the app resumes from the background.
+  useEffect(() => {
+    let previousState = AppState.currentState;
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && previousState !== 'active' && screenIsFocused) {
+        setMapKey((key) => key + 1);
+      }
+      previousState = nextState;
+    });
+
+    return () => subscription.remove();
+  }, [screenIsFocused]);
 
   const refreshMap = () => {
     setMapKey((k) => k + 1); // force remount
