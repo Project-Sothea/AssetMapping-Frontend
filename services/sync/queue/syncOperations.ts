@@ -4,7 +4,12 @@
 
 import { Form, OperationType, Pin } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  createUploadTask,
+  FileSystemSessionType,
+  FileSystemUploadType,
+} from 'expo-file-system/legacy';
+import { File } from 'expo-file-system/next';
 
 import { pins, forms } from '~/db/schema';
 import { fetchPin } from '~/services/api/pinsApi';
@@ -13,20 +18,22 @@ import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 import { getLocalPath } from '~/services/images/ImageManager';
 
-import { pullFormUpdate, pullPinUpdate } from '../pullUpdates';
-
 /**
  * Sync pin to backend
  */
-export async function syncPin(operation: OperationType, data: Pin): Promise<void> {
+export async function syncPin(
+  operation: OperationType,
+  data: Pin,
+  idempotencyKey: string
+): Promise<void> {
   // Handle delete operations
   if (operation === 'delete') {
-    await deletePinOnBackend(data.id);
+    await deletePinOnBackend(data.id, idempotencyKey);
     return;
   }
 
   // Handle create/update operations with image upload
-  const syncedData = await syncPinToBackend(operation, data);
+  const syncedData = await syncPinToBackend(operation, data, idempotencyKey);
 
   await updateLocalPinAfterSync(data.id, syncedData);
 }
@@ -34,13 +41,17 @@ export async function syncPin(operation: OperationType, data: Pin): Promise<void
 /**
  * Sync form to backend
  */
-export async function syncForm(operation: OperationType, data: Form): Promise<void> {
+export async function syncForm(
+  operation: OperationType,
+  data: Form,
+  idempotencyKey: string
+): Promise<void> {
   if (operation === 'delete') {
-    await deleteFormOnBackend(data.id);
+    await deleteFormOnBackend(data.id, idempotencyKey);
     return;
   }
 
-  const syncedData = await syncFormToBackend(operation, data);
+  const syncedData = await syncFormToBackend(operation, data, idempotencyKey);
   await updateLocalFormAfterSync(data.id, syncedData);
 }
 
@@ -51,7 +62,8 @@ export async function syncForm(operation: OperationType, data: Form): Promise<vo
  */
 async function syncPinToBackend(
   operation: OperationType,
-  payload: Pin
+  payload: Pin,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const filenames = payload.images || [];
   const {
@@ -67,7 +79,7 @@ async function syncPinToBackend(
   }
 
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation,
     payload,
@@ -77,15 +89,6 @@ async function syncPinToBackend(
 
   // Handle version conflicts - pull latest data
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for pin ${payload.id} - pulling latest from server`);
-
-      // Pull latest data from server (will overwrite local changes)
-      await pullPinUpdate(payload.id);
-
-      return; // Success - conflict resolved by accepting server data
-    }
-
     // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
@@ -124,9 +127,9 @@ async function updateLocalPinAfterSync(
 /**
  * Delete pin on backend
  */
-async function deletePinOnBackend(pinId: string): Promise<void> {
+async function deletePinOnBackend(pinId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation: 'delete',
     payload: { id: pinId },
@@ -141,10 +144,11 @@ async function deletePinOnBackend(pinId: string): Promise<void> {
 
 async function syncFormToBackend(
   operation: OperationType,
-  payload: Form
+  payload: Form,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation,
     payload,
@@ -153,20 +157,15 @@ async function syncFormToBackend(
   });
 
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for form ${payload.id} - pulling latest from server`);
-      await pullFormUpdate(payload.id);
-      return;
-    }
     throw new Error(response.error || 'Sync failed');
   }
 
   return response.data;
 }
 
-async function deleteFormOnBackend(formId: string): Promise<void> {
+async function deleteFormOnBackend(formId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation: 'delete',
     payload: { id: formId },
@@ -201,33 +200,74 @@ function buildImageKey(pinId: string, imageId: string): string {
 async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void> {
   for (const imageId of imageIds) {
     const uri = getLocalPath(pinId, imageId);
+    const file = new File(uri);
+    if (!file.exists || file.size <= 0) {
+      throw new Error(
+        `Photo ${imageId} is missing or empty on this device. Restore or replace it before uploading.`
+      );
+    }
     const ext = imageId.split('.').pop()?.toLowerCase();
-    const contentType = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
+    const contentTypes: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      heic: 'image/heic',
+      heif: 'image/heif',
+    };
+    const contentType = contentTypes[ext || ''] || 'application/octet-stream';
     const key = buildImageKey(pinId, imageId);
 
     const upload = await getUploadUrl(key, contentType);
-    if (!upload.success) {
-      throw new Error(upload.error);
+    if (!upload.success || typeof upload.data !== 'string' || !upload.data) {
+      const reason = upload.success ? 'storage returned no upload URL' : upload.error;
+      throw new Error(
+        `Photo ${imageId}: could not obtain upload URL (${reason || 'storage unavailable'}).`
+      );
     }
     const uploadUrl = upload.data;
 
-    const fileResponse = await fetch(uri);
-    if (!fileResponse.ok) {
-      throw new Error(`Failed to read local image at ${uri}`);
-    }
-    const blob = await fileResponse.blob();
-    const putResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-      },
-      body: blob,
+    const task = createUploadTask(uploadUrl, uri, {
+      httpMethod: 'PUT',
+      uploadType: FileSystemUploadType.BINARY_CONTENT,
+      sessionType: FileSystemSessionType.FOREGROUND,
+      headers: { 'Content-Type': contentType },
     });
-
-    if (!putResponse.ok) {
+    let timedOut = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
+      const response = await Promise.race([
+        task.uploadAsync(),
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => {
+            timedOut = true;
+            void task.cancelAsync().catch(() => {});
+            reject(new Error('Upload timed out'));
+          }, 60000);
+        }),
+      ]);
+      if (!response) throw new Error('Upload cancelled');
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
+      }
+    } catch (error) {
+      // Expo removes progress subscriptions on resolution, but not rejection.
+      if (!timedOut) void task.cancelAsync().catch(() => {});
+      if (timedOut) {
+        throw new Error(
+          `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
+        );
+      }
+      // Do not expose signed storage URLs in native network error messages.
+      if (error instanceof Error && error.message.startsWith(`Photo ${imageId} upload failed`))
+        throw error;
       throw new Error(
-        `Failed to upload image ${imageId} to storage (status ${putResponse.status})`
+        `Photo ${imageId} could not upload. Your data is kept on this device; check your connection and retry.`
       );
+    } finally {
+      clearTimeout(timeout);
     }
   }
 }
@@ -266,17 +306,16 @@ async function determineImageChanges(
 }
 
 async function getRemoteImages(pinId: string): Promise<string[]> {
-  try {
-    const response = await fetchPin(pinId);
-    if (response.success && response.data) {
-      const images = (response.data as { images?: string[] | null }).images;
-      if (Array.isArray(images)) {
-        return images;
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ Unable to fetch remote images for pin', pinId, error);
+  const response = await fetchPin(pinId);
+  if (!response.success || !response.data) {
+    const reason = response.success ? 'pin unavailable' : response.error;
+    throw new Error(
+      `Could not check remote photos before uploading (${reason || 'pin unavailable'}). Retry when the connection improves.`
+    );
   }
-
-  return [];
+  const images = (response.data as { images?: string[] | null }).images;
+  if (!Array.isArray(images) || images.some((image) => typeof image !== 'string')) {
+    throw new Error('Could not check remote photos: the server returned invalid image metadata.');
+  }
+  return images;
 }

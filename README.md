@@ -1,11 +1,31 @@
 # Asset Mapping Frontend
 
-### Last Updated: 12 Apr, 2026
+### Last Updated: 15 Oct, 2026
 
 ## Overview
 
 This is the frontend for the asset mapping system, built as a React Native (Expo) mobile app. It is designed to be used in conjunction with the backend.  
-The app is written in TypeScript using React Native and Expo Router. It uses a local SQLite database for offline-first storage, syncing data to the backend over a REST API and WebSocket connection. The app integrates Mapbox for map rendering and offline map pack downloads.
+The app is written in TypeScript using React Native and Expo Router. It uses local SQLite for offline-first storage and explicit manual REST transfers. WebSockets track connection status only; receiving a notification or reconnecting does not transfer records. The app integrates Mapbox for map rendering and offline map pack downloads.
+
+## Manual Data Transfer
+
+- Saving a pin or form stores it and its pending upload together on this device. Saving does not upload.
+- In the Download tab, tap **Upload** to send all pending/failed changes. The result lists uploaded, failed, blocked, and remaining changes. A single form save can queue both a pin and a form, so these are change counts, not patient counts.
+- Failed uploads remain on the device. Retry by tapping Upload again. Version conflicts preserve local responses and require team assistance; the app does not silently replace them with server data.
+- **Clear Local Data** requires confirmation and is blocked by pending/failed uploads or unsynced records. It removes only this device's records and cached pin images, not backend records, settings, device identity, or offline map packs. Editing a pin's normal Delete action is different: that deletion is sent to the backend when uploaded.
+- **Download Latest** is available only with no local pins/forms and no outstanding upload operations. It downloads a complete validated snapshot atomically; partial downloads are not kept.
+- Upload, clearing, and download are separate actions. Opening the app, saving the API URL, reconnecting, and changing tabs do not automatically transfer records after setup.
+- The header's **No pending uploads** describes the upload queue, not whether the device is an exact mirror of the backend.
+
+### One-Time Legacy Reset: Release Warning
+
+The existing `localDataResetVersion = '1'` marker is unchanged. Devices that have already completed the reset keep their data. Devices skipping build 14/the first reset APK still clear their old local pins, forms, and queued uploads once on first launch, then attempt one initial download. **Unsent legacy responses are deleted: back up needed work before updating.**
+
+If the initial download fails, the reset is not repeated; retry the download manually while the device is empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the reset marker, so future updates do not flush the device again.
+
+### Transfer Tests
+
+Run `npm test -- --runInBand --watchman=false`, `npx tsc --noEmit`, and `npm run lint`. Tests use a separate in-memory SQLite database with the checked-in migrations and mock network/native boundaries; they do not contact production. Native iOS/Android lifecycle and visual smoke tests remain required before release. Use Node.js 20.19.4+ for the installed React Native toolchain.
 
 ---
 
@@ -138,9 +158,10 @@ The sync queue entry structure:
 
 Key sync files:
 
-- `services/sync/syncService.ts` — orchestrates the full sync lifecycle
-- `services/sync/queue/syncQueue.ts` — queue management
-- `services/sync/pullUpdates.ts` — pulls latest state from the backend
+- `services/sync/syncService.ts` — one-time legacy setup; no routine automatic transfers
+- `services/sync/queue/syncQueue.ts` — explicit upload sessions and retry results
+- `services/sync/localDataTransfer.ts` — empty-only downloads and protected local clearing
+- `services/sync/transferCoordinator.ts` — transfer exclusion and local-write protection
 
 ## Directory Structure
 
@@ -168,7 +189,7 @@ Key sync files:
 │   │   ├── _layout.tsx             - Tab bar layout.
 │   │   ├── index.tsx               - Home / pin list screen.
 │   │   ├── map.tsx                 - Map screen.
-│   │   └── download.tsx            - Offline map packs and API URL configuration.
+│   │   └── download.tsx            - Manual data transfer, offline map packs, and API URL configuration.
 │   └── pin/[pinId]/
 │       └── forms.tsx               - Forms list screen for a specific pin.
 ├── features/                       - Feature-scoped components, hooks, services, and types.
@@ -195,14 +216,15 @@ Key sync files:
 │   │   ├── storageApi.ts           - REST API calls for image storage.
 │   │   └── syncApi.ts              - REST API calls for sync operations.
 │   ├── sync/
-│   │   ├── syncService.ts          - Orchestrates initial pull and background sync.
-│   │   ├── pullUpdates.ts          - Fetches and applies remote updates locally.
+│   │   ├── syncService.ts          - One-time legacy setup only; no routine automatic transfers.
+│   │   ├── localDataTransfer.ts    - Empty-only snapshot download and protected local clearing.
+│   │   ├── transferCoordinator.ts  - Shared transfer exclusion and edit guards.
 │   │   ├── syncMetadata.ts         - Manages last-synced timestamps.
 │   │   └── queue/
-│   │       ├── syncQueue.ts        - Enqueue/dequeue sync operations.
+│   │       ├── syncQueue.ts        - Explicit upload sessions and queue metrics.
 │   │       ├── syncOperations.ts   - Executes individual sync operations against the API.
 │   │       ├── queueOperations.ts  - Low-level queue DB operations.
-│   │       ├── queueState.ts       - In-memory queue state management.
+│   │       ├── operationMerge.ts   - Preserve create semantics across offline edits/deletes.
 │   │       └── types.ts            - Sync queue TypeScript types.
 │   ├── websocket/
 │   │   └── WebSocketManager.ts     - WebSocket connection lifecycle and message handling.
