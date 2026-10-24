@@ -1,5 +1,7 @@
 import type { Pin } from '@assetmapping/shared-types';
 
+import { VILLAGES } from '~/shared/constants/villages';
+
 export const ALL_VILLAGES_KEY = '__all__';
 export const UNASSIGNED_VILLAGE_KEY = '__unassigned__';
 export const UNASSIGNED_VILLAGE_LABEL = 'No village';
@@ -17,10 +19,16 @@ export function villageKey(pin: Pin): string {
   return label ? label.toLowerCase() : UNASSIGNED_VILLAGE_KEY;
 }
 
-/** Villages present on pins, with All first and blank villages last. */
+/** Known villages plus any other village present on a pin. All is first; blank villages are last. */
 export function listVillageOptions(pins: Pin[]): VillageOption[] {
   const labels = new Map<string, Map<string, number>>();
   let hasUnassigned = false;
+
+  for (const name of VILLAGES) {
+    const counts = labels.get(name.toLowerCase()) ?? new Map<string, number>();
+    counts.set(name, counts.get(name) ?? 0);
+    labels.set(name.toLowerCase(), counts);
+  }
 
   for (const pin of pins) {
     const label = pin.cityVillage?.trim() ?? '';
