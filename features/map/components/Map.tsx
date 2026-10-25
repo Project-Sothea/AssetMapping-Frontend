@@ -14,7 +14,7 @@ import {
 import * as Location from 'expo-location';
 import type { Feature } from 'geojson';
 import { useState, useEffect, useRef } from 'react';
-import { AppState, View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppState, View, Text, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
 import pin from '~/assets/pin.png';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
@@ -26,6 +26,8 @@ import { PinModal } from '../../pins/components/PinModal';
 
 // Default style; can be toggled at runtime
 const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
+// Existing offline packs contain Streets, not satellite imagery.
+const OFFLINE_STYLE_URL = MapboxGL.StyleURL.Street;
 
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
@@ -34,6 +36,7 @@ type MapProps = {
 const DEFAULT_COORDS = { lat: 12.794459, lng: 103.308443 };
 const DEFAULT_ZOOM = 10;
 const PIN_ZOOM = 18;
+const MAX_ZOOM = 20;
 
 type PinModalState =
   | { mode: 'create'; coords: [number, number] }
@@ -45,6 +48,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
   const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
+  const [mapLoadFailed, setMapLoadFailed] = useState(false);
 
   const [pinModalState, setPinModalState] = useState<PinModalState>(null);
 
@@ -102,15 +106,13 @@ export default function Map({ initialCoords }: MapProps = {}) {
   }, [screenIsFocused]);
 
   const refreshMap = () => {
+    setMapLoadFailed(false);
     setMapKey((k) => k + 1); // force remount
   };
 
   const toggleStyle = () => {
-    setStyleUrl((prev) =>
-      prev === MapboxGL.StyleURL.SatelliteStreet
-        ? MapboxGL.StyleURL.Outdoors
-        : MapboxGL.StyleURL.SatelliteStreet
-    );
+    setStyleUrl((prev) => (prev === DEFAULT_STYLE_URL ? OFFLINE_STYLE_URL : DEFAULT_STYLE_URL));
+    setMapLoadFailed(false);
   };
 
   const handleDropPin = async (feature: Feature) => {
@@ -168,9 +170,15 @@ export default function Map({ initialCoords }: MapProps = {}) {
         styleURL={styleUrl}
         compassEnabled
         scaleBarEnabled
+        onMapLoadingError={() => {
+          console.warn('Map loading failed', { styleUrl, maxZoom: MAX_ZOOM });
+          setMapLoadFailed(true);
+        }}
+        onDidFinishRenderingMapFully={() => setMapLoadFailed(false)}
         onLongPress={handleDropPin}>
         <Camera
           ref={cameraRef}
+          maxZoomLevel={MAX_ZOOM}
           defaultSettings={{
             centerCoordinate: [targetCoords.lng, targetCoords.lat],
             zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
@@ -234,6 +242,28 @@ export default function Map({ initialCoords }: MapProps = {}) {
           </ShapeSource>
         )}
       </MapView>
+      {mapLoadFailed && (
+        <View style={styles.mapError} accessibilityLiveRegion="polite">
+          <Text>Map could not load</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Reload map"
+            onPress={refreshMap}>
+            <MaterialIcons name="refresh" color="black" size={24} />
+          </TouchableOpacity>
+          {styleUrl !== OFFLINE_STYLE_URL && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Use downloaded street map"
+              onPress={() => {
+                setStyleUrl(OFFLINE_STYLE_URL);
+                refreshMap();
+              }}>
+              <MaterialIcons name="map" color="black" size={24} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
       {pinModalState?.mode === 'view' && screenIsFocused && (
         <PinModal mode="view" visible pin={pinModalState.pin} onClose={handleCloseModal} />
       )}
@@ -267,6 +297,18 @@ export default function Map({ initialCoords }: MapProps = {}) {
 }
 
 const styles = StyleSheet.create({
+  mapError: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    backgroundColor: '#fff',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   controlsLeft: {
     position: 'absolute',
     bottom: 12,
