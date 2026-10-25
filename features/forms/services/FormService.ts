@@ -2,20 +2,32 @@ import type { Form } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
 import { v4 } from 'uuid';
 
-import { forms } from '~/db/schema';
-import { mapFormDbToForm, sanitizeFormForDb } from '~/db/utils';
-import { updatePin } from '~/features/pins/services/PinService';
+import { forms, pins } from '~/db/schema';
+import { mapFormDbToForm, mapPinDbToPin, sanitizeFormForDb, sanitizePinForDb } from '~/db/utils';
 import { db } from '~/services/drizzleDb';
-import { enqueueForm } from '~/services/sync/queue/syncQueue';
+import { enqueueInTransaction, LocalTransaction } from '~/services/sync/queue/queueOperations';
+import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 
 import type { FormUpdate, FormValues } from '../types';
 
-// ============================================
-// CREATE
-// ============================================
-
+function touchParent(tx: LocalTransaction, pinId: string) {
+  if (typeof pinId !== 'string' || !pinId.trim()) {
+    throw new Error('Please reopen the pin before saving this form. The pin link is missing.');
+  }
+  const parent = tx.select().from(pins).where(eq(pins.id, pinId)).get();
+  if (!parent) throw new Error('The parent pin is missing. Save the pin before saving a form.');
+  const updated = { ...mapPinDbToPin(parent), updatedAt: new Date(), status: 'unsynced' };
+  tx.update(pins).set(sanitizePinForDb(updated)).where(eq(pins.id, pinId)).run();
+  enqueueInTransaction(tx, {
+    operation: 'update',
+    entityType: 'pin',
+    entityId: pinId,
+    payload: updated,
+  });
+}
 export async function createForm(values: FormValues): Promise<Form> {
-  const newForm: Form = {
+  assertLocalWritesAllowed();
+  const form: Form = {
     ...values,
     id: v4(),
     createdAt: new Date(),
@@ -23,86 +35,57 @@ export async function createForm(values: FormValues): Promise<Form> {
     version: 1,
     status: 'unsynced',
   };
-  await db.insert(forms).values(sanitizeFormForDb(newForm));
-  // touch parent pin so its updatedAt reflects new form activity
-  if (newForm.pinId) {
-    try {
-      // Update the parent pin's updatedAt using updatePin so the repository
-      // and sync queue logic runs consistently (this also enqueues the pin update).
-      const updatedAt = new Date();
-      await updatePin(newForm.pinId, { updatedAt });
-    } catch (err) {
-      console.warn(
-        `[FormService] createForm: failed to update pin ${newForm.pinId} for form ${newForm.id}`,
-        err
-      );
-    }
-  }
-  await enqueueForm('create', newForm);
-  return newForm;
+  db.transaction((tx) => {
+    touchParent(tx, form.pinId);
+    tx.insert(forms).values(sanitizeFormForDb(form)).run();
+    enqueueInTransaction(tx, {
+      operation: 'create',
+      entityType: 'form',
+      entityId: form.id,
+      payload: form,
+    });
+  });
+  return form;
 }
-
-// ============================================
-// UPDATE
-// ============================================
-
 export async function updateForm(id: string, updates: FormUpdate): Promise<Form> {
-  const existing = await getFormById(id);
-  if (!existing) throw new Error(`Form ${id} not found`);
-
-  // Merge existing form with new values
-  const updated = {
-    ...existing,
+  assertLocalWritesAllowed();
+  const row = db.select().from(forms).where(eq(forms.id, id)).get();
+  if (!row) throw new Error(`Form ${id} not found`);
+  const updated: Form = {
+    ...mapFormDbToForm(row),
     ...updates,
-    updatedAt: new Date(), // Update timestamp
-    status: 'unsynced', // Mark as unsynced
+    updatedAt: new Date(),
+    status: 'unsynced',
   };
-
-  await db.update(forms).set(sanitizeFormForDb(updated)).where(eq(forms.id, id));
-  // touch parent pin so its updatedAt reflects updated form activity
-  if (updated.pinId) {
-    try {
-      const updatedAt = new Date();
-      await updatePin(updated.pinId, { updatedAt });
-    } catch (err) {
-      console.warn(
-        `[FormService] updateForm: failed to update pin ${updated.pinId} for form ${updated.id}`,
-        err
-      );
-    }
-  }
-  await enqueueForm('update', updated);
-  return updated; // Return the updated form data
+  db.transaction((tx) => {
+    touchParent(tx, updated.pinId);
+    tx.update(forms).set(sanitizeFormForDb(updated)).where(eq(forms.id, id)).run();
+    enqueueInTransaction(tx, {
+      operation: 'update',
+      entityType: 'form',
+      entityId: id,
+      payload: updated,
+    });
+  });
+  return updated;
 }
-
-// ============================================
-// DELETE
-// ============================================
-
 export async function deleteForm(id: string): Promise<void> {
-  const existing = await getFormById(id);
-  if (!existing) throw new Error(`Form ${id} not found`);
-  await db.delete(forms).where(eq(forms.id, id));
-  // touch parent pin so its updatedAt reflects deleted form activity
-  if (existing.pinId) {
-    try {
-      const updatedAt = new Date();
-      await updatePin(existing.pinId, { updatedAt });
-    } catch (err) {
-      console.warn(
-        `[FormService] deleteForm: failed to update pin ${existing.pinId} for deleted form ${existing.id}`,
-        err
-      );
-    }
-  }
-  await enqueueForm('delete', existing);
+  assertLocalWritesAllowed();
+  const row = db.select().from(forms).where(eq(forms.id, id)).get();
+  if (!row) throw new Error(`Form ${id} not found`);
+  const form = mapFormDbToForm(row);
+  db.transaction((tx) => {
+    touchParent(tx, form.pinId);
+    tx.delete(forms).where(eq(forms.id, id)).run();
+    enqueueInTransaction(tx, {
+      operation: 'delete',
+      entityType: 'form',
+      entityId: id,
+      payload: form,
+    });
+  });
 }
-
-// ============================================
-// READ
-// ============================================
-
 export async function getFormById(id: string): Promise<Form | null> {
-  const result = db.select().from(forms).where(eq(forms.id, id)).limit(1).get();
+  const result = db.select().from(forms).where(eq(forms.id, id)).get();
   return result ? mapFormDbToForm(result) : null;
 }

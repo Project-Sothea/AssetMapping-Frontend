@@ -14,7 +14,6 @@
 
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 import { getApiUrl } from '~/services/apiUrl';
-import { performIncrementalSync } from '~/services/sync/syncService';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
 type StatusSubscriber = (status: WebSocketStatus) => void;
@@ -24,6 +23,7 @@ class WebSocketManager {
   private ws: WebSocket | null = null;
   private userId: string | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private connectionVersion = 0;
 
   // Status tracking
   private status: WebSocketStatus = {
@@ -48,8 +48,8 @@ class WebSocketManager {
   /**
    * Connect to WebSocket server
    */
-  public async connect(userId: string): Promise<void> {
-    if (this.userId === userId && this.isConnected()) {
+  public async connect(userId: string, forceReconnect = false): Promise<void> {
+    if (!forceReconnect && this.userId === userId && this.isConnected()) {
       return;
     }
 
@@ -63,9 +63,14 @@ class WebSocketManager {
    * Disconnect from WebSocket server
    */
   public disconnect(): void {
+    this.connectionVersion++;
     this.clearTimers();
 
     if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.onopen = null;
+      this.ws.onerror = null;
+      this.ws.onmessage = null;
       this.ws.close();
       this.ws = null;
     }
@@ -139,6 +144,7 @@ class WebSocketManager {
    * Create WebSocket connection
    */
   private async createConnection(): Promise<void> {
+    const version = this.connectionVersion;
     if (!this.userId) {
       console.error('Cannot connect: No user ID provided');
       return;
@@ -146,6 +152,7 @@ class WebSocketManager {
 
     try {
       const apiUrl = await getApiUrl();
+      if (version !== this.connectionVersion) return;
       if (!apiUrl) {
         console.error('Cannot connect: No API URL configured');
         this.updateStatus({
@@ -165,6 +172,7 @@ class WebSocketManager {
       this.ws.onerror = this.handleError.bind(this);
       this.ws.onclose = this.handleClose.bind(this);
     } catch (error) {
+      if (version !== this.connectionVersion) return;
       console.error('Failed to create WebSocket:', error);
       this.updateStatus({
         status: 'error',
@@ -178,8 +186,6 @@ class WebSocketManager {
    * Handle WebSocket open event
    */
   private handleOpen(): void {
-    const wasReconnecting = this.status.status === 'reconnecting';
-
     this.updateStatus({
       status: 'connected',
       isConnected: true,
@@ -187,11 +193,6 @@ class WebSocketManager {
       lastError: null,
       lastConnectedAt: new Date(),
     });
-
-    // If this was a reconnection, trigger incremental sync
-    if (wasReconnecting) {
-      this.triggerReconnectSync();
-    }
   }
 
   /**
@@ -286,19 +287,6 @@ class WebSocketManager {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-  }
-
-  /**
-   * Trigger incremental sync after reconnection
-   * Runs async without blocking WebSocket operations
-   */
-  private async triggerReconnectSync(): Promise<void> {
-    try {
-      await performIncrementalSync();
-    } catch (error) {
-      console.error('Failed to perform incremental sync after reconnect:', error);
-      // Don't throw - sync failure shouldn't break WebSocket
     }
   }
 

@@ -11,6 +11,11 @@ module.exports = defineConfig([
     ignores: ['dist/*'],
   },
   {
+    files: ['services/sync/__tests__/**/*.{ts,tsx}'],
+    // Jest factories and fresh-app tests require modules after installing mocks.
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
     plugins: {
       'react-native': reactNativePlugin,
     },

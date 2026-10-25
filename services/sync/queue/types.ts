@@ -8,3 +8,11 @@ export interface QueueMetrics {
   failed: number;
   completed: number;
 }
+
+export interface UploadResult {
+  uploaded: number;
+  failed: number;
+  blocked: number;
+  remaining: number;
+  errors: { entityId: string; entityType: string; name: string; message: string }[];
+}
