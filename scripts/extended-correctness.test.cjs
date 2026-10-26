@@ -374,7 +374,7 @@ test('historical populated SQLite storage is blocked before destructive migratio
   assert.equal(legacy.prepare('SELECT name FROM pins').get().name, 'QA saved household');
 });
 
-test('the populated current schema can take index/journal migrations without losing pending responses', async (t) => {
+test('the populated current schema passes the upgrade guard and retains pending responses', async (t) => {
   const f = setup(t);
   const form = await f.formService.createForm(f.values);
   const adapter = {
@@ -386,6 +386,47 @@ test('the populated current schema can take index/journal migrations without los
   assert.equal(f.sqlite.prepare('PRAGMA foreign_key_check').all().length, 0);
   assert.ok(await f.formService.getFormById(form.id));
 });
+
+for (const scenario of [
+  {
+    name: 'populated older forms block even without a pins table',
+    sql: "CREATE TABLE forms (id TEXT PRIMARY KEY, name TEXT); INSERT INTO forms VALUES ('saved', 'QA retained answer');",
+    blocked: true,
+  },
+  {
+    name: 'empty older schemas are allowed through the schema guard',
+    sql: 'CREATE TABLE forms (id TEXT PRIMARY KEY); CREATE TABLE pins (id TEXT PRIMARY KEY, createdAt TEXT);',
+    blocked: false,
+  },
+  {
+    name: 'compatible populated pins with empty older forms are allowed through the schema guard',
+    sql: "CREATE TABLE forms (id TEXT PRIMARY KEY); CREATE TABLE pins (id TEXT PRIMARY KEY, createdAt INTEGER); INSERT INTO pins VALUES ('saved', 1767225600000);",
+    blocked: false,
+  },
+  {
+    name: 'an empty new database is allowed through the schema guard',
+    sql: '',
+    blocked: false,
+  },
+]) {
+  test(scenario.name, (t) => {
+    const f = setup(t);
+    const { DatabaseSync } = require('node:sqlite');
+    const candidate = new DatabaseSync(':memory:');
+    t.after(() => candidate.close());
+    candidate.exec(scenario.sql);
+    const before = candidate.prepare('SELECT * FROM sqlite_master ORDER BY name').all();
+    const adapter = {
+      getAllSync: (sql) => candidate.prepare(sql).all(),
+      getFirstSync: (sql) => candidate.prepare(sql).get(),
+    };
+    const error = f.load('services/localUpgradeGuard.ts').getLocalUpgradeError(adapter);
+    assert.equal(Boolean(error), scenario.blocked);
+    assert.deepEqual(candidate.prepare('SELECT * FROM sqlite_master ORDER BY name').all(), before);
+    if (scenario.blocked)
+      assert.equal(candidate.prepare('SELECT name FROM forms').get().name, 'QA retained answer');
+  });
+}
 
 test('React Native selection-field metadata matches the backend contract exactly', (t) => {
   const f = setup(t);

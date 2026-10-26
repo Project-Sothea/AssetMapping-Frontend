@@ -17,11 +17,13 @@ The app is written in TypeScript using React Native and Expo Router. It uses loc
 - Upload, clearing, and download are separate actions. Opening the app, saving the API URL, reconnecting, and changing tabs do not automatically transfer records after setup.
 - The header's **No pending uploads** describes the upload queue, not whether the device is an exact mirror of the backend.
 
-### One-Time Legacy Reset: Release Warning
+### Legacy Data Preservation During Setup
 
-The existing `localDataResetVersion = '1'` marker is unchanged. Devices that have already completed the reset keep their data. Devices skipping build 14/the first reset APK still clear their old local pins, forms, and queued uploads once on first launch, then attempt one initial download. **Unsent legacy responses are deleted: back up needed work before updating.**
+This branch preserves existing local records instead of performing the historical one-time reset. Before migrations, populated older schemas that cannot safely use the current migrations block database setup. Separately, the existing `localDataResetVersion = '1'` marker allows normal setup with pending work; a missing marker plus unsynced records or pending/failed uploads, or an unknown marker value, blocks setup for review. A known marker does not bypass the schema check. Compatible clean records stay on the device without an automatic download; an empty device may download once during initial setup.
 
-If the initial download fails, the reset is not repeated; retry the download manually while the device is empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the reset marker, so future updates do not flush the device again.
+Both guards currently block normal app navigation. The saved database and photos remain on the device, but there is no in-app legacy export/conversion/unlock workflow yet. Retry alone cannot resolve an incompatible schema or unknown legacy records. **Keep the app installed and contact the project team; do not clear storage or uninstall to bypass the guard.** A recovery procedure is required before field rollout.
+
+If an empty device's initial download fails, offline collection is still allowed after setup; retry Download Latest while the device remains empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the marker, so future updates do not flush the device again.
 
 ### Transfer Tests
 
