@@ -17,8 +17,16 @@ export function ApiUrlConfiguration() {
 
   useEffect(() => {
     const loadApiUrl = async () => {
-      const storedUrl = await getApiUrl();
-      setApiUrlState(storedUrl || '');
+      try {
+        const storedUrl = await getApiUrl();
+        setApiUrlState(storedUrl || '');
+      } catch (error) {
+        setApiUrlState(process.env.EXPO_PUBLIC_API_URL ?? '');
+        Alert.alert(
+          'QA API restriction',
+          error instanceof Error ? error.message : 'This QA build only allows the local QA API.'
+        );
+      }
     };
     loadApiUrl();
   }, []);
@@ -29,11 +37,13 @@ export function ApiUrlConfiguration() {
       return;
     }
 
+    let apiUrlSaved = false;
     try {
       setIsSyncing(true);
 
       // Save the new API URL
       await setApiUrl(apiUrl);
+      apiUrlSaved = true;
       resetApiBaseUrlCache();
 
       // Use the centralized reconnect and sync service
@@ -44,8 +54,12 @@ export function ApiUrlConfiguration() {
     } catch (error) {
       console.error('❌ Failed to connect or sync:', error);
       Alert.alert(
-        'Sync Failed',
-        'API URL was saved, but failed to sync data. Please check your connection and try again.'
+        apiUrlSaved ? 'Sync Failed' : 'API URL Rejected',
+        error instanceof Error
+          ? error.message
+          : apiUrlSaved
+            ? 'The API URL was saved, but sync failed. Please check the local QA services.'
+            : 'The API URL could not be saved.'
       );
     } finally {
       setIsSyncing(false);

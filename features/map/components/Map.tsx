@@ -13,7 +13,7 @@ import {
 } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import type { Feature } from 'geojson';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
 import pin from '~/assets/pin.png';
@@ -29,6 +29,7 @@ const DEFAULT_STYLE_URL = MapboxGL.StyleURL.SatelliteStreet;
 
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
+  onInitialCoordsHandled?: () => void;
 };
 
 const DEFAULT_COORDS = { lat: 12.794459, lng: 103.308443 };
@@ -40,8 +41,10 @@ type PinModalState =
   | { mode: 'view'; pin: Pin }
   | null;
 
-export default function Map({ initialCoords }: MapProps = {}) {
+export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps = {}) {
   const pins = useFetchLocalPins();
+  const pinCollection = useMemo(() => convertPinsToPointCollection(pins), [pins]);
+  const pinsById = useMemo(() => new globalThis.Map(pins.map((pin) => [pin.id, pin])), [pins]);
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
   const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
@@ -49,24 +52,31 @@ export default function Map({ initialCoords }: MapProps = {}) {
   const [pinModalState, setPinModalState] = useState<PinModalState>(null);
 
   const screenIsFocused = useIsFocused();
-  const targetCoords = initialCoords ?? DEFAULT_COORDS;
+  const [mapReady, setMapReady] = useState(false);
+  const [mapBusy, setMapBusy] = useState(true);
+  const initialCamera = useRef({
+    centerCoordinate: [
+      (initialCoords ?? DEFAULT_COORDS).lng,
+      (initialCoords ?? DEFAULT_COORDS).lat,
+    ],
+    zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
+  }).current;
 
   // Open initial pin and center camera if provided
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (cameraRef.current && targetCoords.lng && targetCoords.lat) {
-        cameraRef.current.setCamera({
-          centerCoordinate: [targetCoords.lng, targetCoords.lat],
-          zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
-          animationDuration: 1000,
-        });
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [initialCoords, targetCoords.lng, targetCoords.lat]);
+    if (mapReady && screenIsFocused && initialCoords && cameraRef.current) {
+      cameraRef.current.setCamera({
+        centerCoordinate: [initialCoords.lng, initialCoords.lat],
+        zoomLevel: PIN_ZOOM,
+        animationDuration: 1000,
+      });
+      onInitialCoordsHandled?.();
+    }
+  }, [initialCoords, mapReady, screenIsFocused, onInitialCoordsHandled]);
 
   useEffect(() => {
+    if (!screenIsFocused) return;
+    let active = true;
     const setupLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -75,7 +85,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
           return;
         }
 
-        MapboxGL.locationManager.start();
+        if (active) MapboxGL.locationManager.start();
       } catch (e) {
         console.warn('Failed to start Mapbox location manager', e);
       }
@@ -84,15 +94,22 @@ export default function Map({ initialCoords }: MapProps = {}) {
     setupLocation();
 
     return () => {
+      active = false;
       MapboxGL.locationManager.stop();
     };
-  }, []);
+  }, [screenIsFocused]);
 
   const refreshMap = () => {
+    if (mapBusy) return;
+    setMapBusy(true);
+    setMapReady(false);
     setMapKey((k) => k + 1); // force remount
   };
 
   const toggleStyle = () => {
+    if (mapBusy) return;
+    setMapBusy(true);
+    setMapReady(false);
     setStyleUrl((prev) =>
       prev === MapboxGL.StyleURL.SatelliteStreet
         ? MapboxGL.StyleURL.Outdoors
@@ -139,7 +156,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
     if (pressedFeature?.properties) {
       const pinId = pressedFeature.properties.id as string | undefined;
       if (!pinId) return;
-      const pinData = pins?.find((p) => p.id === pinId);
+      const pinData = pinsById.get(pinId);
       if (!pinData) return;
       setPinModalState({ mode: 'view', pin: pinData });
     }
@@ -155,22 +172,25 @@ export default function Map({ initialCoords }: MapProps = {}) {
         styleURL={styleUrl}
         compassEnabled
         scaleBarEnabled
+        onDidFinishLoadingStyle={() => {
+          setMapReady(true);
+          setMapBusy(false);
+        }}
+        onMapLoadingError={() => {
+          setMapReady(false);
+          setMapBusy(false);
+        }}
         onLongPress={handleDropPin}>
-        <Camera
-          ref={cameraRef}
-          defaultSettings={{
-            centerCoordinate: [targetCoords.lng, targetCoords.lat],
-            zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
-          }}
+        <Camera ref={cameraRef} defaultSettings={initialCamera} />
+        <LocationPuck
+          visible={screenIsFocused}
+          puckBearingEnabled={screenIsFocused}
+          puckBearing="heading"
+          pulsing={{ isEnabled: screenIsFocused }}
         />
-        <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
         <Images images={{ pin }} />
         {pins && (
-          <ShapeSource
-            id="pins"
-            shape={convertPinsToPointCollection(pins)}
-            onPress={handleOpenPin}
-            cluster>
+          <ShapeSource id="pins" shape={pinCollection} onPress={handleOpenPin} cluster>
             <SymbolLayer
               id="pointCount"
               style={{
@@ -224,7 +244,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
       {pinModalState?.mode === 'view' && screenIsFocused && (
         <PinModal mode="view" visible pin={pinModalState.pin} onClose={handleCloseModal} />
       )}
-      {pinModalState?.mode === 'create' && (
+      {pinModalState?.mode === 'create' && screenIsFocused && (
         <PinModal
           mode="create"
           visible
@@ -233,7 +253,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
         />
       )}
       <View style={styles.controlsLeft}>
-        <TouchableOpacity style={styles.controlButton} onPress={refreshMap}>
+        <TouchableOpacity style={styles.controlButton} disabled={mapBusy} onPress={refreshMap}>
           <MaterialIcons name="refresh" color="black" size={24} />
         </TouchableOpacity>
         <View style={styles.controlButton}>
@@ -242,7 +262,7 @@ export default function Map({ initialCoords }: MapProps = {}) {
       </View>
 
       <View style={styles.controlsRight}>
-        <TouchableOpacity style={styles.controlButton} onPress={toggleStyle}>
+        <TouchableOpacity style={styles.controlButton} disabled={mapBusy} onPress={toggleStyle}>
           <MaterialIcons name="layers" color="black" size={24} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlButton} onPress={handleCenterOnUser}>

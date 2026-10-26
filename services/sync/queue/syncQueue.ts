@@ -9,13 +9,23 @@
  */
 
 import { Form, Pin } from '@assetmapping/shared-types';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, count, inArray } from 'drizzle-orm';
 
-import { syncQueue } from '~/db/schema';
+import { syncQueue, syncInflight } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
+import { createSingleFlight } from '~/shared/utils/singleFlight';
 
-import { enqueue, processOperation, markCompleted, handleError } from './queueOperations';
-import { getIsProcessing, setIsProcessing, scheduleNextProcess } from './queueState';
+import {
+  enqueue,
+  processOperation,
+  markCompleted,
+  handleError,
+  isCurrentOperation,
+  stageOperation,
+  pendingInflight,
+  hasInflight,
+} from './queueOperations';
+import { scheduleNextProcess } from './queueState';
 import { Operation, QueueMetrics } from './types';
 
 // ==================== Public API ====================
@@ -52,22 +62,52 @@ export async function enqueueForm(operation: Operation, data: Form): Promise<str
  * Get queue health metrics
  */
 export async function getQueueMetrics(): Promise<QueueMetrics> {
-  const items = db.select().from(syncQueue).all();
-  return {
-    pending: items.filter((i) => i.status === 'pending').length,
-    failed: items.filter((i) => i.status === 'failed').length,
-    completed: items.filter((i) => i.status === 'completed').length,
-  };
+  const queue = db
+    .select({ id: syncQueue.id, status: syncQueue.status })
+    .from(syncQueue)
+    .where(inArray(syncQueue.status, ['pending', 'failed']))
+    .all();
+  const inflight = db
+    .select({ id: syncInflight.queueId, status: syncInflight.status })
+    .from(syncInflight)
+    .all();
+  const failed = new Set(
+    [...queue, ...inflight].filter((item) => item.status === 'failed').map((item) => item.id)
+  );
+  const pending = new Set(
+    [...queue, ...inflight]
+      .filter((item) => item.status === 'pending' && !failed.has(item.id))
+      .map((item) => item.id)
+  );
+  const completed =
+    db.select({ n: count() }).from(syncQueue).where(eq(syncQueue.status, 'completed')).get()?.n ??
+    0;
+  return { pending: pending.size, failed: failed.size, completed };
 }
 
 /**
  * Process pending queue operations
  */
-export async function processQueue(): Promise<void> {
-  if (getIsProcessing()) return;
-  setIsProcessing(true);
+const queueFlight = createSingleFlight();
+export function processQueue(): Promise<void> {
+  return queueFlight.run(processQueueBatch);
+}
 
+async function processQueueBatch(): Promise<void> {
   try {
+    const run = async (op: Parameters<typeof processOperation>[0]) => {
+      try {
+        stageOperation(op);
+        const syncedData = await processOperation(op);
+        markCompleted(op, syncedData);
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        await handleError(op, err);
+        console.warn('A sync operation remains saved for retry or review.');
+      }
+    };
+    const replay = pendingInflight().slice(0, 10);
+    for (const op of replay) await run(op);
     const pending = db
       .select()
       .from(syncQueue)
@@ -75,22 +115,18 @@ export async function processQueue(): Promise<void> {
       .orderBy(asc(syncQueue.sequenceNumber))
       .limit(10)
       .all();
-
-    if (!pending.length) return;
-
     for (const op of pending) {
-      try {
-        await processOperation(op);
-        await markCompleted(op.id);
-      } catch (error) {
-        const errorObj = error instanceof Error ? error : new Error(String(error));
-        await handleError(op, errorObj);
-        console.error(`❌ ${op.operation} ${op.entityType}: ${errorObj.message}`);
-      }
+      if (!isCurrentOperation(op) || hasInflight(op.entityType, op.entityId)) continue;
+      await run(op);
     }
   } finally {
-    setIsProcessing(false);
-    scheduleNextProcess(processQueue);
+    const pending = db
+      .select({ type: syncQueue.entityType, id: syncQueue.entityId })
+      .from(syncQueue)
+      .where(eq(syncQueue.status, 'pending'))
+      .all();
+    if (pendingInflight().length || pending.some((op) => !hasInflight(op.type, op.id)))
+      scheduleNextProcess(processQueue);
   }
 }
 
@@ -98,9 +134,25 @@ export async function processQueue(): Promise<void> {
  * Retry all failed operations
  */
 export async function retryFailed(): Promise<void> {
-  await db
-    .update(syncQueue)
-    .set({ status: 'pending', attempts: 0, lastError: null })
-    .where(eq(syncQueue.status, 'failed'));
+  db.transaction((tx) => {
+    tx.update(syncQueue)
+      .set({ status: 'pending', attempts: 0, lastError: null })
+      .where(eq(syncQueue.status, 'failed'))
+      .run();
+    for (const row of tx
+      .select()
+      .from(syncInflight)
+      .where(eq(syncInflight.status, 'failed'))
+      .all()) {
+      const op = JSON.parse(row.operation);
+      tx.update(syncInflight)
+        .set({
+          status: 'pending',
+          operation: JSON.stringify({ ...op, attempts: 0, status: 'pending', lastError: null }),
+        })
+        .where(eq(syncInflight.key, row.key))
+        .run();
+    }
+  });
   scheduleNextProcess(processQueue);
 }

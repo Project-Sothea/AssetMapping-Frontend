@@ -1,5 +1,7 @@
 import type { ApiResponse } from '@assetmapping/shared-types';
 
+import { isLegacySync } from '~/services/sync/protocol';
+
 import { getApiUrl } from '../apiUrl';
 
 let cachedBaseUrl: string | null = null;
@@ -46,6 +48,7 @@ export async function request<T>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...(!isLegacySync ? { 'X-SoForm-Sync-Protocol': '2' } : {}),
         ...options.headers,
       },
       signal: controller.signal,
@@ -55,7 +58,7 @@ export async function request<T>(
       const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
       return {
         success: false,
-        error: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        error: `HTTP ${response.status}: ${errorData.message || errorData.error || response.statusText}`,
       };
     }
 

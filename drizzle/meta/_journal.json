@@ -29,6 +29,20 @@
       "when": 1779470694330,
       "tag": "0003_little_gambit",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792854786931,
+      "tag": "0004_local_query_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792856595691,
+      "tag": "0005_durable_inflight",
+      "breakpoints": true
     }
   ]
 }

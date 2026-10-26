@@ -6,6 +6,6 @@ import type { FeatureCollection, Point } from 'geojson';
 export const convertPinsToPointCollection = (pins: Pin[]): FeatureCollection<Point> => {
   const points = pins
     .filter((pin) => pin.lng != null && pin.lat != null)
-    .map((pin) => point([pin.lng!, pin.lat!], { ...pin }));
+    .map((pin) => point([pin.lng!, pin.lat!], { id: pin.id, name: pin.name }));
   return featureCollection(points);
 };

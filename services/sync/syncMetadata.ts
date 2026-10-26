@@ -36,11 +36,11 @@ export async function getLastSyncTimestamp(): Promise<number> {
 }
 
 /**
- * Update the last sync timestamp to current time
+ * Update the last sync timestamp to the start of the download window
  */
-export async function updateLastSyncTimestamp(): Promise<void> {
+export async function updateLastSyncTimestamp(timestamp = Date.now()): Promise<void> {
   try {
-    await AsyncStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
+    await AsyncStorage.setItem(LAST_SYNC_KEY, timestamp.toString());
   } catch (error) {
     console.error('Failed to update last sync timestamp:', error);
   }

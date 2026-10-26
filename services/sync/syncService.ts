@@ -1,101 +1,43 @@
-/**
- * Sync Service
- *
- * Central service for managing data synchronization between local and remote databases.
- * Provides a single responsibility point for sync operations.
- */
+import { createSingleFlight } from '~/shared/utils/singleFlight';
 
 import { resetLocalDataOnce } from './localDataReset';
-import { pullAllPins, pullAllForms, pullPinsSince, pullFormsSince } from './pullUpdates';
+import { isLegacySync } from './protocol';
+import { pullLegacyCollections, pullSnapshot } from './pullUpdates';
 import { processQueue } from './queue/syncQueue';
-import { getLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 
-/**
- * Performs a full bidirectional sync:
- * 1. Push pending local changes to server
- * 2. Pull all data from server to local database
- *
- * @throws Error if sync fails
- */
-export async function performFullSync(): Promise<void> {
-  // Add a small delay to ensure database is ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Clear stale offline records before the queue can push them.
-  await resetLocalDataOnce();
-
-  // Process any pending local operations (outbox) - do this first
-  await processQueue();
-
-  // Small delay between operations to prevent database locks
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  // Pull all pins from server
-  await pullAllPins();
-
-  // Small delay between operations
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  // Pull all forms from server
-  await pullAllForms();
-
-  // Update last sync timestamp
-  await updateLastSyncTimestamp();
+const syncListeners = new Set<() => void>();
+const syncFlight = createSingleFlight(() => syncListeners.forEach((listener) => listener()));
+let requested = false;
+export const getSyncInProgress = syncFlight.isRunning;
+export function subscribeToSync(listener: () => void) {
+  syncListeners.add(listener);
+  return () => {
+    syncListeners.delete(listener);
+  };
 }
 
-/**
- * Performs an incremental sync (only fetches data updated since last sync):
- * 1. Push pending local changes to server
- * 2. Pull only updated data from server since last sync
- *
- * @throws Error if sync fails
- */
-export async function performIncrementalSync(): Promise<void> {
-  // Add a small delay to ensure database is ready
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // This must run before reading the cursor or processing the outbox.
-  await resetLocalDataOnce();
-
-  // Get last sync timestamp
-  const lastSyncTimestamp = await getLastSyncTimestamp();
-
-  if (lastSyncTimestamp === 0) {
-    await performFullSync();
-    return;
-  }
-
-  // Process any pending local operations (outbox) - do this first
-  await processQueue();
-
-  // Small delay between operations to prevent database locks
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  // Pull pins updated since last sync
-  await pullPinsSince(lastSyncTimestamp);
-
-  // Small delay between operations
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  // Pull forms updated since last sync
-  await pullFormsSince(lastSyncTimestamp);
-
-  // Update last sync timestamp
-  await updateLastSyncTimestamp();
+function requestSync(): Promise<void> {
+  requested = true;
+  return syncFlight.run(async () => {
+    do {
+      requested = false;
+      await resetLocalDataOnce();
+      await processQueue();
+      // One repeatable-read snapshot replaces two clock-based downloads. A
+      // follow-up request during this run guarantees a fresh pass afterwards.
+      if (isLegacySync) await pullLegacyCollections();
+      else await pullSnapshot();
+    } while (requested);
+  });
 }
 
-/**
- * Reconnects to the backend with a new API URL and performs full sync
- *
- * @param deviceId - The device identifier for WebSocket connection
- * @param webSocketManager - The WebSocket manager instance
- * @throws Error if connection or sync fails
- */
+export const performFullSync = requestSync;
+export const performIncrementalSync = requestSync;
+
 export async function reconnectAndSync(
   deviceId: string,
-  webSocketManager: { connect: (deviceId: string) => Promise<void> }
-): Promise<void> {
-  await webSocketManager.connect(deviceId);
-
+  manager: { connect: (deviceId: string) => Promise<void> }
+) {
+  await manager.connect(deviceId);
   await performFullSync();
 }

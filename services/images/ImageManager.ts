@@ -16,6 +16,8 @@
 import { Directory, File, Paths } from 'expo-file-system/next';
 import * as ImagePicker from 'expo-image-picker';
 
+import { createSharedImageLoader } from '~/shared/utils/sharedImageLoader';
+
 import { getDownloadUrl } from '../api/storageApi';
 
 // ============================================
@@ -170,3 +172,10 @@ export function fileExistsLocally(pinId: string, filename: string): boolean {
     return false;
   }
 }
+
+export const loadCachedImage = createSharedImageLoader({
+  exists: fileExistsLocally,
+  local: getLocalPath,
+  remote: getRemoteUrl,
+  cache: cacheRemoteImage,
+});

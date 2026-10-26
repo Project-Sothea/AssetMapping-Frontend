@@ -1,31 +1,31 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type PinCardProps = {
   pin: Pin;
+  formCount: number;
+  isSynced: boolean;
+  onViewForms: (pin: Pin) => void;
   onNavigateToMap?: (pin: Pin) => void;
 };
 
-export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
-  const router = useRouter();
-  const forms = useFetchForms(pin.id);
-
-  // Check sync status from operations table
-  const isSynced = usePinQueueStatus(pin.id);
-
+export const PinCard = React.memo(function PinCard({
+  pin,
+  formCount,
+  isSynced,
+  onViewForms,
+  onNavigateToMap,
+}: PinCardProps) {
   // Dynamic accent color based on synced status
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   const handleViewForms = () => {
-    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
+    onViewForms(pin);
   };
 
   const renderRightActions = () => {
@@ -52,11 +52,10 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
             <View
               style={[
                 styles.formCountBadge,
-                { backgroundColor: forms.length === 0 ? '#E5E7EB' : '#4F46E5' },
+                { backgroundColor: formCount === 0 ? '#E5E7EB' : '#4F46E5' },
               ]}>
-              <Text
-                style={[styles.formCountText, { color: forms.length === 0 ? '#9CA3AF' : '#fff' }]}>
-                {forms.length}
+              <Text style={[styles.formCountText, { color: formCount === 0 ? '#9CA3AF' : '#fff' }]}>
+                {formCount}
               </Text>
             </View>
           </View>
@@ -75,7 +74,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
       </TouchableOpacity>
     </SwipeableCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

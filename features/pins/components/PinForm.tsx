@@ -15,12 +15,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
-import {
-  deleteImageByFilename,
-  getLocalPath,
-  pickImage,
-  saveImageLocally,
-} from '~/services/images/ImageManager';
+import { getLocalPath, pickImage, saveImageLocally } from '~/services/images/ImageManager';
 
 import { PinValues } from '../types/';
 
@@ -158,10 +153,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
                         shouldDirty: true,
                         shouldValidate: true,
                       });
-
-                      deleteImageByFilename(currentId, filename).catch((error) =>
-                        console.warn('⚠️ Failed to delete local image', filename, error)
-                      );
                     }}
                     style={{
                       position: 'absolute',

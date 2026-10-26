@@ -1,6 +1,6 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
@@ -28,6 +28,8 @@ export function PinEditor(props: PinEditorProps) {
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
+  const actionRunning = useRef(false);
+  const [busy, setBusy] = useState(false);
   const submitRef = useRef<(() => void) | null>(null);
   const isCreate = props.mode === 'create';
 
@@ -36,12 +38,18 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error creating pin');
       return;
     }
+    if (actionRunning.current) return;
+    actionRunning.current = true;
+    setBusy(true);
     try {
       await createPinAsync(values);
       Alert.alert('Pin Created!');
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      actionRunning.current = false;
+      setBusy(false);
     }
   };
 
@@ -50,9 +58,13 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error updating pin');
       return;
     }
+    if (actionRunning.current) return;
+    actionRunning.current = true;
+    setBusy(true);
     try {
       await updatePinAsync({
         id: values.id,
+        baseline: props.mode === 'edit' ? props.pin : undefined,
         updates: {
           name: values.name,
           cityVillage: values.cityVillage,
@@ -66,6 +78,9 @@ export function PinEditor(props: PinEditorProps) {
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      actionRunning.current = false;
+      setBusy(false);
     }
   };
 
@@ -75,12 +90,18 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error deleting pin');
       return;
     }
+    if (actionRunning.current) return;
+    actionRunning.current = true;
+    setBusy(true);
     try {
-      await deletePinAsync(props.pin.id);
+      await deletePinAsync({ id: props.pin.id, baseline: props.pin });
       Alert.alert('Pin Deleted!');
       props.onClose();
     } catch (error) {
       Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      actionRunning.current = false;
+      setBusy(false);
     }
   };
 
@@ -96,16 +117,33 @@ export function PinEditor(props: PinEditorProps) {
       />
       <View style={styles.toolbar}>
         <TouchableOpacity
+          accessibilityLabel="Save pin"
+          disabled={busy}
           onPress={() => submitRef.current?.()}
           style={[styles.iconBtn, styles.primary]}>
           <MaterialIcons name="save" size={22} color="#fff" />
         </TouchableOpacity>
         {!isCreate && (
           <>
-            <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
+            <TouchableOpacity
+              disabled={busy}
+              onPress={props.onCancel}
+              style={[styles.iconBtn, styles.muted]}>
               <MaterialIcons name="visibility" size={22} color="#111" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} style={[styles.iconBtn, styles.danger]}>
+            <TouchableOpacity
+              disabled={busy}
+              onPress={() =>
+                Alert.alert(
+                  'Delete this pin and its forms?',
+                  'This will remove the household and all linked responses when synced.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: handleDelete },
+                  ]
+                )
+              }
+              style={[styles.iconBtn, styles.danger]}>
               <MaterialIcons name="delete" size={22} color="#fff" />
             </TouchableOpacity>
           </>

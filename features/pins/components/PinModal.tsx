@@ -2,6 +2,7 @@ import { Pin } from '@assetmapping/shared-types';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
+import { useSingleNavigation } from '~/hooks/useSingleNavigation';
 import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 
 import { ImageModal } from './ImageModal';
@@ -26,6 +27,7 @@ type PinModalProps = CreatePinModalProps | ViewPinModalProps;
 
 export function PinModal(props: PinModalProps) {
   const router = useRouter();
+  const navigateOnce = useSingleNavigation();
   const [isEditing, setIsEditing] = useState(props.mode === 'create');
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -39,7 +41,13 @@ export function PinModal(props: PinModalProps) {
 
   const handleViewForms = () => {
     if (!pin) return;
-    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
+    navigateOnce(() => {
+      props.onClose();
+      router.navigate({
+        pathname: '/pin/[pinId]/forms',
+        params: { pinId: pin.id, pinName: pin.name },
+      });
+    });
   };
 
   return (

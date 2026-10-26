@@ -3,45 +3,43 @@
  */
 
 import { Form, OperationType, Pin } from '@assetmapping/shared-types';
-import { eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 
-import { pins, forms } from '~/db/schema';
 import { fetchPin } from '~/services/api/pinsApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
-import { db } from '~/services/drizzleDb';
 import { getLocalPath } from '~/services/images/ImageManager';
-
-import { pullFormUpdate, pullPinUpdate } from '../pullUpdates';
+import { getDeviceId } from '~/shared/utils/getDeviceId';
 
 /**
  * Sync pin to backend
  */
-export async function syncPin(operation: OperationType, data: Pin): Promise<void> {
+export async function syncPin(
+  operation: OperationType,
+  data: Pin,
+  idempotencyKey: string
+): Promise<Record<string, unknown> | undefined> {
   // Handle delete operations
   if (operation === 'delete') {
-    await deletePinOnBackend(data.id);
-    return;
+    return deletePinOnBackend(data, idempotencyKey);
   }
 
   // Handle create/update operations with image upload
-  const syncedData = await syncPinToBackend(operation, data);
-
-  await updateLocalPinAfterSync(data.id, syncedData);
+  return syncPinToBackend(operation, data, idempotencyKey);
 }
 
 /**
  * Sync form to backend
  */
-export async function syncForm(operation: OperationType, data: Form): Promise<void> {
+export async function syncForm(
+  operation: OperationType,
+  data: Form,
+  idempotencyKey: string
+): Promise<Record<string, unknown> | undefined> {
   if (operation === 'delete') {
-    await deleteFormOnBackend(data.id);
-    return;
+    return deleteFormOnBackend(data, idempotencyKey);
   }
 
-  const syncedData = await syncFormToBackend(operation, data);
-  await updateLocalFormAfterSync(data.id, syncedData);
+  return syncFormToBackend(operation, data, idempotencyKey);
 }
 
 // ========== Helper Functions ==========
@@ -51,7 +49,8 @@ export async function syncForm(operation: OperationType, data: Form): Promise<vo
  */
 async function syncPinToBackend(
   operation: OperationType,
-  payload: Pin
+  payload: Pin,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const filenames = payload.images || [];
   const {
@@ -67,26 +66,15 @@ async function syncPinToBackend(
   }
 
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation,
     payload,
-    deviceId: 'mobile-app',
+    deviceId: getDeviceId(),
     timestamp: new Date(),
   });
 
-  // Handle version conflicts - pull latest data
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for pin ${payload.id} - pulling latest from server`);
-
-      // Pull latest data from server (will overwrite local changes)
-      await pullPinUpdate(payload.id);
-
-      return; // Success - conflict resolved by accepting server data
-    }
-
-    // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
 
@@ -102,96 +90,65 @@ async function syncPinToBackend(
 }
 
 /**
- * Update local database after successful sync
- * Updates version and image filenames from backend to keep local and remote in sync
- */
-async function updateLocalPinAfterSync(
-  pinId: string,
-  syncedData?: Record<string, unknown>
-): Promise<void> {
-  const updates: Record<string, unknown> = {
-    status: 'synced',
-  };
-
-  // Update version from backend response to stay in sync
-  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
-    updates.version = syncedData.version;
-  }
-
-  await db.update(pins).set(updates).where(eq(pins.id, pinId));
-}
-
-/**
  * Delete pin on backend
  */
-async function deletePinOnBackend(pinId: string): Promise<void> {
+async function deletePinOnBackend(
+  pin: Pin,
+  idempotencyKey: string
+): Promise<Record<string, unknown>> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'pin',
     operation: 'delete',
-    payload: { id: pinId },
-    deviceId: 'mobile-app',
+    payload: { id: pin.id, version: pin.version },
+    deviceId: getDeviceId(),
     timestamp: new Date(),
   });
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to delete pin');
   }
+  return response.data;
 }
 
 async function syncFormToBackend(
   operation: OperationType,
-  payload: Form
+  payload: Form,
+  idempotencyKey: string
 ): Promise<Record<string, unknown> | undefined> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation,
     payload,
-    deviceId: 'mobile-app',
+    deviceId: getDeviceId(),
     timestamp: new Date(),
   });
 
   if (!response.success) {
-    if (response.error?.includes('Conflict') || response.error?.includes('newer data')) {
-      console.warn(`⚠️ Version conflict for form ${payload.id} - pulling latest from server`);
-      await pullFormUpdate(payload.id);
-      return;
-    }
     throw new Error(response.error || 'Sync failed');
   }
 
   return response.data;
 }
 
-async function deleteFormOnBackend(formId: string): Promise<void> {
+async function deleteFormOnBackend(
+  form: Form,
+  idempotencyKey: string
+): Promise<Record<string, unknown>> {
   const response = await sync({
-    idempotencyKey: uuidv4(),
+    idempotencyKey,
     entityType: 'form',
     operation: 'delete',
-    payload: { id: formId },
-    deviceId: 'mobile-app',
+    payload: { id: form.id, version: form.version, pinId: form.pinId },
+    deviceId: getDeviceId(),
     timestamp: new Date(),
   });
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to delete form');
   }
-}
-
-async function updateLocalFormAfterSync(
-  formId: string,
-  syncedData?: Record<string, unknown>
-): Promise<void> {
-  const updates: Record<string, unknown> = {
-    status: 'synced',
-  };
-
-  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
-    updates.version = (syncedData as Record<string, unknown>).version;
-  }
-
-  await db.update(forms).set(updates).where(eq(forms.id, formId));
+  return response.data;
 }
 
 function buildImageKey(pinId: string, imageId: string): string {

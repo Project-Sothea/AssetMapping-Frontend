@@ -60,6 +60,14 @@ export default function RootLayout() {
     }
   }, [success]);
 
+  if (error)
+    return (
+      <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
+        <Text accessibilityRole="header">Local data needs review</Text>
+        <Text>{error.message}</Text>
+      </View>
+    );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       {migrationStatus === 'loading' && (
@@ -82,6 +90,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="pin/[pinId]/forms"
+                  getId={({ params }) => (params as { pinId?: string } | undefined)?.pinId}
                   options={({ route }) => {
                     const { pinName } = route.params as { pinName?: string };
                     return {

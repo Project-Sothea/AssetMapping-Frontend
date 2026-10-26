@@ -1,10 +1,12 @@
+import type { Pin } from '@assetmapping/shared-types';
 import { useMutation } from '@tanstack/react-query';
 
 import { deletePin } from '../services/PinService';
 
 export const useDeletePin = () => {
   const mutation = useMutation({
-    mutationFn: (id: string) => deletePin(id),
+    retry: false,
+    mutationFn: ({ id, baseline }: { id: string; baseline?: Pin }) => deletePin(id, baseline),
   });
 
   return {

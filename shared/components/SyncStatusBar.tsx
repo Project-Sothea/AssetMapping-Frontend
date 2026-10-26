@@ -1,14 +1,25 @@
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useRef, useState, useSyncExternalStore } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 
 import { processQueue, getQueueMetrics, retryFailed } from '~/services/sync/queue/syncQueue';
+import {
+  getSyncInProgress,
+  performIncrementalSync,
+  subscribeToSync,
+} from '~/services/sync/syncService';
 import { usePopup } from '~/shared/contexts/PopupContext';
 
 export const SyncStatusBar = () => {
   const queryClient = useQueryClient();
   const { showPopup } = usePopup();
   const [isSyncing, setIsSyncing] = useState(false);
+  const pressing = useRef(false);
+  const backgroundSync = useSyncExternalStore(
+    subscribeToSync,
+    getSyncInProgress,
+    getSyncInProgress
+  );
 
   // Use React Query for polling queue metrics
   const { data: metrics } = useQuery({
@@ -22,9 +33,9 @@ export const SyncStatusBar = () => {
   const queueFailed = metrics?.failed || 0;
 
   const handlePress = async () => {
-    if (isSyncing) return; // Prevent double-tap
+    if (pressing.current || getSyncInProgress()) return;
+    pressing.current = true;
 
-    const beforeMetrics = { pending: queuePending, failed: queueFailed };
     setIsSyncing(true);
 
     try {
@@ -39,10 +50,9 @@ export const SyncStatusBar = () => {
         // setQueueFailed(afterMetrics.failed);
 
         if (afterMetrics.failed > 0) {
-          showPopup(
-            `${beforeMetrics.failed - afterMetrics.failed} synced, ${afterMetrics.failed} still failed`,
-            '#f39c12'
-          );
+          showPopup(`${afterMetrics.failed} failed, ${afterMetrics.pending} pending`, '#f39c12');
+        } else if (afterMetrics.pending > 0) {
+          showPopup(`${afterMetrics.pending} pending`, '#f39c12');
         } else {
           showPopup('All synced!', 'green');
         }
@@ -57,19 +67,21 @@ export const SyncStatusBar = () => {
 
         if (afterMetrics.failed > 0) {
           showPopup(`${afterMetrics.failed} failed`, 'red');
+        } else if (afterMetrics.pending > 0) {
+          showPopup(`${afterMetrics.pending} pending`, '#f39c12');
         } else {
           showPopup('All synced!', 'green');
         }
       } else {
         // Nothing to sync, pull latest from server
-        await queryClient.invalidateQueries({ queryKey: ['pins'] });
-        await queryClient.invalidateQueries({ queryKey: ['forms'] });
+        await performIncrementalSync();
         showPopup('Refreshed!', 'green');
       }
     } catch (err) {
       console.error('Sync failed:', err);
       showPopup('Sync failed!', 'red');
     } finally {
+      pressing.current = false;
       setIsSyncing(false);
       // Invalidate to refresh metrics immediately
       await queryClient.invalidateQueries({ queryKey: ['queueMetrics'] });
@@ -81,7 +93,7 @@ export const SyncStatusBar = () => {
     if (!__DEV__ && queueFailed > 0) {
       Alert.alert(
         'Sync Issues Detected',
-        `${queueFailed} operation${queueFailed > 1 ? 's' : ''} failed to sync. This usually means:\n\n• Poor internet connection\n• Server temporarily unavailable\n\nThe app will keep retrying automatically. Data is safe locally.`,
+        `${queueFailed} operation${queueFailed > 1 ? 's' : ''} failed to sync. Changes are still waiting to sync on this device. Check your connection, then tap the sync button to retry.`,
         [{ text: 'OK' }]
       );
       return;
@@ -90,7 +102,7 @@ export const SyncStatusBar = () => {
 
   // Construct status display with 3D styling
   const getStatusStyle = () => {
-    if (isSyncing) {
+    if (isSyncing || backgroundSync) {
       return {
         backgroundColor: '#3498db',
         shadowColor: '#2980b9',
@@ -115,7 +127,7 @@ export const SyncStatusBar = () => {
   };
 
   const getStatusText = () => {
-    if (isSyncing) return 'Syncing...';
+    if (isSyncing || backgroundSync) return 'Syncing...';
     if (queueFailed > 0) return `${queueFailed} failed`;
     if (queuePending > 0) return `${queuePending} pending`;
     return 'Synced';
@@ -129,6 +141,7 @@ export const SyncStatusBar = () => {
       <View style={styles.buttonWrapper}>
         <Pressable
           onPress={handlePress}
+          disabled={isSyncing || backgroundSync}
           onLongPress={handleLongPress}
           style={({ pressed }) => [
             styles.button,
