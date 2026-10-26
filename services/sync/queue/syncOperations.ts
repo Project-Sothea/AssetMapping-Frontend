@@ -16,6 +16,8 @@ import { sync } from '~/services/api/syncApi';
 import { getLocalPath } from '~/services/images/ImageManager';
 import { getDeviceId } from '~/shared/utils/getDeviceId';
 
+import { validateServerAcknowledgement } from './acknowledgement';
+
 /**
  * Sync pin to backend
  */
@@ -87,9 +89,16 @@ async function syncPinToBackend(
   // Return the synced data from backend (includes updated version)
   const synced = response.data;
 
-  // Delete removed images from S3 (only after successful sync to avoid drift)
+  // An HTTP success alone is insufficient: keep originals if the server did not
+  // confirm this exact record. Storage cleanup must not invalidate a valid entity
+  // acknowledgement or lose its version when the record has already committed.
+  validateServerAcknowledgement(payload.id, operation, payload, synced);
   if (imagesToDelete.length > 0) {
-    await deleteImagesFromS3(payload.id, imagesToDelete);
+    try {
+      await deleteImagesFromS3(payload.id, imagesToDelete);
+    } catch {
+      console.warn('Pin uploaded; unused remote photos could not be removed.');
+    }
   }
 
   return synced;

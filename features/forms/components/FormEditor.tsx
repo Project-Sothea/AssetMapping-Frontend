@@ -182,8 +182,9 @@ export function FormEditor({
 
   useEffect(() => {
     onCloseGuardChange?.(() => {
-      if (actionRunning.current || transferBusy) return;
-      if (isEditing && isDirty)
+      // A transfer elsewhere blocks writes, but must not trap this editor on screen.
+      if (actionRunning.current) return;
+      if (isDirty)
         Alert.alert(
           'Discard unsaved changes?',
           'These changes have not been saved on this device.',
@@ -195,7 +196,7 @@ export function FormEditor({
       else onClose();
     });
     return () => onCloseGuardChange?.(null);
-  }, [isDirty, isEditing, onClose, onCloseGuardChange, transferBusy]);
+  }, [isDirty, onClose, onCloseGuardChange]);
 
   const values = watch();
 
@@ -304,9 +305,7 @@ export function FormEditor({
       style={{ flex: 1 }}
       keyboardDismissMode="on-drag"
       keyboardShouldPersistTaps="handled">
-      {isEditing && isDirty && (
-        <Text accessibilityLiveRegion="polite">Unsaved changes · tap Save</Text>
-      )}
+      {isDirty && <Text accessibilityLiveRegion="polite">Unsaved changes · tap Save</Text>}
       <FormSection
         title="General"
         isOpen={expandedSection === 'general'}

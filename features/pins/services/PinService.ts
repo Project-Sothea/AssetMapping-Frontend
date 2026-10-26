@@ -3,7 +3,7 @@
  *
  * Key principles:
  * 1. Save pins to database immediately (optimistic)
- * 2. Queue for background sync to backend
+ * 2. Queue for explicit manual upload to the backend
  * 3. Images are just arrays of strings (no complex processing)
  * 4. Let the form/UI handle image picking and saving
  */
@@ -15,7 +15,7 @@ import { forms, pins, syncQueue } from '~/db/schema';
 import { mapPinDbToPin, sanitizePinForDb } from '~/db/utils';
 import { validateLocal } from '~/db/validateLocal';
 import { db } from '~/services/drizzleDb';
-import * as ImageManager from '~/services/images/ImageManager';
+import { cleanupDeletedPinImages } from '~/services/images/deletedPinImages';
 import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
 import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import { sameContent } from '~/shared/utils/sameContent';
@@ -93,7 +93,7 @@ export async function updatePin(id: string, updates: PinUpdate, baseline?: Pin):
 
 export async function deletePin(id: string, baseline?: Pin): Promise<void> {
   assertLocalWritesAllowed();
-  const existing = db.transaction((tx) => {
+  db.transaction((tx) => {
     const row = tx.select().from(pins).where(eq(pins.id, id)).get();
     if (!row) throw new Error('This pin no longer exists on this device.');
     const existing = mapPinDbToPin(row);
@@ -121,16 +121,9 @@ export async function deletePin(id: string, baseline?: Pin): Promise<void> {
       entityId: id,
       payload: existing,
     });
-    return existing;
   });
-  // File cleanup follows a successful commit, so a failed save cannot discard images.
-  if (existing.images?.length) {
-    try {
-      await ImageManager.deleteImagesByFilename(id, existing.images);
-    } catch {
-      console.warn('Unable to remove deleted pin images from this device.');
-    }
-  }
+  // An unsent cancellation may clean now; a journal/pending delete retains every photo.
+  await cleanupDeletedPinImages(id);
 }
 
 // ============================================

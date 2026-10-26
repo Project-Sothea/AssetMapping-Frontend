@@ -3,6 +3,10 @@ import { eq, asc, count, inArray } from 'drizzle-orm';
 
 import { syncQueue, syncInflight } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
+import {
+  cleanupCompletedPinImages,
+  cleanupDeletedPinImages,
+} from '~/services/images/deletedPinImages';
 
 import { runTransfer } from '../transferCoordinator';
 
@@ -79,6 +83,7 @@ export async function uploadPendingChanges(
   onProgress?: (done: number, total: number) => void
 ): Promise<UploadResult> {
   return runTransfer('upload', async () => {
+    await cleanupCompletedPinImages();
     await retryFailed();
     const replay = pendingInflight().sort((a, b) => operationRank(a) - operationRank(b));
     const replayKeys = new Set(replay.map((op) => op.idempotencyKey));
@@ -115,6 +120,8 @@ export async function uploadPendingChanges(
         stageOperation(op);
         const acknowledged = await processOperation(op);
         markCompleted(op, acknowledged);
+        if (op.entityType === 'pin' && op.operation === 'delete')
+          await cleanupDeletedPinImages(op.entityId);
         result.uploaded++;
       } catch (error) {
         const failure = error instanceof Error ? error : new Error(String(error));

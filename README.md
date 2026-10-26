@@ -329,9 +329,13 @@ Minimum checklist for this candidate:
 - Upload more than ten operations, interrupt the network, retry, and check pending/failed/blocked totals, parent links and duplicates.
 - Pending or failed work prevents clearing/downloading. After successful upload, clearing is local-only and a new empty-device download restores server records.
 - Pick a **pin** photo from the gallery, save/reopen/upload and retry after interruption. Survey forms have no photo field; image resizing/caps are not included in this candidate.
+- Interrupt a photo-pin upload, delete the pin, restart and retry: prior photos must remain available until the earlier revision and deletion resolve. Also test interrupted child-form uploads followed by parent-pin deletion; the queue must finish after confirmed cascade.
+- During an unrelated upload, open a form and use Close/Back; dismissal must work, with a discard prompt for unsaved changes. During that editor's own Save/Delete, keep dismissal and field/photo mutations blocked until its action ends. Try a gallery picker returning after Save starts.
 - Repeatedly tap entries/Save/Back/Close, switch Map/Pins, zoom and background/resume. Check the four villages and offline Streets packs inside their downloaded bounds.
 - Upgrade with synthetic existing and pending data. Unknown legacy-storage guards must preserve data; if blocked, keep the app installed and report the error. Export/recovery for real legacy phones remains a release gate.
 
 Report source SHA, build profile/package, app build number, OS/device, test steps and expected/actual results. Use synthetic screenshots/logs. Native Android/iOS sign-off remains pending until these exact-build checks are recorded.
 
 The app now has one manual upload worker. Future snapshot reconciliation tools live under `scripts/test-support/` for isolated protocol tests and are not imported by the app. Transfer summaries use SQL aggregates and batched local table notifications, without a two-second polling timer.
+
+Deleted-pin photos are retained while any pin revision remains unresolved. Confirmed deletion retires superseded child recovery entries atomically; local directory cleanup follows acknowledgement. Interrupted cleanup can retry on a later explicit upload. File cleanup errors can leave unused local/remote files and do not invalidate a validated saved-record acknowledgement. Local files from a canceled, never-uploaded pin have no durable cleanup-retry record; storage housekeeping is best effort.

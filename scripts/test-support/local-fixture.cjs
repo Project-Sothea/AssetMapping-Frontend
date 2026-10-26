@@ -101,7 +101,11 @@ function fixture(filename = ':memory:', options = {}) {
       if (id === '~/services/sync/protocol' || id === './protocol')
         return { isLegacySync: options.legacy === true };
       if (id === '~/services/images/ImageManager')
-        return { deleteImagesByFilename: async () => {}, getLocalPath: () => '' };
+        return {
+          deleteImagesByFilename: async () => {},
+          deletePinImageDirectory: async () => {},
+          getLocalPath: () => '',
+        };
       if (id === '~/services/api/storageApi') return {};
       if (!options.apiUrl && id === '~/services/api/syncApi')
         return {

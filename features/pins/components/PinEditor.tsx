@@ -12,7 +12,9 @@ import type { PinValues } from '../types';
 
 import { PinForm } from './PinForm';
 
-type PinEditorProps =
+type PinEditorProps = {
+  onBusyChange?: (busy: boolean) => void;
+} & (
   | {
       mode: 'create';
       coords: { lat: number; lng: number };
@@ -23,7 +25,8 @@ type PinEditorProps =
       pin: Pin;
       onClose: () => void;
       onCancel: () => void;
-    };
+    }
+);
 
 export function PinEditor(props: PinEditorProps) {
   const { createPinAsync } = useCreatePin();
@@ -43,6 +46,7 @@ export function PinEditor(props: PinEditorProps) {
     if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
+    props.onBusyChange?.(true);
     try {
       await createPinAsync(values);
       Alert.alert('Pin Created!');
@@ -52,6 +56,7 @@ export function PinEditor(props: PinEditorProps) {
     } finally {
       actionRunning.current = false;
       setBusy(false);
+      props.onBusyChange?.(false);
     }
   };
 
@@ -63,6 +68,7 @@ export function PinEditor(props: PinEditorProps) {
     if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
+    props.onBusyChange?.(true);
     try {
       await updatePinAsync({
         id: values.id,
@@ -83,6 +89,7 @@ export function PinEditor(props: PinEditorProps) {
     } finally {
       actionRunning.current = false;
       setBusy(false);
+      props.onBusyChange?.(false);
     }
   };
 
@@ -95,6 +102,7 @@ export function PinEditor(props: PinEditorProps) {
     if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
+    props.onBusyChange?.(true);
     try {
       await deletePinAsync({ id: props.pin.id, baseline: props.pin });
       Alert.alert('Pin Deleted!');
@@ -104,12 +112,14 @@ export function PinEditor(props: PinEditorProps) {
     } finally {
       actionRunning.current = false;
       setBusy(false);
+      props.onBusyChange?.(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <PinForm
+        disabled={busy || transferBusy}
         onSubmit={isCreate ? handleCreateSubmit : handleUpdateSubmit}
         selectedPin={isCreate ? null : props.pin}
         coords={isCreate ? props.coords : undefined}
@@ -128,7 +138,7 @@ export function PinEditor(props: PinEditorProps) {
         {!isCreate && (
           <>
             <TouchableOpacity
-              disabled={busy || transferBusy}
+              disabled={busy}
               onPress={props.onCancel}
               style={[styles.iconBtn, styles.muted]}>
               <MaterialIcons name="visibility" size={22} color="#111" />

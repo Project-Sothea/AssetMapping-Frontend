@@ -28,11 +28,27 @@ type PinFormProps = {
   selectedPin: PinValues | null;
   coords?: { lat: number; lng: number };
   onSubmitRegister?: (fn: () => void) => void;
+  disabled?: boolean;
 };
 
-export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: PinFormProps) => {
+export const PinForm = ({
+  onSubmit,
+  selectedPin,
+  coords,
+  onSubmitRegister,
+  disabled = false,
+}: PinFormProps) => {
   const isCreate = selectedPin === null;
   const idRef = useRef<string>(uuidv4());
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const defaults = useMemo((): PinValues => {
     if (!isCreate) return selectedPin!;
@@ -55,6 +71,7 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
     handleSubmit,
     setValue,
     watch,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<PinValues>({
@@ -74,16 +91,19 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
   // Use the current id from form values for any image operations
   const currentId = values.id;
 
-  const appendNewImage = async (currentFilenames: string[] | null) => {
+  const appendNewImage = async () => {
+    if (disabledRef.current) return;
     try {
       // Pick image
       const pickedUri = await pickImage();
-      if (!pickedUri) return;
+      if (!pickedUri || disabledRef.current || !mountedRef.current) return;
 
       // Save to pin folder (returns filename)
       const newFilename = await saveImageLocally(currentId, pickedUri);
+      if (disabledRef.current || !mountedRef.current) return;
 
       // Add filename to form
+      const currentFilenames = getValues('images');
       const existing = Array.isArray(currentFilenames) ? currentFilenames : [];
       setValue('images', [...existing, newFilename], { shouldValidate: true, shouldDirty: true });
     } catch (error) {
@@ -93,7 +113,11 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
 
   useEffect(() => {
     if (onSubmitRegister) {
-      onSubmitRegister(() => handleSubmit((data) => onSubmit(data))());
+      onSubmitRegister(() =>
+        handleSubmit((data) => {
+          if (!disabledRef.current) onSubmit(data);
+        })()
+      );
     }
   }, [handleSubmit, onSubmit, onSubmitRegister]);
 
@@ -111,13 +135,15 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
             {required ? ' *' : ''}
           </Text>
           <TextInput
+            editable={!disabled}
             style={styles.input}
-            onChangeText={(text) =>
+            onChangeText={(text) => {
+              if (disabledRef.current) return;
               setValue(name as keyof PinValues, text as PinValues[keyof PinValues], {
                 shouldDirty: true,
                 shouldValidate: true,
-              })
-            }
+              });
+            }}
             value={(values[name as keyof PinValues] as string) ?? ''}
             placeholder={`Enter ${label.toLowerCase()}`}
           />
@@ -147,7 +173,10 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
                     }
                   />
                   <Pressable
+                    accessibilityLabel={`Remove photo ${idx + 1}`}
+                    disabled={disabled}
                     onPress={() => {
+                      if (disabledRef.current) return;
                       const remainingFilenames = values.images?.filter((_, i) => i !== idx);
                       setValue('images', remainingFilenames, {
                         shouldDirty: true,
@@ -171,7 +200,8 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
         </ScrollView>
         <View style={styles.buttonRow}>
           <TouchableOpacity
-            onPress={() => appendNewImage(values.images)}
+            disabled={disabled}
+            onPress={appendNewImage}
             style={styles.imagePickerButton}>
             <MaterialIcons name="image" size={24} color="blue" />
             <Text style={styles.imagePickerText}>Pick an Image</Text>

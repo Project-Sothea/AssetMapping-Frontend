@@ -7,6 +7,7 @@ import { checkLegacyUpload } from '~/services/sync/legacySync';
 import { isLegacySync } from '~/services/sync/protocol';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
+import { validateServerAcknowledgement } from './acknowledgement';
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
 
@@ -120,45 +121,43 @@ export async function processOperation(
     (op.entityType === 'pin'
       ? await syncPin(op.operation as Operation, payload as any, op.idempotencyKey)
       : await syncForm(op.operation as Operation, payload as any, op.idempotencyKey));
-  if (
-    !result ||
-    typeof result.id !== 'string' ||
-    result.id.toLowerCase() !== op.entityId.toLowerCase()
-  )
-    throw new Error('Invalid server acknowledgement. This change remains saved locally.');
-  if (op.operation === 'delete') {
-    if (result.deleted !== true) throw new Error('The server did not confirm deletion.');
-  } else {
-    if (
-      typeof result.version !== 'number' ||
-      !Number.isSafeInteger(result.version) ||
-      (isLegacySync
-        ? result.version < (op.operation === 'create' ? 1 : Number(payload.version))
-        : result.version !== (op.operation === 'create' ? 1 : Number(payload.version) + 1))
-    )
-      throw new Error('The server did not confirm a saved version.');
-    for (const [key, value] of Object.entries(payload)) {
-      if (
-        ['id', 'createdAt', 'updatedAt', 'version', 'status'].includes(key) ||
-        value === undefined
-      )
-        continue;
-      // Postgres stores legacy map coordinates as REAL (32-bit); compare those
-      // within its precision. Survey answers and all other values must match exactly.
-      if (
-        ['lat', 'lng'].includes(key) &&
-        typeof value === 'number' &&
-        typeof result[key] === 'number' &&
-        Math.abs(value - (result[key] as number)) < 0.00001
-      )
-        continue;
-      if (JSON.stringify(value) !== JSON.stringify(result[key]))
-        throw new Error(
-          'The server confirmed different saved content. Your local answer is preserved for review.'
-        );
-    }
-  }
+  validateServerAcknowledgement(op.entityId, op.operation as Operation, payload, result);
   return result;
+}
+
+// A confirmed parent deletion cascades to its forms on the server. Until that
+// confirmation, keep every child revision for recovery; afterwards those revisions
+// must not replay against records that the acknowledged cascade has removed.
+function retireDeletedPinChildren(tx: LocalTransaction, pinId: string): void {
+  const belongsToPin = (payload: string): boolean => {
+    try {
+      return JSON.parse(payload)?.pinId === pinId;
+    } catch {
+      // Malformed recovery records need review, not silent removal.
+      return false;
+    }
+  };
+  for (const child of tx
+    .select()
+    .from(syncInflight)
+    .where(eq(syncInflight.entityType, 'form'))
+    .all()) {
+    let operation: QueueItem;
+    try {
+      operation = JSON.parse(child.operation);
+    } catch {
+      continue;
+    }
+    if (operation?.entityType === 'form' && belongsToPin(operation.payload))
+      tx.delete(syncInflight).where(eq(syncInflight.key, child.key)).run();
+  }
+  for (const child of tx
+    .select()
+    .from(syncQueue)
+    .where(and(eq(syncQueue.entityType, 'form'), inArray(syncQueue.status, ['pending', 'failed'])))
+    .all()) {
+    if (belongsToPin(child.payload)) tx.delete(syncQueue).where(eq(syncQueue.id, child.id)).run();
+  }
 }
 
 // An acknowledgement for an older upload must never complete a newer local edit.
@@ -166,6 +165,8 @@ export function markCompleted(op: QueueItem, syncedData?: Record<string, unknown
   db.transaction((tx) => {
     const current = tx.select().from(syncQueue).where(eq(syncQueue.id, op.id)).get();
     tx.delete(syncInflight).where(eq(syncInflight.key, op.idempotencyKey)).run();
+    if (op.entityType === 'pin' && op.operation === 'delete' && syncedData?.deleted === true)
+      retireDeletedPinChildren(tx, op.entityId);
     if (!current || current.status === 'completed') return;
     const sameRevision = current.idempotencyKey === op.idempotencyKey;
     const version = typeof syncedData?.version === 'number' ? syncedData.version : undefined;

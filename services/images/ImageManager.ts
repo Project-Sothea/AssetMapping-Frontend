@@ -20,7 +20,7 @@ import { createSharedImageLoader } from '~/shared/utils/sharedImageLoader';
 
 import { getDownloadUrl } from '../api/storageApi';
 
-import { assertSafeImageReference } from './imagePaths';
+import { assertSafeImageComponent, assertSafeImageReference } from './imagePaths';
 
 // ============================================
 // PICK IMAGE
@@ -107,6 +107,13 @@ export async function deleteImagesByFilename(pinId: string, filenames: string[])
       // Continue with other files
     }
   }
+}
+
+/** Caller must first prove that no saved pin or unresolved upload needs these files. */
+export async function deletePinImageDirectory(pinId: string): Promise<void> {
+  assertSafeImageComponent(pinId);
+  const directory = new Directory(Paths.document, 'pins', pinId);
+  if (directory.exists) directory.delete();
 }
 
 // ============================================
