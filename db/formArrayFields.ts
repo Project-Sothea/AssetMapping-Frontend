@@ -1,4 +1,7 @@
-// Pure React Native metadata; keep in sync with the shared API contract (tested).
+import type { FormArrayFieldKey } from '@assetmapping/shared-types';
+
+// Keep runtime metadata local: the shared package is a sibling type dependency
+// and is not available to Metro in standalone mobile builds.
 export const FORM_ARRAY_FIELDS = [
   'longTermConditions',
   'managementMethods',
@@ -22,4 +25,4 @@ export const FORM_ARRAY_FIELDS = [
   'waterSources',
   'unsafeWaterTypes',
   'waterFilterNonUseReasons',
-] as const;
+] as const satisfies readonly FormArrayFieldKey[];

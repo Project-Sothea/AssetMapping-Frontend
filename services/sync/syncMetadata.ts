@@ -43,5 +43,8 @@ export async function updateLastSyncTimestamp(timestamp = Date.now()): Promise<v
     await AsyncStorage.setItem(LAST_SYNC_KEY, timestamp.toString());
   } catch (error) {
     console.error('Failed to update last sync timestamp:', error);
+    throw new Error(
+      'Records were downloaded, but the sync timestamp could not be saved. Do not download again while local records exist.'
+    );
   }
 }

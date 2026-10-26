@@ -9,6 +9,7 @@ import { db } from '~/services/drizzleDb';
 import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
 import { scheduleNextProcess } from '~/services/sync/queue/queueState';
 import { processQueue } from '~/services/sync/queue/syncQueue';
+import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import { sameContent } from '~/shared/utils/sameContent';
 
 import type { FormUpdate, FormValues } from '../types';
@@ -29,6 +30,9 @@ function touchParent(tx: Transaction, pinId: string, updatedAt: Date) {
 }
 
 export async function createForm(values: FormValues): Promise<Form> {
+  assertLocalWritesAllowed();
+  if (typeof values.pinId !== 'string' || !values.pinId.trim())
+    throw new Error('Please reopen the pin before saving this form.');
   const now = new Date();
   const form: Form = {
     ...values,
@@ -54,6 +58,7 @@ export async function createForm(values: FormValues): Promise<Form> {
 }
 
 export async function updateForm(id: string, updates: FormUpdate, baseline?: Form): Promise<Form> {
+  assertLocalWritesAllowed();
   const form = db.transaction((tx) => {
     const existing = tx.select().from(forms).where(eq(forms.id, id)).get();
     if (!existing) throw new Error('This form no longer exists on this device.');
@@ -87,6 +92,7 @@ export async function updateForm(id: string, updates: FormUpdate, baseline?: For
 }
 
 export async function deleteForm(id: string, baseline?: Form): Promise<void> {
+  assertLocalWritesAllowed();
   db.transaction((tx) => {
     const existing = tx.select().from(forms).where(eq(forms.id, id)).get();
     if (!existing) throw new Error('This form no longer exists on this device.');

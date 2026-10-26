@@ -6,6 +6,7 @@ import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
 import { useDeletePin } from '~/features/pins/hooks/useDeletePin';
 import { useUpdatePin } from '~/features/pins/hooks/useUpdatePin';
+import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 
 import type { PinValues } from '../types';
 
@@ -28,6 +29,7 @@ export function PinEditor(props: PinEditorProps) {
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
+  const { busy: transferBusy } = useTransferState();
   const actionRunning = useRef(false);
   const [busy, setBusy] = useState(false);
   const submitRef = useRef<(() => void) | null>(null);
@@ -38,7 +40,7 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error creating pin');
       return;
     }
-    if (actionRunning.current) return;
+    if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
     try {
@@ -58,7 +60,7 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error updating pin');
       return;
     }
-    if (actionRunning.current) return;
+    if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
     try {
@@ -90,7 +92,7 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error deleting pin');
       return;
     }
-    if (actionRunning.current) return;
+    if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
     try {
@@ -118,7 +120,7 @@ export function PinEditor(props: PinEditorProps) {
       <View style={styles.toolbar}>
         <TouchableOpacity
           accessibilityLabel="Save pin"
-          disabled={busy}
+          disabled={busy || transferBusy}
           onPress={() => submitRef.current?.()}
           style={[styles.iconBtn, styles.primary]}>
           <MaterialIcons name="save" size={22} color="#fff" />
@@ -126,13 +128,13 @@ export function PinEditor(props: PinEditorProps) {
         {!isCreate && (
           <>
             <TouchableOpacity
-              disabled={busy}
+              disabled={busy || transferBusy}
               onPress={props.onCancel}
               style={[styles.iconBtn, styles.muted]}>
               <MaterialIcons name="visibility" size={22} color="#111" />
             </TouchableOpacity>
             <TouchableOpacity
-              disabled={busy}
+              disabled={busy || transferBusy}
               onPress={() =>
                 Alert.alert(
                   'Delete this pin and its forms?',

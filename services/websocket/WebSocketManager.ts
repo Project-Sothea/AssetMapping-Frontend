@@ -1,6 +1,5 @@
 import type { WebSocketStatus } from '~/hooks/RealTimeSync/useWebSocketStatus';
 import { getApiUrl } from '~/services/apiUrl';
-import { performIncrementalSync } from '~/services/sync/syncService';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
 type MessageHandler = (message: Record<string, unknown>) => void;
@@ -10,7 +9,6 @@ export class WebSocketManager {
   private userId: string | null = null;
   private generation = 0;
   private stopped = true;
-  private everConnected = false;
   private connecting: Promise<void> | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private subscribers = new Set<(status: WebSocketStatus) => void>();
@@ -25,8 +23,9 @@ export class WebSocketManager {
     lastDisconnectedAt: null,
   };
 
-  public connect(userId: string): Promise<void> {
+  public connect(userId: string, force = false): Promise<void> {
     if (
+      !force &&
       this.userId === userId &&
       !this.stopped &&
       (this.connecting ||
@@ -105,8 +104,6 @@ export class WebSocketManager {
       const current = () => !this.stopped && this.generation === generation && this.ws === socket;
       socket.onopen = () => {
         if (!current()) return;
-        const catchUp = this.everConnected;
-        this.everConnected = true;
         this.clearTimer();
         this.updateStatus({
           status: 'connected',
@@ -115,10 +112,6 @@ export class WebSocketManager {
           lastError: null,
           lastConnectedAt: new Date(),
         });
-        if (catchUp)
-          performIncrementalSync().catch(() =>
-            console.warn('Reconnect refresh failed; local data is preserved.')
-          );
       };
       socket.onmessage = (event) => {
         if (!current()) return;

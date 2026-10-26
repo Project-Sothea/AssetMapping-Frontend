@@ -15,6 +15,8 @@ import { syncQueue, syncInflight } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
 import { createSingleFlight } from '~/shared/utils/singleFlight';
 
+import { runTransfer } from '../transferCoordinator';
+
 import {
   enqueue,
   processOperation,
@@ -26,6 +28,7 @@ import {
   hasInflight,
 } from './queueOperations';
 import { scheduleNextProcess } from './queueState';
+import type { UploadResult } from './types';
 import { Operation, QueueMetrics } from './types';
 
 // ==================== Public API ====================
@@ -155,4 +158,82 @@ export async function retryFailed(): Promise<void> {
     }
   });
   scheduleNextProcess(processQueue);
+}
+
+function operationRank(op: Parameters<typeof processOperation>[0]) {
+  return op.operation === 'delete'
+    ? op.entityType === 'form'
+      ? 2
+      : 3
+    : op.entityType === 'pin'
+      ? 0
+      : 1;
+}
+/** All network writes from the UI occur inside this explicit manual transfer. */
+export async function uploadPendingChanges(
+  onProgress?: (done: number, total: number) => void
+): Promise<UploadResult> {
+  return runTransfer('upload', async () => {
+    await retryFailed();
+    const replay = pendingInflight().sort((a, b) => operationRank(a) - operationRank(b));
+    const replayKeys = new Set(replay.map((op) => op.idempotencyKey));
+    const latest = db
+      .select()
+      .from(syncQueue)
+      .where(eq(syncQueue.status, 'pending'))
+      .orderBy(asc(syncQueue.sequenceNumber))
+      .all()
+      .filter((op) => !replayKeys.has(op.idempotencyKey))
+      .sort((a, b) => operationRank(a) - operationRank(b));
+    const result: UploadResult = { uploaded: 0, failed: 0, blocked: 0, remaining: 0, errors: [] };
+    const failedPins = new Set<string>();
+    const snapshot = [...replay, ...latest];
+    onProgress?.(0, snapshot.length);
+    for (const [index, original] of snapshot.entries()) {
+      const staged = replayKeys.has(original.idempotencyKey);
+      const op = staged
+        ? original
+        : db.select().from(syncQueue).where(eq(syncQueue.id, original.id)).get();
+      if (!op || op.status !== 'pending') continue;
+      let payload: Record<string, unknown> = {};
+      try {
+        payload = JSON.parse(op.payload);
+        if (
+          (op.entityType === 'form' && failedPins.has(String(payload.pinId))) ||
+          (!staged && hasInflight(op.entityType, op.entityId))
+        ) {
+          result.blocked++;
+          throw new Error(
+            'An earlier revision or parent pin needs review before uploading this change.'
+          );
+        }
+        stageOperation(op);
+        const acknowledged = await processOperation(op);
+        markCompleted(op, acknowledged);
+        result.uploaded++;
+      } catch (error) {
+        const failure = error instanceof Error ? error : new Error(String(error));
+        if (op.entityType === 'pin') failedPins.add(op.entityId);
+        if (failure.message.startsWith('An earlier revision')) {
+          db.update(syncQueue)
+            .set({ lastError: failure.message })
+            .where(eq(syncQueue.id, op.id))
+            .run();
+        } else {
+          await handleError(op, failure);
+          result.failed++;
+        }
+        result.errors.push({
+          entityId: op.entityId,
+          entityType: op.entityType,
+          name: String(payload.name || op.entityId),
+          message: failure.message,
+        });
+      }
+      onProgress?.(index + 1, snapshot.length);
+    }
+    const metrics = await getQueueMetrics();
+    result.remaining = metrics.pending + metrics.failed;
+    return result;
+  });
 }

@@ -20,6 +20,8 @@ import { createSharedImageLoader } from '~/shared/utils/sharedImageLoader';
 
 import { getDownloadUrl } from '../api/storageApi';
 
+import { assertSafeImageReference } from './imagePaths';
+
 // ============================================
 // PICK IMAGE
 // ============================================
@@ -48,6 +50,8 @@ export async function pickImage(): Promise<string | null> {
 // ============================================
 
 export async function saveImageLocally(pinId: string, imageUri: string): Promise<string> {
+  const filename = imageUri.split('/').pop()!;
+  assertSafeImageReference(pinId, filename);
   const pinDir = new Directory(Paths.document, 'pins', pinId);
 
   if (!pinDir.exists) {
@@ -55,7 +59,6 @@ export async function saveImageLocally(pinId: string, imageUri: string): Promise
   }
 
   // Extract filename from ImagePicker URI (already has UUID)
-  const filename = imageUri.split('/').pop()!;
   const destFile = new File(pinDir, filename);
 
   // For local file:// URIs from the picker, copy directly; fall back to download for remote URIs
@@ -76,6 +79,7 @@ export async function saveImageLocally(pinId: string, imageUri: string): Promise
  * Delete image by filename
  */
 export async function deleteImageByFilename(pinId: string, filename: string): Promise<void> {
+  assertSafeImageReference(pinId, filename);
   try {
     const pinDir = new Directory(Paths.document, 'pins', pinId);
     const file = new File(pinDir, filename);
@@ -113,6 +117,7 @@ export async function deleteImagesByFilename(pinId: string, filenames: string[])
  * Get local file path for a filename
  */
 export function getLocalPath(pinId: string, filename: string): string {
+  assertSafeImageReference(pinId, filename);
   const pinDir = new Directory(Paths.document, 'pins', pinId);
   const file = new File(pinDir, filename);
   return file.uri;
@@ -123,6 +128,7 @@ export function getLocalPath(pinId: string, filename: string): string {
  */
 export async function getRemoteUrl(pinId: string, filename: string): Promise<string | null> {
   try {
+    assertSafeImageReference(pinId, filename);
     const key = `pins/${pinId}/${filename}`;
     const response = await getDownloadUrl(key);
 
@@ -146,6 +152,7 @@ export async function cacheRemoteImage(
   remoteUrl: string
 ): Promise<string | null> {
   try {
+    assertSafeImageReference(pinId, filename);
     const pinDir = new Directory(Paths.document, 'pins', pinId);
     if (!pinDir.exists) {
       pinDir.create({ intermediates: true });
@@ -165,6 +172,7 @@ export async function cacheRemoteImage(
  */
 export function fileExistsLocally(pinId: string, filename: string): boolean {
   try {
+    assertSafeImageReference(pinId, filename);
     const pinDir = new Directory(Paths.document, 'pins', pinId);
     const file = new File(pinDir, filename);
     return (file as any).exists ?? false;

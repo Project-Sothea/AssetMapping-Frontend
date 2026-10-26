@@ -614,9 +614,7 @@
       "indexes": {
         "forms_pin_id_idx": {
           "name": "forms_pin_id_idx",
-          "columns": [
-            "pinId"
-          ],
+          "columns": ["pinId"],
           "isUnique": false
         }
       },
@@ -625,12 +623,8 @@
           "name": "forms_pinId_pins_id_fk",
           "tableFrom": "forms",
           "tableTo": "pins",
-          "columnsFrom": [
-            "pinId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pinId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -908,26 +902,17 @@
       "indexes": {
         "sync_queue_idempotencyKey_unique": {
           "name": "sync_queue_idempotencyKey_unique",
-          "columns": [
-            "idempotencyKey"
-          ],
+          "columns": ["idempotencyKey"],
           "isUnique": true
         },
         "queue_entity_status_idx": {
           "name": "queue_entity_status_idx",
-          "columns": [
-            "entityType",
-            "entityId",
-            "status"
-          ],
+          "columns": ["entityType", "entityId", "status"],
           "isUnique": false
         },
         "queue_pending_order_idx": {
           "name": "queue_pending_order_idx",
-          "columns": [
-            "status",
-            "sequenceNumber"
-          ],
+          "columns": ["status", "sequenceNumber"],
           "isUnique": false
         }
       },

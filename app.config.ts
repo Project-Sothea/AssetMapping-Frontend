@@ -100,7 +100,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     router: {},
     appEnvironment: isQaBuild ? 'qa' : 'standard',
-    syncProtocol: process.env.EXPO_PUBLIC_SYNC_PROTOCOL === 'legacy' ? 'legacy' : 'durable',
+    syncProtocol: process.env.EXPO_PUBLIC_SYNC_PROTOCOL ?? (isQaBuild ? 'durable' : 'legacy'),
     eas: {
       projectId: process.env.EAS_PROJECT_ID ?? 'd019d9ea-2c0f-4eec-a19b-9208d487048f',
     },

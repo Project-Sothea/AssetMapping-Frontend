@@ -48,7 +48,8 @@ test('outbox update failure rolls back edited answers; retry has one form', asyn
 test('outbox failure rolls back deletion, retaining response', async (t) => {
   const f = setup(t);
   const form = await f.formService.createForm(f.values);
-  f.failQueue('UPDATE');
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 1 });
+  f.failQueue('INSERT');
   await assert.rejects(f.formService.deleteForm(form.id));
   assert.ok(await f.formService.getFormById(form.id));
 });

@@ -6,6 +6,7 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { ScrollView, Alert, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { z } from 'zod';
 
+import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
 import Spacer from '~/shared/components/ui/Spacer';
 import { ErrorHandler } from '~/shared/utils/errorHandling';
 
@@ -62,6 +63,7 @@ export function FormEditor({
   const { createFormAsync } = useCreateForm();
   const { updateFormAsync } = useUpdateForm();
   const { deleteFormAsync } = useDeleteForm();
+  const { busy: transferBusy } = useTransferState();
   const actionRunning = useRef(false);
   const [busy, setBusy] = useState(false);
   const [expandedSection, setExpandedSection] = useState<SectionOrder>('general');
@@ -180,7 +182,7 @@ export function FormEditor({
 
   useEffect(() => {
     onCloseGuardChange?.(() => {
-      if (actionRunning.current) return;
+      if (actionRunning.current || transferBusy) return;
       if (isEditing && isDirty)
         Alert.alert(
           'Discard unsaved changes?',
@@ -193,7 +195,7 @@ export function FormEditor({
       else onClose();
     });
     return () => onCloseGuardChange?.(null);
-  }, [isDirty, isEditing, onClose, onCloseGuardChange]);
+  }, [isDirty, isEditing, onClose, onCloseGuardChange, transferBusy]);
 
   const values = watch();
 
@@ -218,7 +220,7 @@ export function FormEditor({
   type SetFieldValue = (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
 
   const setFieldValue: SetFieldValue = (field, value) => {
-    if (!isEditing || actionRunning.current) return;
+    if (!isEditing || transferBusy || actionRunning.current) return;
     setValue(field, value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
@@ -230,8 +232,14 @@ export function FormEditor({
 
   const handleSubmitForm = async (vals: FormValues) => {
     try {
+      const parentPinId = selectedForm ? selectedForm.pinId : pinId;
+      if (typeof parentPinId !== 'string' || !parentPinId.trim())
+        throw new Error(
+          'Please reopen the pin before saving this form. Your answers are still here.'
+        );
       const submissionValues: FormValues = {
         ...vals,
+        pinId: parentPinId,
         name: vals.name?.trim() ?? '',
         dataCollectionDate: vals.dataCollectionDate?.trim() ?? vals.dataCollectionDate,
         householdNumber: vals.householdNumber?.trim() ?? vals.householdNumber,
@@ -270,7 +278,7 @@ export function FormEditor({
   };
 
   const runAction = async (action: () => Promise<void>) => {
-    if (actionRunning.current) return;
+    if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
     onBusyChange?.(true);
@@ -284,7 +292,7 @@ export function FormEditor({
   };
 
   const confirmDelete = () => {
-    if (actionRunning.current) return;
+    if (actionRunning.current || transferBusy) return;
     Alert.alert('Delete this form?', 'This will also delete it from the server when synced.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => runAction(handleDelete) },
@@ -309,7 +317,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -323,7 +331,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
           mode="conflict"
         />
       </FormSection>
@@ -336,7 +344,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -348,7 +356,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -360,7 +368,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -371,7 +379,7 @@ export function FormEditor({
             style={[styles.iconBtn, styles.save]}
             accessibilityLabel="Save form"
             accessibilityState={{ disabled: busy, busy }}
-            disabled={busy}
+            disabled={busy || transferBusy}
             onPress={() =>
               runAction(
                 handleSubmit(handleSubmitForm, () => {
@@ -389,13 +397,13 @@ export function FormEditor({
             <>
               <TouchableOpacity
                 accessibilityLabel="Delete form"
-                disabled={busy}
+                disabled={busy || transferBusy}
                 onPress={confirmDelete}
                 style={[styles.iconBtn, styles.danger]}>
                 <MaterialIcons name="delete" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
-                disabled={busy}
+                disabled={busy || transferBusy}
                 onPress={() => onToggleEdit?.(false)}
                 style={[styles.iconBtn, styles.muted]}>
                 <MaterialIcons name="visibility" size={24} color="#111" />

@@ -163,7 +163,7 @@ test('late close events from an old socket cannot disconnect or reconnect the ne
   assert.equal(f.sockets.length, 2);
 });
 
-test('manual reconnect catches up after a previous successful connection', async (t) => {
+test('manual reconnect preserves connection status without starting a data transfer', async (t) => {
   const f = socketFixture(t);
   await f.manager.connect('qa-device');
   f.sockets[0].open();
@@ -171,7 +171,7 @@ test('manual reconnect catches up after a previous successful connection', async
   f.manager.disconnect();
   await f.manager.connect('qa-device');
   f.sockets[1].open();
-  assert.equal(f.refreshes(), 1);
+  assert.equal(f.refreshes(), 0);
 });
 
 test('unsubscribed WebSocket handlers receive no later notifications', async (t) => {

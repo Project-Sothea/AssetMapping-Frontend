@@ -80,6 +80,24 @@ function fixture(filename = ':memory:', options = {}) {
       if (id === '~/services/apiUrl' || id.endsWith('/apiUrl'))
         return { getApiUrl: async () => options.apiUrl };
       if (id === '~/services/drizzleDb') return { db };
+      if (id === 'expo-file-system/legacy')
+        return {
+          createUploadTask() {
+            throw new Error('Native image upload is outside this host fixture.');
+          },
+          FileSystemSessionType: {},
+          FileSystemUploadType: {},
+        };
+      if (id === 'expo-file-system/next')
+        return {
+          File: class {
+            exists = true;
+            size = 1;
+          },
+        };
+      if (id === '~/hooks/RealTimeSync/useTransferState')
+        return { useTransferState: () => ({ busy: false, setupReady: true }) };
+      if (id === '~/services/sync/transferCoordinator') return { assertLocalWritesAllowed() {} };
       if (id === '~/services/sync/protocol' || id === './protocol')
         return { isLegacySync: options.legacy === true };
       if (id.endsWith('/queueState') || id === './queueState') return { scheduleNextProcess() {} };
@@ -149,6 +167,7 @@ function fixture(filename = ':memory:', options = {}) {
   };
   if (options.pinId) pin.id = options.pinId;
   if (!options.reopen) db.insert(schema.pins).values(utils.sanitizePinForDb(pin)).run();
+  if (!options.reopen) remotePins = [pin];
   const values = {
     pinId: pin.id,
     name: 'QA synthetic',

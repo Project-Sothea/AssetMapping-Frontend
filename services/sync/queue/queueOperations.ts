@@ -11,7 +11,7 @@ import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
 
 export type QueueItem = typeof syncQueue.$inferSelect;
-type QueueWriter = Pick<typeof db, 'select' | 'update' | 'insert'>;
+type QueueWriter = Pick<typeof db, 'select' | 'update' | 'insert' | 'delete'>;
 type EnqueueParams = {
   operation: Operation;
   entityType: EntityType;
@@ -36,6 +36,27 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
     .get();
   const revision = uuidv4();
   if (existing) {
+    const inflight = writer
+      .select({ key: syncInflight.key })
+      .from(syncInflight)
+      .where(
+        and(
+          eq(syncInflight.entityType, params.entityType),
+          eq(syncInflight.entityId, params.entityId)
+        )
+      )
+      .get();
+    if (
+      params.operation === 'delete' &&
+      existing.status === 'pending' &&
+      existing.operation === 'create' &&
+      existing.attempts === 0 &&
+      !existing.lastAttemptAt &&
+      !inflight
+    ) {
+      writer.delete(syncQueue).where(eq(syncQueue.id, existing.id)).run();
+      return existing.id;
+    }
     writer
       .update(syncQueue)
       .set({
@@ -263,3 +284,7 @@ export async function handleError(op: QueueItem, error: Error): Promise<void> {
         .run();
   });
 }
+
+export const outstanding = inArray(syncQueue.status, ['pending', 'failed']);
+export type QueueRow = QueueItem;
+export type LocalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

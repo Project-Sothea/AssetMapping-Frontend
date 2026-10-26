@@ -422,34 +422,25 @@ test('the actual form-list hook selects metadata without loading survey answers'
   await act(async () => tree.unmount());
 });
 
-test('a notification burst coalesces into one snapshot; own-device messages cause none', async (t) => {
-  let handler,
-    refreshes = 0;
-  const listeners = [];
+test('the connection hook does not subscribe to data changes or transfer on mount', async (t) => {
+  let transfers = 0,
+    subscriptions = 0,
+    connects = 0;
   const f = componentFixture(t, {
-    'react-native': {
-      ...native,
-      AppState: {
-        addEventListener: (_event, fn) => {
-          listeners.push(fn);
-          return { remove() {} };
-        },
-      },
-    },
     '~/services/websocket/WebSocketManager': {
       webSocketManager: {
-        connect: async () => {},
-        onMessage: (fn) => {
-          handler = fn;
-          return () => {
-            handler = null;
-          };
+        connect: async () => {
+          connects++;
+        },
+        onMessage: () => {
+          subscriptions++;
+          return () => {};
         },
       },
     },
     '~/services/sync/syncService': {
       performIncrementalSync: async () => {
-        refreshes++;
+        transfers++;
       },
     },
   });
@@ -462,17 +453,8 @@ test('a notification burst coalesces into one snapshot; own-device messages caus
   await act(async () => {
     tree = create(React.createElement(Probe));
   });
-  for (let i = 0; i < 1000; i++)
-    handler({ type: 'form', action: 'updated', aggregateId: 'qa-form', deviceId: 'qa-self' });
-  await new Promise((resolve) => setTimeout(resolve, 180));
-  assert.equal(refreshes, 0);
-  for (let i = 0; i < 1000; i++)
-    handler({ type: 'form', action: 'updated', aggregateId: 'qa-form', deviceId: 'qa-other' });
-  await new Promise((resolve) => setTimeout(resolve, 180));
-  assert.equal(refreshes, 1);
-  listeners[0]('active');
-  await new Promise((resolve) => setTimeout(resolve, 180));
-  assert.equal(refreshes, 2);
+  assert.equal(connects, 1);
+  assert.equal(subscriptions, 0);
+  assert.equal(transfers, 0);
   await act(async () => tree.unmount());
-  assert.equal(handler, null);
 });

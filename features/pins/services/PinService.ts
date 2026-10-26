@@ -19,6 +19,7 @@ import * as ImageManager from '~/services/images/ImageManager';
 import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
 import { scheduleNextProcess } from '~/services/sync/queue/queueState';
 import { processQueue } from '~/services/sync/queue/syncQueue';
+import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import { sameContent } from '~/shared/utils/sameContent';
 
 import { PinUpdate, PinValues } from '../types';
@@ -28,6 +29,7 @@ import { PinUpdate, PinValues } from '../types';
 // ============================================
 
 export async function createPin(pin: PinValues): Promise<Pin> {
+  assertLocalWritesAllowed();
   const newPin: Pin = {
     ...pin,
     createdAt: new Date(),
@@ -56,6 +58,7 @@ export async function createPin(pin: PinValues): Promise<Pin> {
 // ============================================
 
 export async function updatePin(id: string, updates: PinUpdate, baseline?: Pin): Promise<Pin> {
+  assertLocalWritesAllowed();
   const updated = db.transaction((tx) => {
     const row = tx.select().from(pins).where(eq(pins.id, id)).get();
     if (!row) throw new Error('This pin no longer exists on this device.');
@@ -93,6 +96,7 @@ export async function updatePin(id: string, updates: PinUpdate, baseline?: Pin):
 // ============================================
 
 export async function deletePin(id: string, baseline?: Pin): Promise<void> {
+  assertLocalWritesAllowed();
   const existing = db.transaction((tx) => {
     const row = tx.select().from(pins).where(eq(pins.id, id)).get();
     if (!row) throw new Error('This pin no longer exists on this device.');
