@@ -148,16 +148,12 @@ test('failed snapshot request cannot prune local rows or mark pending work synce
   assert.equal(f.operations().filter((op) => op.status === 'pending').length, 2);
 });
 
-test('empty queue schedules no idle polling timer', async (t) => {
-  let scheduled = 0;
-  const f = setup(t, {
-    overrides: {
-      './queueState': { scheduleNextProcess: () => scheduled++ },
-      '~/services/sync/queue/queueState': { scheduleNextProcess: () => scheduled++ },
-    },
-  });
-  await f.syncQueue.processQueue();
-  assert.equal(scheduled, 0);
+test('manual upload of an empty queue makes no HTTP writes', async (t) => {
+  const f = setup(t);
+  const result = await f.syncQueue.uploadPendingChanges();
+  assert.equal(result.uploaded, 0);
+  assert.equal(result.remaining, 0);
+  assert.equal(f.calls.length, 0);
 });
 
 test('a refresh requested during a snapshot runs a fresh follow-up pass', async (t) => {
@@ -172,7 +168,7 @@ test('a refresh requested during a snapshot runs a fresh follow-up pass', async 
         })
       : { success: true, data: { protocolVersion: 1, pins: [f.pin], forms: [] } };
   });
-  const service = f.load('services/sync/syncService.ts');
+  const service = f.load('scripts/test-support/sync-tools.ts');
   const first = service.performFullSync();
   while (!release) await Promise.resolve();
   const second = service.performIncrementalSync();
@@ -339,20 +335,23 @@ test('an in-flight create replay rebases the newer queued edit before sending it
   assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sync_inflight').get().n, 0);
 });
 
-test('exhausted unknown upload outcome blocks the newer revision until manual retry', async (t) => {
+test('an explicit upload retries an uncertain revision before its newer local answer', async (t) => {
   const f = setup(t);
   const form = await f.formService.createForm(f.values);
   const old = f.operations().find((op) => op.entityType === 'form');
   f.queue.stageOperation(old);
   await f.formService.updateForm(form.id, { name: 'QA newer pending answer' });
   await f.queue.handleError({ ...old, attempts: 2 }, new Error('Network error'));
-  await f.syncQueue.processQueue();
-  assert.equal(f.calls.filter((request) => request.entityType === 'form').length, 0);
-  const metrics = await f.syncQueue.getQueueMetrics();
-  assert.equal(metrics.failed, 1);
-  await f.syncQueue.retryFailed();
-  await f.syncQueue.processQueue();
+  assert.equal(f.calls.length, 0);
+  assert.equal((await f.syncQueue.getQueueMetrics()).failed, 1);
+  await f.syncQueue.uploadPendingChanges();
   assert.equal((await f.formService.getFormById(form.id)).status, 'synced');
+  assert.equal((await f.formService.getFormById(form.id)).name, 'QA newer pending answer');
+  const sent = f.calls.filter((request) => request.entityType === 'form');
+  assert.deepEqual(
+    sent.map((request) => request.operation),
+    ['create', 'update']
+  );
 });
 
 test('historical populated SQLite storage is blocked before destructive migrations', async (t) => {

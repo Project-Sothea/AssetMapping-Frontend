@@ -23,7 +23,7 @@ test('legacy initial/manual sync uses existing collection routes without the sna
       },
     },
   });
-  const service = f.load('services/sync/syncService.ts');
+  const service = f.load('scripts/test-support/sync-tools.ts');
   await service.performFullSync();
   assert.equal(f.db.select().from(f.schema.pins).all().length, 1);
 });

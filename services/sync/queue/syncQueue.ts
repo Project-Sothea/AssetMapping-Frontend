@@ -1,69 +1,23 @@
-/**
- * Simplified Sync Queue
- *
- * Public API:
- * - enqueuePin(operation, data) - Queue pin sync
- * - enqueueForm(operation, data) - Queue form sync
- * - processQueue() - Process pending operations
- * - getQueueMetrics() - Get queue health stats
- */
-
-import { Form, Pin } from '@assetmapping/shared-types';
+/** Explicit manual upload sessions, retry recovery and queue metrics. */
 import { eq, asc, count, inArray } from 'drizzle-orm';
 
 import { syncQueue, syncInflight } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
-import { createSingleFlight } from '~/shared/utils/singleFlight';
 
 import { runTransfer } from '../transferCoordinator';
 
 import {
-  enqueue,
   processOperation,
   markCompleted,
   handleError,
-  isCurrentOperation,
   stageOperation,
   pendingInflight,
   hasInflight,
 } from './queueOperations';
-import { scheduleNextProcess } from './queueState';
-import type { UploadResult } from './types';
-import { Operation, QueueMetrics } from './types';
+import type { QueueMetrics, UploadResult } from './types';
 
-// ==================== Public API ====================
+class BlockedUploadError extends Error {}
 
-/**
- * Queue a pin operation
- */
-export async function enqueuePin(operation: Operation, data: Pin): Promise<string> {
-  const operationId = await enqueue({
-    operation,
-    entityType: 'pin',
-    entityId: data.id,
-    payload: data,
-  });
-  scheduleNextProcess(processQueue);
-  return operationId;
-}
-
-/**
- * Queue a form operation
- */
-export async function enqueueForm(operation: Operation, data: Form): Promise<string> {
-  const operationId = await enqueue({
-    operation,
-    entityType: 'form',
-    entityId: data.id,
-    payload: data,
-  });
-  scheduleNextProcess(processQueue);
-  return operationId;
-}
-
-/**
- * Get queue health metrics
- */
 export async function getQueueMetrics(): Promise<QueueMetrics> {
   const queue = db
     .select({ id: syncQueue.id, status: syncQueue.status })
@@ -88,55 +42,7 @@ export async function getQueueMetrics(): Promise<QueueMetrics> {
   return { pending: pending.size, failed: failed.size, completed };
 }
 
-/**
- * Process pending queue operations
- */
-const queueFlight = createSingleFlight();
-export function processQueue(): Promise<void> {
-  return queueFlight.run(processQueueBatch);
-}
-
-async function processQueueBatch(): Promise<void> {
-  try {
-    const run = async (op: Parameters<typeof processOperation>[0]) => {
-      try {
-        stageOperation(op);
-        const syncedData = await processOperation(op);
-        markCompleted(op, syncedData);
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        await handleError(op, err);
-        console.warn('A sync operation remains saved for retry or review.');
-      }
-    };
-    const replay = pendingInflight().slice(0, 10);
-    for (const op of replay) await run(op);
-    const pending = db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.status, 'pending'))
-      .orderBy(asc(syncQueue.sequenceNumber))
-      .limit(10)
-      .all();
-    for (const op of pending) {
-      if (!isCurrentOperation(op) || hasInflight(op.entityType, op.entityId)) continue;
-      await run(op);
-    }
-  } finally {
-    const pending = db
-      .select({ type: syncQueue.entityType, id: syncQueue.entityId })
-      .from(syncQueue)
-      .where(eq(syncQueue.status, 'pending'))
-      .all();
-    if (pendingInflight().length || pending.some((op) => !hasInflight(op.type, op.id)))
-      scheduleNextProcess(processQueue);
-  }
-}
-
-/**
- * Retry all failed operations
- */
-export async function retryFailed(): Promise<void> {
+async function retryFailed(): Promise<void> {
   db.transaction((tx) => {
     tx.update(syncQueue)
       .set({ status: 'pending', attempts: 0, lastError: null })
@@ -157,7 +63,6 @@ export async function retryFailed(): Promise<void> {
         .run();
     }
   });
-  scheduleNextProcess(processQueue);
 }
 
 function operationRank(op: Parameters<typeof processOperation>[0]) {
@@ -203,7 +108,7 @@ export async function uploadPendingChanges(
           (!staged && hasInflight(op.entityType, op.entityId))
         ) {
           result.blocked++;
-          throw new Error(
+          throw new BlockedUploadError(
             'An earlier revision or parent pin needs review before uploading this change.'
           );
         }
@@ -214,7 +119,7 @@ export async function uploadPendingChanges(
       } catch (error) {
         const failure = error instanceof Error ? error : new Error(String(error));
         if (op.entityType === 'pin') failedPins.add(op.entityId);
-        if (failure.message.startsWith('An earlier revision')) {
+        if (failure instanceof BlockedUploadError) {
           db.update(syncQueue)
             .set({ lastError: failure.message })
             .where(eq(syncQueue.id, op.id))

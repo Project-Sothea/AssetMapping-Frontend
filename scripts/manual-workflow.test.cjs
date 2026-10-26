@@ -70,3 +70,90 @@ test('a staged create cannot be canceled as though it was never sent', async (t)
   assert.equal(f.operations().find((op) => op.entityType === 'form').operation, 'delete');
   assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sync_inflight').get().n, 1);
 });
+
+test('server error wording cannot misclassify a failed upload as a blocked revision', async (t) => {
+  const f = fixture();
+  t.after(f.close);
+  await f.pinService.createPin({ id: 'qa-error-text', name: 'QA', lat: 1, lng: 2, images: [] });
+  f.setSyncResponse(async () => ({
+    success: false,
+    error: 'An earlier revision: server unavailable',
+  }));
+  const result = await f.syncQueue.uploadPendingChanges();
+  assert.equal(result.failed, 1);
+  assert.equal(result.blocked, 0);
+  assert.equal(result.remaining, 1);
+});
+
+test('one listener shared by several tables refreshes once per notification burst', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../shared/utils/tableChanges.ts'), 'utf8');
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  const sandbox = { exports: {} };
+  vm.runInNewContext(outputText, sandbox);
+  let flush;
+  let refreshes = 0;
+  const batcher = sandbox.exports.createTableChangeBatcher((callback) => {
+    flush = callback;
+  });
+  const refresh = () => refreshes++;
+  batcher.subscribe('pins', refresh);
+  batcher.subscribe('forms', refresh);
+  batcher.changed('pins');
+  batcher.changed('forms');
+  flush();
+  assert.equal(refreshes, 1);
+});
+
+test('production services expose setup and manual upload without retired scheduling paths', () => {
+  const root = path.join(__dirname, '..');
+  const setup = fs.readFileSync(path.join(root, 'services/sync/syncService.ts'), 'utf8');
+  assert.doesNotMatch(setup, /performFullSync|performIncrementalSync|processQueue|pullSnapshot/);
+  for (const name of ['queueState.ts', 'operationMerge.ts'])
+    assert.equal(fs.existsSync(path.join(root, 'services/sync/queue', name)), false);
+  for (const name of [
+    'features/forms/services/FormService.ts',
+    'features/pins/services/PinService.ts',
+  ])
+    assert.doesNotMatch(fs.readFileSync(path.join(root, name), 'utf8'), /scheduleNextProcess/);
+  assert.equal(fs.existsSync(path.join(root, 'services/sync/pullUpdates.ts')), false);
+});
+
+test('shared QA profiles select the legacy API and leave standard iOS networking unchanged', () => {
+  const root = path.join(__dirname, '..');
+  const profiles = JSON.parse(fs.readFileSync(path.join(root, 'eas.json'), 'utf8')).build;
+  assert.equal(profiles['qa-legacy'].extends, 'qa');
+  assert.equal(profiles['qa-legacy'].env.EXPO_PUBLIC_SYNC_PROTOCOL, 'legacy');
+  assert.equal(profiles['qa-ios'].extends, 'qa-legacy');
+  assert.equal(profiles['qa-ios'].ios.simulator, true);
+  assert.equal(profiles['qa-ios'].env.EXPO_PUBLIC_API_URL, 'http://127.0.0.1:3300');
+  const source = fs.readFileSync(path.join(root, 'app.config.ts'), 'utf8');
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  const configure = (env) => {
+    const sandbox = { exports: {}, process: { env }, URL };
+    vm.runInNewContext(outputText, sandbox);
+    return sandbox.exports.default({ config: {} });
+  };
+  const qa = configure({
+    EXPO_PUBLIC_APP_ENV: 'qa',
+    EXPO_PUBLIC_API_URL: 'http://127.0.0.1:3300',
+    EXPO_PUBLIC_SYNC_PROTOCOL: 'legacy',
+  });
+  assert.equal(qa.ios.bundleIdentifier, 'com.anonymous.AssetMapApp.qa');
+  assert.equal(qa.ios.infoPlist.NSAppTransportSecurity.NSAllowsLocalNetworking, true);
+  assert.equal(qa.extra.syncProtocol, 'legacy');
+  const standard = configure({});
+  assert.equal(standard.ios.infoPlist.NSAppTransportSecurity, undefined);
+  assert.equal(standard.extra.syncProtocol, 'legacy');
+  assert.throws(
+    () =>
+      configure({
+        EXPO_PUBLIC_APP_ENV: 'qa',
+        EXPO_PUBLIC_API_URL: 'https://assetmapping-backend.up.railway.app',
+      }),
+    /blocked/
+  );
+});

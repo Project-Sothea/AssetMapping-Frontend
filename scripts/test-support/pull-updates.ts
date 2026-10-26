@@ -1,3 +1,5 @@
+// QA-only snapshot/reconciliation tools for the proposed future server protocol.
+// The shipped app downloads through localDataTransfer into an empty device.
 import type { Pin, Form } from '@assetmapping/shared-types';
 import { and, eq, inArray } from 'drizzle-orm';
 

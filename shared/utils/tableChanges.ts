@@ -22,7 +22,8 @@ export function createTableChangeBatcher(schedule: (flush: () => void) => void) 
         scheduled = false;
         const tables = [...dirty];
         dirty.clear();
-        for (const name of tables) for (const listener of listeners.get(name) ?? []) listener();
+        const refreshes = new Set(tables.flatMap((name) => [...(listeners.get(name) ?? [])]));
+        for (const refresh of refreshes) refresh();
       });
     },
   };

@@ -96,24 +96,6 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
   return id;
 }
 
-export async function enqueue(params: EnqueueParams): Promise<string> {
-  return db.transaction((tx) => enqueueInTransaction(tx, params));
-}
-
-export function isCurrentOperation(op: QueueItem): boolean {
-  return !!db
-    .select({ id: syncQueue.id })
-    .from(syncQueue)
-    .where(
-      and(
-        eq(syncQueue.id, op.id),
-        eq(syncQueue.idempotencyKey, op.idempotencyKey),
-        eq(syncQueue.status, 'pending')
-      )
-    )
-    .get();
-}
-
 export async function processOperation(
   op: QueueItem
 ): Promise<Record<string, unknown> | undefined> {
@@ -285,6 +267,4 @@ export async function handleError(op: QueueItem, error: Error): Promise<void> {
   });
 }
 
-export const outstanding = inArray(syncQueue.status, ['pending', 'failed']);
-export type QueueRow = QueueItem;
 export type LocalTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

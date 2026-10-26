@@ -79,6 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: isQaBuild ? baseBundleIdentifier + '.qa' : baseBundleIdentifier,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      ...(isQaBuild ? { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } } : {}),
       NSCameraUsageDescription: 'This app needs access to your camera',
       NSPhotoLibraryUsageDescription: 'This app needs access to your photo library',
       NSLocationWhenInUseUsageDescription:

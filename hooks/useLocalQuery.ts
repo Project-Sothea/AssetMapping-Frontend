@@ -22,6 +22,11 @@ function subscribe(table: string, refresh: () => void) {
   };
 }
 
+export function subscribeToLocalTables(tables: readonly string[], refresh: () => void) {
+  const unsubscribe = tables.map((table) => subscribe(table, refresh));
+  return () => unsubscribe.forEach((remove) => remove());
+}
+
 // Expo's synchronous SQLite driver runs queries on the JS thread. Refresh once per
 // burst of table changes instead of once per changed row, and release subscriptions on unmount.
 export function useLocalQuery<T>(query: { all(): T[] }, table: string, deps: DependencyList = []) {

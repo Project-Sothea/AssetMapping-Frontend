@@ -1,9 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
+import { subscribeToLocalTables } from '~/hooks/useLocalQuery';
 import {
   clearLocalData,
   downloadLatest,
@@ -23,8 +24,14 @@ export function DataTransferControls() {
   const { data: summary } = useQuery({
     queryKey: ['localDataSummary'],
     queryFn: getLocalDataSummary,
-    refetchInterval: 2000,
   });
+  useEffect(
+    () =>
+      subscribeToLocalTables(['pins', 'forms', 'sync_queue', 'sync_inflight'], () => {
+        void client.invalidateQueries({ queryKey: ['localDataSummary'] });
+      }),
+    [client]
+  );
   const disabled = busy || working || !summary;
   const outstanding = (summary?.pending ?? 0) + (summary?.failed ?? 0);
   const canClear =

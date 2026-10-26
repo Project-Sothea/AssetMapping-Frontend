@@ -17,8 +17,6 @@ import { validateLocal } from '~/db/validateLocal';
 import { db } from '~/services/drizzleDb';
 import * as ImageManager from '~/services/images/ImageManager';
 import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
-import { scheduleNextProcess } from '~/services/sync/queue/queueState';
-import { processQueue } from '~/services/sync/queue/syncQueue';
 import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import { sameContent } from '~/shared/utils/sameContent';
 
@@ -48,7 +46,6 @@ export async function createPin(pin: PinValues): Promise<Pin> {
       payload: newPin,
     });
   });
-  scheduleNextProcess(processQueue);
 
   return newPin;
 }
@@ -86,7 +83,6 @@ export async function updatePin(id: string, updates: PinUpdate, baseline?: Pin):
     });
     return next;
   });
-  scheduleNextProcess(processQueue);
 
   return updated;
 }
@@ -127,7 +123,6 @@ export async function deletePin(id: string, baseline?: Pin): Promise<void> {
     });
     return existing;
   });
-  scheduleNextProcess(processQueue);
   // File cleanup follows a successful commit, so a failed save cannot discard images.
   if (existing.images?.length) {
     try {

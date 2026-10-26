@@ -100,7 +100,6 @@ function fixture(filename = ':memory:', options = {}) {
       if (id === '~/services/sync/transferCoordinator') return { assertLocalWritesAllowed() {} };
       if (id === '~/services/sync/protocol' || id === './protocol')
         return { isLegacySync: options.legacy === true };
-      if (id.endsWith('/queueState') || id === './queueState') return { scheduleNextProcess() {} };
       if (id === '~/services/images/ImageManager')
         return { deleteImagesByFilename: async () => {}, getLocalPath: () => '' };
       if (id === '~/services/api/storageApi') return {};
@@ -152,8 +151,10 @@ function fixture(filename = ':memory:', options = {}) {
   const formService = load(path.join(root, 'features/forms/services/FormService.ts'));
   const pinService = load(path.join(root, 'features/pins/services/PinService.ts'));
   const queue = load(path.join(root, 'services/sync/queue/queueOperations.ts'));
-  const pulls = load(path.join(root, 'services/sync/pullUpdates.ts'));
+  const pulls = load(path.join(root, 'scripts/test-support/pull-updates.ts'));
   const syncQueue = load(path.join(root, 'services/sync/queue/syncQueue.ts'));
+  load(path.join(root, 'services/sync/transferCoordinator.ts')).finishSetup();
+  const tools = load(path.join(root, 'scripts/test-support/sync-tools.ts'));
   const pin = {
     id: 'qa-pin',
     name: 'QA household',
@@ -189,7 +190,12 @@ function fixture(filename = ':memory:', options = {}) {
   return {
     sqlite,
     storage,
-    load: (file) => load(path.join(root, file)),
+    // Older companion backend tests use the retired full-sync fixture API.
+    // Keep that alias here only; production syncService exports setup only.
+    load: (file) =>
+      file === 'services/sync/syncService.ts'
+        ? { ...load(path.join(root, file)), ...tools }
+        : load(path.join(root, file)),
     db,
     schema,
     utils,
@@ -197,7 +203,8 @@ function fixture(filename = ':memory:', options = {}) {
     pinService,
     queue,
     pulls,
-    syncQueue,
+    // Exercise the production manual worker, retaining the old host-driver name.
+    syncQueue: { ...syncQueue, processQueue: () => syncQueue.uploadPendingChanges() },
     pin,
     values,
     operations,

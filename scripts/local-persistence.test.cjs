@@ -145,13 +145,15 @@ test('live remote deletion preserves pending work; removes clean local rows', as
   assert.equal(f.sqlite.prepare('SELECT count(*) n FROM pins').get().n, 0);
 });
 
-test('simultaneous queue callers await one upload batch', async (t) => {
+test('simultaneous manual uploads reject the second session without duplicate writes', async (t) => {
   const f = setup(t);
   await f.formService.createForm(f.values);
   const first = f.syncQueue.processQueue();
   const second = f.syncQueue.processQueue();
-  assert.equal(first, second);
-  await Promise.all([first, second]);
+  const results = await Promise.allSettled([first, second]);
+  assert.equal(results[0].status, 'fulfilled');
+  assert.equal(results[1].status, 'rejected');
+  assert.match(results[1].reason.message, /transfer.*progress/);
   assert.equal(f.calls.length, 2);
   assert.ok(f.operations().every((op) => op.status === 'completed'));
 });

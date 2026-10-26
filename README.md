@@ -224,7 +224,6 @@ Key sync files:
 │   │       ├── syncQueue.ts        - Explicit upload sessions and queue metrics.
 │   │       ├── syncOperations.ts   - Executes individual sync operations against the API.
 │   │       ├── queueOperations.ts  - Low-level queue DB operations.
-│   │       ├── operationMerge.ts   - Preserve create semantics across offline edits/deletes.
 │   │       └── types.ts            - Sync queue TypeScript types.
 │   ├── websocket/
 │   │   └── WebSocketManager.ts     - WebSocket connection lifecycle and message handling.
@@ -298,3 +297,41 @@ npx tsc --noEmit
 ```
 
 The host suite uses synthetic SQLite/transport fixtures; Jest covers the manual controls, local writes, native upload wrapper and map recovery. Companion backend system tests require the backend checkout beside this repository and its disposable loopback QA services. No test writes to production. Physical-device endurance, low-storage testing and iOS coverage of these combined changes remain incomplete. Keep local-only responses backed up before an app update; do not uninstall or clear storage to resolve an update failure.
+
+### Testing PR #38 before merge
+
+Check out `codex/android-reliability` and record `git rev-parse HEAD` with every test result. The PR can be tested while it is a draft. The October 25 APK and the team's existing TestFlight build do not identify this candidate.
+
+Prerequisites: Node 24, the backend checkout at `../AssetMapping-Backend` for shared types, dependencies installed in both checkouts, and a public Mapbox token configured as `EXPO_PUBLIC_MAPBOX_KEY`. Run `npm ci` and `npm run build:types` in the backend before `npm ci` in the frontend. Native builds also need the existing Mapbox download credential/build configuration. Do not commit `.env` files or credentials.
+
+Use **SO'FORM QA** (`com.anonymous.AssetMapApp.qa`) and a disposable local backend with synthetic records. For compatibility QA, run the existing backend main contract on port 3300 with local PostgreSQL/Redis; backend PR #13 is not required. Configure its `.env` for those disposable services, then use its `npm run migrate` and `PORT=3300 npm run dev`. A freshly migrated database can be populated with synthetic pins/forms through the QA app. Photo integration tests require a separate QA object-storage bucket; do not use the production bucket.
+
+Local Android emulator build:
+
+```sh
+EXPO_PUBLIC_APP_ENV=qa EXPO_PUBLIC_SYNC_PROTOCOL=legacy EXPO_PUBLIC_API_URL=http://10.0.2.2:3300 npx expo run:android --variant release
+```
+
+Local iOS simulator build (Xcode/CocoaPods required):
+
+```sh
+EXPO_PUBLIC_APP_ENV=qa EXPO_PUBLIC_SYNC_PROTOCOL=legacy EXPO_PUBLIC_API_URL=http://127.0.0.1:3300 npx expo run:ios --configuration Release
+```
+
+For EAS, `qa-legacy` produces the Android QA APK and `qa-ios` produces an iOS simulator build, both using the existing server contract. For example, `npx eas-cli build --platform ios --profile qa-ios` can be run by a maintainer with project access and the configured build credentials. Install the resulting simulator app on the same Mac running the QA API. `qa-ios` is a simulator build, not an iPhone/TestFlight build. The current QA URL guard permits loopback addresses only; a physical iPhone needs a separately reviewed reachable QA endpoint/build configuration before write testing. Keep this PR unmerged while that device QA is arranged.
+
+For a USB Android handset, run `adb reverse tcp:3300 tcp:3300` and set the QA app's API URL to `http://127.0.0.1:3300`. Avoid uninstalling an app with unsent records. A separate fresh QA install does not prove regular-package upgrade safety; test an update over a prior QA build with matching signing and synthetic pending work too.
+
+Minimum checklist for this candidate:
+
+- Save a form offline with blank name/ID/age plus zero/false answers; force-close/reopen and verify every value.
+- Save, reconnect, resume and change API settings: no implicit survey upload. Press Upload explicitly and confirm exact answers/UUIDs on the QA server.
+- Upload more than ten operations, interrupt the network, retry, and check pending/failed/blocked totals, parent links and duplicates.
+- Pending or failed work prevents clearing/downloading. After successful upload, clearing is local-only and a new empty-device download restores server records.
+- Pick a **pin** photo from the gallery, save/reopen/upload and retry after interruption. Survey forms have no photo field; image resizing/caps are not included in this candidate.
+- Repeatedly tap entries/Save/Back/Close, switch Map/Pins, zoom and background/resume. Check the four villages and offline Streets packs inside their downloaded bounds.
+- Upgrade with synthetic existing and pending data. Unknown legacy-storage guards must preserve data; if blocked, keep the app installed and report the error. Export/recovery for real legacy phones remains a release gate.
+
+Report source SHA, build profile/package, app build number, OS/device, test steps and expected/actual results. Use synthetic screenshots/logs. Native Android/iOS sign-off remains pending until these exact-build checks are recorded.
+
+The app now has one manual upload worker. Future snapshot reconciliation tools live under `scripts/test-support/` for isolated protocol tests and are not imported by the app. Transfer summaries use SQL aggregates and batched local table notifications, without a two-second polling timer.

@@ -5,10 +5,10 @@ import { fetchForms } from '~/services/api/formsApi';
 import { fetchPins } from '~/services/api/pinsApi';
 import { db } from '~/services/drizzleDb';
 
-import { clearLocalData, downloadLatest } from '../localDataTransfer';
+import { clearLocalData, downloadLatest, getLocalDataSummary } from '../localDataTransfer';
 import { finishSetup } from '../transferCoordinator';
 
-import { createPin } from './fixtures';
+import { createForm, createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
@@ -33,6 +33,33 @@ beforeEach(() => {
   finishSetup();
   jest.mocked(fetchPins).mockResolvedValue({ success: true, data: [serverPin] } as never);
   jest.mocked(fetchForms).mockResolvedValue({ success: true, data: [] });
+});
+
+test('aggregate summary reports zeros on an empty database', async () => {
+  expect(await getLocalDataSummary()).toEqual({
+    pins: 0,
+    forms: 0,
+    pending: 0,
+    failed: 0,
+    unsynced: 0,
+  });
+});
+
+test('aggregate summary retains NULL statuses as unsynced and ignores completed queue history', async () => {
+  await createPin({ id: 'p', name: 'QA', lat: 1, lng: 2 });
+  await createForm({ pinId: 'p', name: '', village: '', villageId: '' });
+  db.update(pins).set({ status: 'synced' }).run();
+  db.update(forms).set({ status: null }).run();
+  db.update(syncQueue).set({ status: 'completed' }).run();
+  expect(await getLocalDataSummary()).toEqual({
+    pins: 1,
+    forms: 1,
+    pending: 0,
+    failed: 0,
+    unsynced: 1,
+  });
+  await expect(clearLocalData()).rejects.toThrow(/upload/i);
+  expect(db.select().from(forms).all()).toHaveLength(1);
 });
 
 test('download refuses any local pins even when they are uploaded', async () => {

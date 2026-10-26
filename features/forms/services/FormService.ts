@@ -7,8 +7,6 @@ import { mapFormDbToForm, mapPinDbToPin, sanitizeFormForDb, sanitizePinForDb } f
 import { validateLocal } from '~/db/validateLocal';
 import { db } from '~/services/drizzleDb';
 import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
-import { scheduleNextProcess } from '~/services/sync/queue/queueState';
-import { processQueue } from '~/services/sync/queue/syncQueue';
 import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
 import { sameContent } from '~/shared/utils/sameContent';
 
@@ -53,7 +51,6 @@ export async function createForm(values: FormValues): Promise<Form> {
       payload: form,
     });
   });
-  scheduleNextProcess(processQueue);
   return form;
 }
 
@@ -87,7 +84,6 @@ export async function updateForm(id: string, updates: FormUpdate, baseline?: For
     });
     return updated;
   });
-  scheduleNextProcess(processQueue);
   return form;
 }
 
@@ -110,7 +106,6 @@ export async function deleteForm(id: string, baseline?: Form): Promise<void> {
       payload: form,
     });
   });
-  scheduleNextProcess(processQueue);
 }
 
 export async function getFormById(id: string): Promise<Form | null> {

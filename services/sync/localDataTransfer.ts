@@ -1,4 +1,4 @@
-import { getTableColumns } from 'drizzle-orm';
+import { count, getTableColumns, sql } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { FORM_ARRAY_FIELDS } from '~/db/formArrayFields';
@@ -15,15 +15,27 @@ import { clearLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata'
 import { getTransferState, runTransfer } from './transferCoordinator';
 
 export async function getLocalDataSummary() {
-  const localPins = db.select().from(pins).all();
-  const localForms = db.select().from(forms).all();
+  const pinCounts = db
+    .select({
+      total: count(),
+      unsynced: sql<number>`coalesce(sum(case when ${pins.status} = 'synced' then 0 else 1 end), 0)`,
+    })
+    .from(pins)
+    .get()!;
+  const formCounts = db
+    .select({
+      total: count(),
+      unsynced: sql<number>`coalesce(sum(case when ${forms.status} = 'synced' then 0 else 1 end), 0)`,
+    })
+    .from(forms)
+    .get()!;
   const metrics = await getQueueMetrics();
   return {
-    pins: localPins.length,
-    forms: localForms.length,
+    pins: pinCounts.total,
+    forms: formCounts.total,
     pending: metrics.pending,
     failed: metrics.failed,
-    unsynced: [...localPins, ...localForms].filter((row) => row.status !== 'synced').length,
+    unsynced: pinCounts.unsynced + formCounts.unsynced,
   };
 }
 
