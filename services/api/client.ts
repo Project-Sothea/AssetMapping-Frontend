@@ -1,7 +1,5 @@
 import type { ApiResponse } from '@assetmapping/shared-types';
 
-import { isLegacySync } from '~/services/sync/protocol';
-
 import { getApiUrl } from '../apiUrl';
 
 let cachedBaseUrl: string | null = null;
@@ -48,7 +46,6 @@ export async function request<T>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(!isLegacySync ? { 'X-SoForm-Sync-Protocol': '2' } : {}),
         ...options.headers,
       },
       signal: controller.signal,

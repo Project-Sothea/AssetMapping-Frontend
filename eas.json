@@ -11,31 +11,6 @@
     "preview": {
       "distribution": "internal"
     },
-    "qa": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_APP_ENV": "qa",
-        "EXPO_PUBLIC_API_URL": "http://10.0.2.2:3300"
-      }
-    },
-    "qa-legacy": {
-      "extends": "qa",
-      "env": {
-        "EXPO_PUBLIC_SYNC_PROTOCOL": "legacy"
-      }
-    },
-    "qa-ios": {
-      "extends": "qa-legacy",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "http://127.0.0.1:3300"
-      },
-      "ios": {
-        "simulator": true
-      }
-    },
     "production": {
       "autoIncrement": true
     }

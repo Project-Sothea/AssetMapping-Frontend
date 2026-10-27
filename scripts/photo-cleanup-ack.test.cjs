@@ -3,10 +3,9 @@ const test = require('node:test');
 
 const { fixture } = require('./test-support/local-fixture.cjs');
 
-async function photoRemoval(t, { legacy = false, cleanup } = {}) {
+async function photoRemoval(t, { cleanup } = {}) {
   const cleanupCalls = [];
   const f = fixture(':memory:', {
-    legacy,
     overrides: {
       '~/services/api/storageApi': {
         deleteObjects: async (keys) => {
@@ -26,7 +25,6 @@ async function photoRemoval(t, { legacy = false, cleanup } = {}) {
 for (const failure of ['http', 'network']) {
   test(`remote-photo cleanup ${failure} failure cannot discard a committed pin ACK or its version`, async (t) => {
     const { f, cleanupCalls } = await photoRemoval(t, {
-      legacy: true,
       cleanup: async () => {
         if (failure === 'network') throw new Error('Network timeout');
         return { success: false, error: 'HTTP 403: storage permission denied' };
@@ -62,7 +60,7 @@ for (const invalid of ['identity', 'version', 'content']) {
         ...request.payload,
         version: request.payload.version + 1,
         ...(invalid === 'identity' ? { id: 'qa-wrong-pin' } : {}),
-        ...(invalid === 'version' ? { version: request.payload.version } : {}),
+        ...(invalid === 'version' ? { version: 0 } : {}),
         ...(invalid === 'content' ? { images: ['qa.jpg'] } : {}),
       },
     }));

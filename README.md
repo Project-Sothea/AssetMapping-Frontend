@@ -284,15 +284,17 @@ Each device generates a stable UUID on first launch (stored in AsyncStorage) via
 
 Pin images are stored locally using Expo's filesystem and synced to the backend via the storage API. `services/images/ImageManager.ts` handles upload, download, and local cache management. Images are referenced by UUID filenames.
 
-## Reliability review and build modes
+## Reliability and testing
 
-- Manual Upload/Download remains the app workflow. Saving, reconnecting, notifications and changing the API URL do not start a data transfer. A fresh empty device may perform its one-time setup download; existing records and unknown legacy storage are preserved for review rather than wiped.
-- Normal builds default to the existing production API contract (`legacy`). `EXPO_PUBLIC_SYNC_PROTOCOL=durable` is reserved for a coordinated backend rollout. QA builds default to durable unless explicitly built with `legacy`, and allow only the loopback QA API.
-- Missing names and household/village IDs remain blank in storage; cards/details display “Not provided”. Existing collection dates are not guessed from identifiers or today. The editor still requires a collection date when saving.
-- Local migrations add query indexes and a durable in-flight journal. Populated unknown legacy schemas stop for export/review before historical destructive migrations.
-- Upstream manual-transfer exclusion, native file uploads, safe image paths, additional villages and map recovery/zoom constraints are retained. Photo uploads use the native file URI without allocating photo-sized JavaScript buffers.
+The app keeps the existing manual Upload/Download workflow and backend contract. There is one regular SO'FORM package; this PR does not add a QA app variant or a future-protocol switch.
 
-Reproducible checks (Node 24):
+- Saving, reconnecting, notifications and changing the API URL do not upload survey responses. Empty-device setup may download once.
+- Blank names and household/village IDs stay blank; cards/details display “Not provided”. Existing collection dates are not guessed.
+- Local query indexes, upload recovery journals and queue-origin metadata preserve responsive reads and interrupted uploads. Unsupported populated older schemas stop before destructive historical migrations.
+- Photo bytes stay on the device while a related upload/deletion is unresolved. Cleanup is best effort and can leave unused files; housekeeping errors do not invalidate a confirmed upload.
+- Current-server checks cannot eliminate its concurrent-write race. Backend PR #13 and its future-protocol experiments are separate work.
+
+Run the current-app regression suites with Node 24:
 
 ```sh
 npm run test:unit
@@ -300,47 +302,23 @@ npm test -- --runInBand
 npx tsc --noEmit
 ```
 
-The host suite uses synthetic SQLite/transport fixtures; Jest covers the manual controls, local writes, native upload wrapper and map recovery. Companion backend system tests require the backend checkout beside this repository and its disposable loopback QA services. No test writes to production. Physical-device endurance, low-storage testing and iOS coverage of these combined changes remain incomplete. Keep local-only responses backed up before an app update; do not uninstall or clear storage to resolve an update failure.
+These tests use synthetic SQLite/network/native fixtures. Future snapshot reconciliation and its research tooling are excluded from this PR.
 
 ### Testing PR #38 before merge
 
-Check out `codex/android-reliability` and record `git rev-parse HEAD` with every test result. The PR can be tested while it is a draft. The October 25 APK and the team's existing TestFlight build do not identify this candidate.
+Check out `codex/android-reliability` and record the source SHA. Keep the backend checkout beside the frontend for the existing shared-types dependency: install its dependencies and run `npm run build:types`, then install frontend dependencies. Use the existing Mapbox/build credentials without committing them.
 
-Prerequisites: Node 24, the backend checkout at `../AssetMapping-Backend` for shared types, dependencies installed in both checkouts, and a public Mapbox token configured as `EXPO_PUBLIC_MAPBOX_KEY`. Run `npm ci` and `npm run build:types` in the backend before `npm ci` in the frontend. Native builds also need the existing Mapbox download credential/build configuration. Do not commit `.env` files or credentials.
+Test the regular app in a disposable emulator/simulator using synthetic records and a dedicated test backend/object bucket. Set `EXPO_PUBLIC_API_URL` before building, then verify the effective URL in Download settings: a previously saved URL overrides that environment variable. Ordinary Android/iOS network security rules apply; use HTTPS where required. This branch has no special QA networking plugin or endpoint restrictions. Do not use production for failure or write tests.
 
-Use **SO'FORM QA** (`com.anonymous.AssetMapApp.qa`) and a disposable local backend with synthetic records. For compatibility QA, run the existing backend main contract on port 3300 with local PostgreSQL/Redis; backend PR #13 is not required. Configure its `.env` for those disposable services, then use its `npm run migrate` and `PORT=3300 npm run dev`. A freshly migrated database can be populated with synthetic pins/forms through the QA app. Photo integration tests require a separate QA object-storage bucket; do not use the production bucket.
+Use the normal `npm run android` / `npm run ios` build commands. Existing APKs labelled SO'FORM QA predate this scope reduction and do not represent the current branch. A fresh install does not prove update safety; test an update over a matching-signed regular build containing synthetic pending work too.
 
-Local Android emulator build:
+Minimum checks:
 
-```sh
-EXPO_PUBLIC_APP_ENV=qa EXPO_PUBLIC_SYNC_PROTOCOL=legacy EXPO_PUBLIC_API_URL=http://10.0.2.2:3300 npx expo run:android --variant release
-```
+- Save offline with blank name/ID/age, zero and false; force-close/reopen and verify every value. Saving, reconnecting and resuming must not upload. Explicit Upload must preserve the UUID, answers and parent link.
+- Upload more than ten changes; interrupt/retry and verify totals and duplicates. Pending/failed/unconfirmed records must prevent Clear/Download. Clearing after successful upload is local-only; downloading into an empty device restores server records.
+- Interrupt a pin-photo upload, delete the pin, restart and retry. Keep prior photos until recovery/deletion resolves. Repeat for child-form upload followed by parent deletion.
+- Close/Back must work during an unrelated upload, with dirty-discard confirmation. Block dismissal/mutation during that editor's own Save/Delete; test a delayed photo picker.
+- Burst-tap entries and Save, use Back/Close, switch Map/Pins, zoom and background/resume. Check the four villages and offline Streets packs.
+- Update with existing/pending data and a missing historical setup marker. Preserve answers/outbox/journals without implicit transfers. Hold malformed uploads individually; incompatible schemas and unknown future setup versions still require recovery assistance. Do not uninstall or clear storage to bypass a failure.
 
-Local iOS simulator build (Xcode/CocoaPods required):
-
-```sh
-EXPO_PUBLIC_APP_ENV=qa EXPO_PUBLIC_SYNC_PROTOCOL=legacy EXPO_PUBLIC_API_URL=http://127.0.0.1:3300 npx expo run:ios --configuration Release
-```
-
-For EAS, `qa-legacy` produces the Android QA APK and `qa-ios` produces an iOS simulator build, both using the existing server contract. For example, `npx eas-cli build --platform ios --profile qa-ios` can be run by a maintainer with project access and the configured build credentials. Install the resulting simulator app on the same Mac running the QA API. `qa-ios` is a simulator build, not an iPhone/TestFlight build. The current QA URL guard permits loopback addresses only; a physical iPhone needs a separately reviewed reachable QA endpoint/build configuration before write testing. Keep this PR unmerged while that device QA is arranged.
-
-For a USB Android handset, run `adb reverse tcp:3300 tcp:3300` and set the QA app's API URL to `http://127.0.0.1:3300`. Avoid uninstalling an app with unsent records. A separate fresh QA install does not prove regular-package upgrade safety; test an update over a prior QA build with matching signing and synthetic pending work too.
-
-Minimum checklist for this candidate:
-
-- Save a form offline with blank name/ID/age plus zero/false answers; force-close/reopen and verify every value.
-- Save, reconnect, resume and change API settings: no implicit survey upload. Press Upload explicitly and confirm exact answers/UUIDs on the QA server.
-- Upload more than ten operations, interrupt the network, retry, and check pending/failed/blocked totals, parent links and duplicates.
-- Pending or failed work prevents clearing/downloading. After successful upload, clearing is local-only and a new empty-device download restores server records.
-- Pick a **pin** photo from the gallery, save/reopen/upload and retry after interruption. Survey forms have no photo field; image resizing/caps are not included in this candidate.
-- Interrupt a photo-pin upload, delete the pin, restart and retry: prior photos must remain available until the earlier revision and deletion resolve. Also test interrupted child-form uploads followed by parent-pin deletion; the queue must finish after confirmed cascade.
-- During an unrelated upload, open a form and use Close/Back; dismissal must work, with a discard prompt for unsaved changes. During that editor's own Save/Delete, keep dismissal and field/photo mutations blocked until its action ends. Try a gallery picker returning after Save starts.
-- Repeatedly tap entries/Save/Back/Close, switch Map/Pins, zoom and background/resume. Check the four villages and offline Streets packs inside their downloaded bounds.
-- Upgrade with synthetic existing/pending data and remove only the historical setup marker. The app must open with identical answers and queue/journal entries and no implicit transfer. Explicit Upload must hold stale or malformed changes individually while uploading unrelated valid records. Check the nullable origin migration preserves existing rows and does not automatically trust old deletions.
-- Incompatible older schemas and unknown non-null setup versions still block safely. Keep the app installed and report the error. Export/recovery remains required before rollout to those affected phones.
-
-Report source SHA, build profile/package, app build number, OS/device, test steps and expected/actual results. Use synthetic screenshots/logs. Native Android/iOS sign-off remains pending until these exact-build checks are recorded.
-
-The app now has one manual upload worker. Future snapshot reconciliation tools live under `scripts/test-support/` for isolated protocol tests and are not imported by the app. Transfer summaries use SQL aggregates and batched local table notifications, without a two-second polling timer.
-
-Deleted-pin photos are retained while any pin revision remains unresolved. Confirmed deletion retires superseded child recovery entries atomically; local directory cleanup follows acknowledgement. Interrupted cleanup can retry on a later explicit upload. File cleanup errors can leave unused local/remote files and do not invalidate a validated saved-record acknowledgement. Local files from a canceled, never-uploaded pin have no durable cleanup-retry record; storage housekeeping is best effort.
+Report source SHA, package/build number, OS/device, steps and expected/actual results. Physical-device endurance, low-storage and exact-build Android/iOS sign-off remain pending. Survey forms have no photo field; image resizing/caps are outside this PR.

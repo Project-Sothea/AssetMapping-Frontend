@@ -23,31 +23,29 @@ async function interruptedChildUpdate(f) {
   return form;
 }
 
-for (const legacy of [true, false]) {
-  test(`confirmed pin deletion retires failed child journals (${legacy ? 'legacy' : 'durable'})`, async (t) => {
-    const f = fixture(':memory:', { legacy });
-    t.after(f.close);
-    await interruptedChildUpdate(f);
-    await f.pinService.deletePin(f.pin.id);
-    // The child retry still fails; the later acknowledged parent cascade supersedes it.
-    f.setSyncResponse(async (request) =>
-      request.entityType === 'form'
-        ? { success: false, error: 'Network timeout' }
-        : { success: true, data: { id: request.payload.id, deleted: true } }
-    );
-    assert.equal((await f.syncQueue.uploadPendingChanges()).remaining, 0);
-    assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sync_inflight').get().n, 0);
-    f.setForms([]);
-    f.setPins([]);
-    assert.equal((await f.syncQueue.uploadPendingChanges()).remaining, 0);
-  });
-}
+test('confirmed pin deletion retires failed child journals', async (t) => {
+  const f = fixture();
+  t.after(f.close);
+  await interruptedChildUpdate(f);
+  await f.pinService.deletePin(f.pin.id);
+  // The child retry still fails; the later acknowledged parent cascade supersedes it.
+  f.setSyncResponse(async (request) =>
+    request.entityType === 'form'
+      ? { success: false, error: 'Network timeout' }
+      : { success: true, data: { id: request.payload.id, deleted: true } }
+  );
+  assert.equal((await f.syncQueue.uploadPendingChanges()).remaining, 0);
+  assert.equal(f.sqlite.prepare('SELECT count(*) n FROM sync_inflight').get().n, 0);
+  f.setForms([]);
+  f.setPins([]);
+  assert.equal((await f.syncQueue.uploadPendingChanges()).remaining, 0);
+});
 
 test('a lost parent deletion acknowledgement preserves child recovery until a later confirmation after restart', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'soform-child-journal-'));
   const filename = path.join(dir, 'qa.sqlite');
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-  const first = fixture(filename, { legacy: true });
+  const first = fixture(filename);
   const form = await interruptedChildUpdate(first);
   await first.pinService.deletePin(first.pin.id);
   first.setSyncResponse(async () => ({ success: false, error: 'Network timeout after commit' }));
@@ -55,7 +53,7 @@ test('a lost parent deletion acknowledgement preserves child recovery until a la
   assert.equal(first.sqlite.prepare('SELECT count(*) n FROM sync_inflight').get().n, 2);
   first.close();
 
-  const recovered = fixture(filename, { legacy: true, reopen: true });
+  const recovered = fixture(filename, { reopen: true });
   t.after(recovered.close);
   // Parent deletion committed on the server. Its GET 404 independently confirms
   // the cascade; the old child's update also returns 404 and cannot replay.
@@ -67,7 +65,7 @@ test('a lost parent deletion acknowledgement preserves child recovery until a la
 });
 
 test('confirmed pin deletion also retires journals for children already deleted locally', async (t) => {
-  const f = fixture(':memory:', { legacy: true });
+  const f = fixture();
   t.after(f.close);
   const form = await interruptedChildUpdate(f);
   await f.formService.deleteForm(form.id);

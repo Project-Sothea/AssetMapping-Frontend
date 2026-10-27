@@ -9,23 +9,6 @@ const ts = require('typescript');
 
 const { fixture } = require('./test-support/local-fixture.cjs');
 
-test('ordinary builds default to production-compatible sync; QA/durable are explicit', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../services/sync/protocol.ts'), 'utf8');
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS },
-  });
-  const sandbox = { exports: {}, process: { env: {} } };
-  vm.runInNewContext(outputText, sandbox);
-  const { resolveSyncProtocol, isLegacySync } = sandbox.exports;
-  assert.equal(isLegacySync, true);
-  assert.equal(resolveSyncProtocol(undefined, undefined), 'legacy');
-  assert.equal(resolveSyncProtocol('standard', undefined), 'legacy');
-  assert.equal(resolveSyncProtocol('qa', undefined), 'durable');
-  assert.equal(resolveSyncProtocol('standard', 'durable'), 'durable');
-  assert.equal(resolveSyncProtocol('qa', 'legacy'), 'legacy');
-  assert.throws(() => resolveSyncProtocol('standard', 'invalid'));
-});
-
 test('manual upload processes more than ten queued rows in one protected session', async (t) => {
   const f = fixture();
   t.after(f.close);
@@ -118,42 +101,4 @@ test('production services expose setup and manual upload without retired schedul
   ])
     assert.doesNotMatch(fs.readFileSync(path.join(root, name), 'utf8'), /scheduleNextProcess/);
   assert.equal(fs.existsSync(path.join(root, 'services/sync/pullUpdates.ts')), false);
-});
-
-test('shared QA profiles select the legacy API and leave standard iOS networking unchanged', () => {
-  const root = path.join(__dirname, '..');
-  const profiles = JSON.parse(fs.readFileSync(path.join(root, 'eas.json'), 'utf8')).build;
-  assert.equal(profiles['qa-legacy'].extends, 'qa');
-  assert.equal(profiles['qa-legacy'].env.EXPO_PUBLIC_SYNC_PROTOCOL, 'legacy');
-  assert.equal(profiles['qa-ios'].extends, 'qa-legacy');
-  assert.equal(profiles['qa-ios'].ios.simulator, true);
-  assert.equal(profiles['qa-ios'].env.EXPO_PUBLIC_API_URL, 'http://127.0.0.1:3300');
-  const source = fs.readFileSync(path.join(root, 'app.config.ts'), 'utf8');
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  });
-  const configure = (env) => {
-    const sandbox = { exports: {}, process: { env }, URL };
-    vm.runInNewContext(outputText, sandbox);
-    return sandbox.exports.default({ config: {} });
-  };
-  const qa = configure({
-    EXPO_PUBLIC_APP_ENV: 'qa',
-    EXPO_PUBLIC_API_URL: 'http://127.0.0.1:3300',
-    EXPO_PUBLIC_SYNC_PROTOCOL: 'legacy',
-  });
-  assert.equal(qa.ios.bundleIdentifier, 'com.anonymous.AssetMapApp.qa');
-  assert.equal(qa.ios.infoPlist.NSAppTransportSecurity.NSAllowsLocalNetworking, true);
-  assert.equal(qa.extra.syncProtocol, 'legacy');
-  const standard = configure({});
-  assert.equal(standard.ios.infoPlist.NSAppTransportSecurity, undefined);
-  assert.equal(standard.extra.syncProtocol, 'legacy');
-  assert.throws(
-    () =>
-      configure({
-        EXPO_PUBLIC_APP_ENV: 'qa',
-        EXPO_PUBLIC_API_URL: 'https://assetmapping-backend.up.railway.app',
-      }),
-    /blocked/
-  );
 });

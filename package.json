@@ -13,8 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "test:unit": "node --test scripts/*.test.cjs",
-    "test:perf": "node scripts/benchmark-local.cjs"
+    "test:unit": "node --test scripts/*.test.cjs"
   },
   "dependencies": {
     "@assetmapping/shared-types": "file:../AssetMapping-Backend/packages/shared-types",

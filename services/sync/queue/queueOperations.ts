@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { forms, pins, syncQueue, syncInflight } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
 import { checkLegacyUpload } from '~/services/sync/legacySync';
-import { isLegacySync } from '~/services/sync/protocol';
 import { safeJsonParse } from '~/shared/utils/parsing';
 
 import { validateServerAcknowledgement } from './acknowledgement';
@@ -120,12 +119,14 @@ export async function processOperation(
   // Validation and journaling share one synchronous turn before any HTTP work.
   insertJournal(op);
   const expected = normalizeQueuedPayload(op, payload);
-  // Old journal request bodies retain their exact meaning for durable receipts.
+  // Preserve old journal request bodies when retrying their idempotency keys.
   // New atomic writes use a complete, deterministic business snapshot on wire.
   const wirePayload = op.writeOrigin === ATOMIC_WRITE_ORIGIN ? expected : payload;
-  const recovered = isLegacySync
-    ? await checkLegacyUpload(op.entityType as EntityType, op.operation as Operation, expected)
-    : undefined;
+  const recovered = await checkLegacyUpload(
+    op.entityType as EntityType,
+    op.operation as Operation,
+    expected
+  );
   const result =
     recovered ??
     (op.entityType === 'pin'

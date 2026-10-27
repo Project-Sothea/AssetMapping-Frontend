@@ -44,16 +44,30 @@ function fixture(filename = ':memory:', options = {}) {
   let remoteForms = [];
   let remotePins = [];
   let calls = [];
-  let syncResponse = async (request) => ({
-    success: true,
-    data:
+  // Model the current server's saved rows, so every preflight/retry GET observes
+  // prior successful writes rather than an unrelated, permanently empty list.
+  let syncResponse = async (request) => {
+    const rows = request.entityType === 'pin' ? remotePins : remoteForms;
+    const existing = rows.find((row) => row.id === request.payload.id);
+    const remaining = rows.filter((row) => row.id !== request.payload.id);
+    const data =
       request.operation === 'delete'
         ? { id: request.payload.id, deleted: true }
         : {
             ...request.payload,
-            version: request.operation === 'create' ? 1 : Number(request.payload.version) + 1,
-          },
-  });
+            version:
+              request.operation === 'create'
+                ? 1
+                : Number(existing?.version ?? request.payload.version) + 1,
+          };
+    if (request.operation !== 'delete') remaining.push(JSON.parse(JSON.stringify(data)));
+    if (request.entityType === 'pin') {
+      remotePins = remaining;
+      if (request.operation === 'delete')
+        remoteForms = remoteForms.filter((row) => row.pinId !== request.payload.id);
+    } else remoteForms = remaining;
+    return { success: true, data };
+  };
   const cache = new Map();
   const root = path.resolve(__dirname, '../..');
   function load(filename) {
@@ -98,8 +112,6 @@ function fixture(filename = ':memory:', options = {}) {
       if (id === '~/hooks/RealTimeSync/useTransferState')
         return { useTransferState: () => ({ busy: false, setupReady: true }) };
       if (id === '~/services/sync/transferCoordinator') return { assertLocalWritesAllowed() {} };
-      if (id === '~/services/sync/protocol' || id === './protocol')
-        return { isLegacySync: options.legacy === true };
       if (id === '~/services/images/ImageManager')
         return {
           deleteImagesByFilename: async () => {},
@@ -117,7 +129,6 @@ function fixture(filename = ':memory:', options = {}) {
       if (!options.apiUrl && id === '~/services/api/formsApi')
         return {
           fetchForms: async () => ({ success: true, data: remoteForms }),
-          fetchFormsSince: async () => ({ success: true, data: remoteForms }),
           fetchForm: async (id) =>
             remoteForms.some((f) => f.id === id)
               ? { success: true, data: remoteForms.find((f) => f.id === id) }
@@ -126,7 +137,6 @@ function fixture(filename = ':memory:', options = {}) {
       if (!options.apiUrl && id === '~/services/api/pinsApi')
         return {
           fetchPins: async () => ({ success: true, data: remotePins }),
-          fetchPinsSince: async () => ({ success: true, data: remotePins }),
           fetchPin: async (id) =>
             remotePins.some((p) => p.id === id)
               ? { success: true, data: remotePins.find((p) => p.id === id) }
@@ -155,10 +165,8 @@ function fixture(filename = ':memory:', options = {}) {
   const formService = load(path.join(root, 'features/forms/services/FormService.ts'));
   const pinService = load(path.join(root, 'features/pins/services/PinService.ts'));
   const queue = load(path.join(root, 'services/sync/queue/queueOperations.ts'));
-  const pulls = load(path.join(root, 'scripts/test-support/pull-updates.ts'));
   const syncQueue = load(path.join(root, 'services/sync/queue/syncQueue.ts'));
   load(path.join(root, 'services/sync/transferCoordinator.ts')).finishSetup();
-  const tools = load(path.join(root, 'scripts/test-support/sync-tools.ts'));
   const pin = {
     id: 'qa-pin',
     name: 'QA household',
@@ -194,21 +202,14 @@ function fixture(filename = ':memory:', options = {}) {
   return {
     sqlite,
     storage,
-    // Older companion backend tests use the retired full-sync fixture API.
-    // Keep that alias here only; production syncService exports setup only.
-    load: (file) =>
-      file === 'services/sync/syncService.ts'
-        ? { ...load(path.join(root, file)), ...tools }
-        : load(path.join(root, file)),
+    load: (file) => load(path.join(root, file)),
     db,
     schema,
     utils,
     formService,
     pinService,
     queue,
-    pulls,
-    // Exercise the production manual worker, retaining the old host-driver name.
-    syncQueue: { ...syncQueue, processQueue: () => syncQueue.uploadPendingChanges() },
+    syncQueue,
     pin,
     values,
     operations,

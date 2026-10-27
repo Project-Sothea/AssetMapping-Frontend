@@ -1,5 +1,3 @@
-import { isLegacySync } from '~/services/sync/protocol';
-
 import type { Operation } from './types';
 
 /** Validate the authoritative record before completing an upload or removing photos. */
@@ -21,9 +19,7 @@ export function validateServerAcknowledgement(
     if (
       typeof result.version !== 'number' ||
       !Number.isSafeInteger(result.version) ||
-      (isLegacySync
-        ? result.version < (operation === 'create' ? 1 : Number(payload.version))
-        : result.version !== (operation === 'create' ? 1 : Number(payload.version) + 1))
+      result.version < (operation === 'create' ? 1 : Number(payload.version))
     )
       throw new Error('The server did not confirm a saved version.');
     if (!sameServerAnswers(payload, result))
