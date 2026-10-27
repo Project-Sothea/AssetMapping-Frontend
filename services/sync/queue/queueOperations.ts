@@ -10,6 +10,12 @@ import { safeJsonParse } from '~/shared/utils/parsing';
 import { validateServerAcknowledgement } from './acknowledgement';
 import { syncPin, syncForm } from './syncOperations';
 import { Operation, EntityType } from './types';
+import {
+  ATOMIC_WRITE_ORIGIN,
+  QueuedOperationValidationError,
+  validateQueuedOperation,
+  normalizeQueuedPayload,
+} from './validateQueuedOperation';
 
 export type QueueItem = typeof syncQueue.$inferSelect;
 type QueueWriter = Pick<typeof db, 'select' | 'update' | 'insert' | 'delete'>;
@@ -51,6 +57,7 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
       params.operation === 'delete' &&
       existing.status === 'pending' &&
       existing.operation === 'create' &&
+      existing.writeOrigin === ATOMIC_WRITE_ORIGIN &&
       existing.attempts === 0 &&
       !existing.lastAttemptAt &&
       !inflight
@@ -71,6 +78,14 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
         lastError: null,
         sequenceNumber: Date.now(),
         idempotencyKey: revision,
+        // A new edit cannot prove that an older unjournaled create was never
+        // transmitted. Keep that uncertainty until an explicit delete or ACK.
+        writeOrigin:
+          existing.operation === 'create' &&
+          params.operation === 'update' &&
+          existing.writeOrigin !== ATOMIC_WRITE_ORIGIN
+            ? null
+            : ATOMIC_WRITE_ORIGIN,
       })
       .where(eq(syncQueue.id, existing.id))
       .run();
@@ -92,6 +107,7 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
       sequenceNumber: Date.now(),
       deviceId: 'mobile-app',
       createdAt: timestamp,
+      writeOrigin: ATOMIC_WRITE_ORIGIN,
     })
     .run();
   return id;
@@ -100,28 +116,20 @@ export function enqueueInTransaction(writer: QueueWriter, params: EnqueueParams)
 export async function processOperation(
   op: QueueItem
 ): Promise<Record<string, unknown> | undefined> {
-  if (
-    !['pin', 'form'].includes(op.entityType) ||
-    !['create', 'update', 'delete'].includes(op.operation)
-  )
-    throw new Error('Invalid local outbox operation. Saved data needs review.');
-  let payload: Record<string, unknown>;
-  try {
-    payload = JSON.parse(op.payload);
-  } catch {
-    throw new Error('Invalid local outbox payload. Saved data needs review.');
-  }
-  if (!payload || typeof payload !== 'object' || payload.id !== op.entityId)
-    throw new Error('Outbox identity mismatch. Saved data needs review.');
+  const payload = validateQueuedOperation(op);
+  const expected = normalizeQueuedPayload(op, payload);
+  // Old journal request bodies retain their exact meaning for durable receipts.
+  // New atomic writes use a complete, deterministic business snapshot on wire.
+  const wirePayload = op.writeOrigin === ATOMIC_WRITE_ORIGIN ? expected : payload;
   const recovered = isLegacySync
-    ? await checkLegacyUpload(op.entityType as EntityType, op.operation as Operation, payload)
+    ? await checkLegacyUpload(op.entityType as EntityType, op.operation as Operation, expected)
     : undefined;
   const result =
     recovered ??
     (op.entityType === 'pin'
-      ? await syncPin(op.operation as Operation, payload as any, op.idempotencyKey)
-      : await syncForm(op.operation as Operation, payload as any, op.idempotencyKey));
-  validateServerAcknowledgement(op.entityId, op.operation as Operation, payload, result);
+      ? await syncPin(op.operation as Operation, wirePayload as any, op.idempotencyKey)
+      : await syncForm(op.operation as Operation, wirePayload as any, op.idempotencyKey));
+  validateServerAcknowledgement(op.entityId, op.operation as Operation, expected, result);
   return result;
 }
 
@@ -209,6 +217,7 @@ export function markCompleted(op: QueueItem, syncedData?: Record<string, unknown
 // Stage before any HTTP request. A process death cannot forget which payload
 // might have committed, even if the worker has since edited the same record.
 export function stageOperation(op: QueueItem): void {
+  validateQueuedOperation(op);
   db.insert(syncInflight)
     .values({
       key: op.idempotencyKey,
@@ -228,7 +237,36 @@ export function pendingInflight(): QueueItem[] {
     .from(syncInflight)
     .where(eq(syncInflight.status, 'pending'))
     .all()
-    .map((row) => JSON.parse(row.operation) as QueueItem);
+    .map((row) => {
+      let stored: Partial<QueueItem> = {};
+      try {
+        const parsed = JSON.parse(row.operation);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) stored = parsed;
+      } catch {
+        /* Preserve raw recovery data; the per-operation validator reports it. */
+      }
+      // Outer identities identify the actual journal row even when its inner
+      // snapshot is malformed. Never rewrite that original snapshot on failure.
+      return {
+        createdAt: '',
+        operation: 'invalid',
+        payload: JSON.stringify({ id: row.entityId }),
+        attempts: 0,
+        maxAttempts: 3,
+        lastError: null,
+        lastAttemptAt: null,
+        sequenceNumber: null,
+        dependsOn: null,
+        deviceId: null,
+        writeOrigin: null,
+        ...stored,
+        id: row.queueId,
+        idempotencyKey: row.key,
+        entityType: row.entityType,
+        entityId: row.entityId,
+        status: row.status,
+      } as QueueItem;
+    });
 }
 
 export function hasInflight(type: string, id: string): boolean {
@@ -256,6 +294,13 @@ export async function handleError(op: QueueItem, error: Error): Promise<void> {
       .set(update)
       .where(and(eq(syncQueue.id, op.id), eq(syncQueue.idempotencyKey, op.idempotencyKey)))
       .run();
+    if (error instanceof QueuedOperationValidationError) {
+      tx.update(syncInflight)
+        .set({ status: 'failed' })
+        .where(eq(syncInflight.key, op.idempotencyKey))
+        .run();
+      return;
+    }
     // A 4xx response proves that this request did not commit. A timeout, process
     // interruption or local acknowledgement-write failure leaves outcome unknown.
     if (/HTTP 4\d\d/.test(error.message))

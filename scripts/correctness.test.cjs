@@ -12,12 +12,11 @@ function setup(t, options) {
 test('a missing reset marker must never erase a saved response or outbox', async (t) => {
   const f = setup(t);
   const form = await f.formService.createForm(f.values);
-  await assert.rejects(
-    f.load('services/sync/localDataReset.ts').resetLocalDataOnce(),
-    /review|saved|pending/i
-  );
+  assert.equal(await f.load('services/sync/localDataReset.ts').resetLocalDataOnce(), false);
   assert.ok(await f.formService.getFormById(form.id));
   assert.equal(f.operations().length, 2);
+  assert.equal(f.storage.get('localDataResetVersion'), '1');
+  assert.equal(f.calls.length, 0);
 });
 
 test('an older download arriving after a newer one must not regress answers or version', async (t) => {

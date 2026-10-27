@@ -175,6 +175,8 @@ export const syncQueue = sqliteTable(
     sequenceNumber: integer(),
     dependsOn: text(),
     deviceId: text(),
+    // Written only alongside an atomic local mutation; never backfill legacy rows.
+    writeOrigin: text(),
   },
   (table) => [
     index('queue_entity_status_idx').on(table.entityType, table.entityId, table.status),

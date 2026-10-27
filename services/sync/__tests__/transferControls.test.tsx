@@ -61,6 +61,37 @@ test('download and clearing are disabled while local unsent work exists', async 
   expect(button('Download latest data').props.disabled).toBe(true);
   expect(button('Clear local data').props.disabled).toBe(true);
   expect(text()).toContain('3 pending');
+  expect(text()).not.toContain('but there are no pending uploads');
+});
+
+test.each([1, 3])(
+  '%s locally unconfirmed records without queued work show a warning and cannot be cleared',
+  async (unsynced) => {
+    jest
+      .mocked(getLocalDataSummary)
+      .mockResolvedValue({ pins: 2, forms: 1, pending: 0, failed: 0, unsynced });
+    await mount();
+    expect(text()).toContain(
+      `${unsynced} locally saved ${unsynced === 1 ? 'record is' : 'records are'} not confirmed uploaded`
+    );
+    expect(text()).toContain('but there are no pending uploads');
+    expect(text()).toContain('Keep this data on the device and contact the app team.');
+    expect(button('Upload changes').props.disabled).toBe(true);
+    expect(button('Clear local data').props.disabled).toBe(true);
+    expect(button('Download latest data').props.disabled).toBe(true);
+    expect(uploadPendingChanges).not.toHaveBeenCalled();
+    expect(clearLocalData).not.toHaveBeenCalled();
+    expect(downloadLatest).not.toHaveBeenCalled();
+  }
+);
+
+test('failed queued uploads do not show the missing-queue warning', async () => {
+  jest
+    .mocked(getLocalDataSummary)
+    .mockResolvedValue({ pins: 2, forms: 1, pending: 0, failed: 1, unsynced: 3 });
+  await mount();
+  expect(text()).not.toContain('but there are no pending uploads');
+  expect(button('Upload changes').props.disabled).toBe(false);
 });
 
 test('transfer text has an opaque light surface over the dark Download background', async () => {

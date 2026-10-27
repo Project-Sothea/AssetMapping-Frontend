@@ -19,6 +19,7 @@ import {
   hasInflight,
 } from './queueOperations';
 import type { QueueMetrics, UploadResult } from './types';
+import { validateQueuedOperation } from './validateQueuedOperation';
 
 class BlockedUploadError extends Error {}
 
@@ -57,14 +58,9 @@ async function retryFailed(): Promise<void> {
       .from(syncInflight)
       .where(eq(syncInflight.status, 'failed'))
       .all()) {
-      const op = JSON.parse(row.operation);
-      tx.update(syncInflight)
-        .set({
-          status: 'pending',
-          operation: JSON.stringify({ ...op, attempts: 0, status: 'pending', lastError: null }),
-        })
-        .where(eq(syncInflight.key, row.key))
-        .run();
+      // Manual Retry schedules one more attempt without rewriting recovery evidence.
+      // The replay reader takes status from this outer row, even for malformed JSON.
+      tx.update(syncInflight).set({ status: 'pending' }).where(eq(syncInflight.key, row.key)).run();
     }
   });
 }
@@ -107,7 +103,7 @@ export async function uploadPendingChanges(
       if (!op || op.status !== 'pending') continue;
       let payload: Record<string, unknown> = {};
       try {
-        payload = JSON.parse(op.payload);
+        payload = validateQueuedOperation(op);
         if (
           (op.entityType === 'form' && failedPins.has(String(payload.pinId))) ||
           (!staged && hasInflight(op.entityType, op.entityId))
