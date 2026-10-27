@@ -1,9 +1,9 @@
 // Isolated QA helpers for snapshot/concurrency tests. Never imported by the app.
 import { isLegacySync } from '~/services/sync/protocol';
 import { uploadPendingChanges } from '~/services/sync/queue/syncQueue';
-import { createSingleFlight } from '~/shared/utils/singleFlight';
 
 import { pullLegacyCollections, pullSnapshot } from './pull-updates';
+import { createSingleFlight } from './singleFlight';
 
 const flight = createSingleFlight();
 let requested = false;

@@ -38,21 +38,21 @@ export function PinEditor(props: PinEditorProps) {
   const submitRef = useRef<(() => void) | null>(null);
   const isCreate = props.mode === 'create';
 
-  const handleCreateSubmit = async (values: PinValues) => {
-    if (!values.lat || !values.lng) {
-      Alert.alert('Error creating pin');
-      return;
-    }
+  const runAction = async (
+    action: () => Promise<unknown>,
+    successMessage: string,
+    errorTitle: string
+  ) => {
     if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
     props.onBusyChange?.(true);
     try {
-      await createPinAsync(values);
-      Alert.alert('Pin Created!');
+      await action();
+      Alert.alert(successMessage);
       props.onClose();
     } catch (error) {
-      Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
+      Alert.alert(errorTitle, error instanceof Error ? error.message : 'Unknown error');
     } finally {
       actionRunning.current = false;
       setBusy(false);
@@ -60,37 +60,36 @@ export function PinEditor(props: PinEditorProps) {
     }
   };
 
+  const handleCreateSubmit = async (values: PinValues) => {
+    if (!values.lat || !values.lng) {
+      Alert.alert('Error creating pin');
+      return;
+    }
+    return runAction(() => createPinAsync(values), 'Pin Created!', 'Failed to create pin');
+  };
+
   const handleUpdateSubmit = async (values: PinValues) => {
     if (!values.lat || !values.lng) {
       Alert.alert('Error updating pin');
       return;
     }
-    if (actionRunning.current || transferBusy) return;
-    actionRunning.current = true;
-    setBusy(true);
-    props.onBusyChange?.(true);
-    try {
-      await updatePinAsync({
-        id: values.id,
-        baseline: props.mode === 'edit' ? props.pin : undefined,
-        updates: {
-          name: values.name,
-          cityVillage: values.cityVillage,
-          address: values.address,
-          description: values.description,
-          type: values.type,
-          images: values.images,
-        },
-      });
-      Alert.alert('Pin Updated!');
-      props.onClose();
-    } catch (error) {
-      Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
-    } finally {
-      actionRunning.current = false;
-      setBusy(false);
-      props.onBusyChange?.(false);
-    }
+    return runAction(
+      () =>
+        updatePinAsync({
+          id: values.id,
+          baseline: props.mode === 'edit' ? props.pin : undefined,
+          updates: {
+            name: values.name,
+            cityVillage: values.cityVillage,
+            address: values.address,
+            description: values.description,
+            type: values.type,
+            images: values.images,
+          },
+        }),
+      'Pin Updated!',
+      'Failed to update pin'
+    );
   };
 
   const handleDelete = async () => {
@@ -99,21 +98,11 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error deleting pin');
       return;
     }
-    if (actionRunning.current || transferBusy) return;
-    actionRunning.current = true;
-    setBusy(true);
-    props.onBusyChange?.(true);
-    try {
-      await deletePinAsync({ id: props.pin.id, baseline: props.pin });
-      Alert.alert('Pin Deleted!');
-      props.onClose();
-    } catch (error) {
-      Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
-    } finally {
-      actionRunning.current = false;
-      setBusy(false);
-      props.onBusyChange?.(false);
-    }
+    return runAction(
+      () => deletePinAsync({ id: props.pin.id, baseline: props.pin }),
+      'Pin Deleted!',
+      'Failed to delete pin'
+    );
   };
 
   return (

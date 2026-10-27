@@ -26,25 +26,27 @@ export function validateServerAcknowledgement(
         : result.version !== (operation === 'create' ? 1 : Number(payload.version) + 1))
     )
       throw new Error('The server did not confirm a saved version.');
-    for (const [key, value] of Object.entries(payload)) {
-      if (
-        ['id', 'createdAt', 'updatedAt', 'version', 'status'].includes(key) ||
-        value === undefined
-      )
-        continue;
-      // Postgres stores legacy map coordinates as REAL (32-bit); compare those
-      // within its precision. Survey answers and all other values must match exactly.
-      if (
-        ['lat', 'lng'].includes(key) &&
-        typeof value === 'number' &&
-        typeof result[key] === 'number' &&
-        Math.abs(value - (result[key] as number)) < 0.00001
-      )
-        continue;
-      if (JSON.stringify(value) !== JSON.stringify(result[key]))
-        throw new Error(
-          'The server confirmed different saved content. Your local answer is preserved for review.'
-        );
-    }
+    if (!sameServerAnswers(payload, result))
+      throw new Error(
+        'The server confirmed different saved content. Your local answer is preserved for review.'
+      );
   }
+}
+
+/** Compare saved business answers, allowing only PostgreSQL REAL coordinate precision. */
+export function sameServerAnswers(
+  expected: Record<string, unknown>,
+  actual: Record<string, unknown>
+): boolean {
+  return Object.entries(expected).every(([key, value]) => {
+    if (['id', 'createdAt', 'updatedAt', 'version', 'status'].includes(key) || value === undefined)
+      return true;
+    if (
+      ['lat', 'lng'].includes(key) &&
+      typeof value === 'number' &&
+      typeof actual[key] === 'number'
+    )
+      return Math.abs(value - actual[key]) < 0.00001;
+    return JSON.stringify(value) === JSON.stringify(actual[key]);
+  });
 }

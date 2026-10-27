@@ -1,10 +1,12 @@
 import type { Form } from '@assetmapping/shared-types';
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, TouchableOpacity } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 import { FormEditor } from '~/features/forms/components/FormEditor';
+import { FormModal } from '~/features/forms/components/FormModal';
 import GeneralSection from '~/features/forms/components/GeneralSection';
+import ModalWrapper from '~/shared/components/ui/ModalWrapper';
 
 let mockTransferBusy = false;
 const mockCreate = jest.fn();
@@ -168,6 +170,54 @@ test.each(['save', 'delete'] as const)(
       await pending;
     });
     await act(async () => guard?.());
+    if (action === 'save') {
+      expect(discard()).toBeDefined();
+      await act(async () => discard()?.onPress?.());
+    }
+    expect(close).toHaveBeenCalledTimes(1);
+  }
+);
+
+test.each(['save', 'delete'] as const)(
+  'the modal delegates dismissal to the editor guard during its own %s and after failure',
+  async (action) => {
+    const operation = deferred();
+    (action === 'save' ? mockUpdate : mockDelete).mockReturnValueOnce(operation.promise);
+    const modal = () => (
+      <FormModal pinId="test-pin" selectedForm={selectedForm} visible onClose={close} />
+    );
+    await act(async () => {
+      renderer = create(modal());
+    });
+    await act(async () => {
+      renderer.root
+        .findAllByType(TouchableOpacity)
+        .find((button) => button.findAllByProps({ name: 'edit' }).length)!
+        .props.onPress();
+    });
+    if (action === 'save') await makeDirty();
+    let pending!: Promise<void>;
+    await act(async () => {
+      if (action === 'save') {
+        pending = renderer.root.findByProps({ accessibilityLabel: 'Save form' }).props.onPress();
+      } else {
+        renderer.root.findByProps({ accessibilityLabel: 'Delete form' }).props.onPress();
+        pending = jest
+          .mocked(Alert.alert)
+          .mock.calls[0][2]?.find((button) => button.text === 'Delete')
+          ?.onPress?.() as unknown as Promise<void>;
+      }
+    });
+    expect(action === 'save' ? mockUpdate : mockDelete).toHaveBeenCalledTimes(1);
+    await act(async () => renderer.root.findByType(ModalWrapper).props.onClose());
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => {
+      operation.reject(new Error('Synthetic storage failure'));
+      await pending;
+    });
+    mockTransferBusy = true;
+    await act(async () => renderer.update(modal()));
+    await act(async () => renderer.root.findByType(ModalWrapper).props.onClose());
     if (action === 'save') {
       expect(discard()).toBeDefined();
       await act(async () => discard()?.onPress?.());

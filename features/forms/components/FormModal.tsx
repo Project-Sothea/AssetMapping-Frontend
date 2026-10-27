@@ -17,16 +17,13 @@ type FormModalProps = {
 export function FormModal({ visible, pinId, selectedForm, onClose, isSynced }: FormModalProps) {
   const [isEditing, setIsEditing] = useState(!selectedForm);
 
-  const busy = useRef(false);
   const guard = useRef<(() => void) | null>(null);
   const updateGuard = useCallback((value: (() => void) | null) => {
     guard.current = value;
   }, []);
   const close = () => {
-    if (!busy.current) {
-      if (guard.current) guard.current();
-      else onClose();
-    }
+    if (guard.current) guard.current();
+    else onClose();
   };
 
   return (
@@ -45,9 +42,6 @@ export function FormModal({ visible, pinId, selectedForm, onClose, isSynced }: F
         selectedForm={selectedForm as Form | null}
         onClose={onClose}
         onCloseGuardChange={updateGuard}
-        onBusyChange={(value) => {
-          busy.current = value;
-        }}
         isEditing={isEditing}
         onToggleEdit={setIsEditing}
       />

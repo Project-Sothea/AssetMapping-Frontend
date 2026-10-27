@@ -117,6 +117,8 @@ export async function processOperation(
   op: QueueItem
 ): Promise<Record<string, unknown> | undefined> {
   const payload = validateQueuedOperation(op);
+  // Validation and journaling share one synchronous turn before any HTTP work.
+  insertJournal(op);
   const expected = normalizeQueuedPayload(op, payload);
   // Old journal request bodies retain their exact meaning for durable receipts.
   // New atomic writes use a complete, deterministic business snapshot on wire.
@@ -218,6 +220,10 @@ export function markCompleted(op: QueueItem, syncedData?: Record<string, unknown
 // might have committed, even if the worker has since edited the same record.
 export function stageOperation(op: QueueItem): void {
   validateQueuedOperation(op);
+  insertJournal(op);
+}
+
+function insertJournal(op: QueueItem): void {
   db.insert(syncInflight)
     .values({
       key: op.idempotencyKey,

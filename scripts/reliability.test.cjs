@@ -6,8 +6,8 @@ const vm = require('node:vm');
 
 const ts = require('typescript');
 
-function loadUtility(name) {
-  const source = fs.readFileSync(path.join(__dirname, '../shared/utils', `${name}.ts`), 'utf8');
+function loadUtility(name, directory = '../shared/utils') {
+  const source = fs.readFileSync(path.join(__dirname, directory, `${name}.ts`), 'utf8');
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
@@ -48,9 +48,9 @@ test('a navigation exception releases the gate for a retry', () => {
   );
 });
 
-test('startup, reconnect and manual requests share one in-progress sync', async () => {
+test('QA snapshot tools share one in-progress operation', async () => {
   const states = [];
-  const flight = loadUtility('singleFlight').createSingleFlight(() =>
+  const flight = loadUtility('singleFlight', 'test-support').createSingleFlight(() =>
     states.push(flight.isRunning())
   );
   let finish;
@@ -81,7 +81,7 @@ test('startup, reconnect and manual requests share one in-progress sync', async 
 });
 
 test('a failed sync releases activity state and permits a fresh attempt', async () => {
-  const flight = loadUtility('singleFlight').createSingleFlight();
+  const flight = loadUtility('singleFlight', 'test-support').createSingleFlight();
   const failing = flight.run(async () => {
     throw new Error('network unavailable');
   });

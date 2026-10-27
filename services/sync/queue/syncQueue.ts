@@ -7,6 +7,7 @@ import {
   cleanupCompletedPinImages,
   cleanupDeletedPinImages,
 } from '~/services/images/deletedPinImages';
+import { safeJsonParse } from '~/shared/utils/parsing';
 
 import { runTransfer } from '../transferCoordinator';
 
@@ -14,12 +15,10 @@ import {
   processOperation,
   markCompleted,
   handleError,
-  stageOperation,
   pendingInflight,
   hasInflight,
 } from './queueOperations';
 import type { QueueMetrics, UploadResult } from './types';
-import { validateQueuedOperation } from './validateQueuedOperation';
 
 class BlockedUploadError extends Error {}
 
@@ -103,7 +102,9 @@ export async function uploadPendingChanges(
       if (!op || op.status !== 'pending') continue;
       let payload: Record<string, unknown> = {};
       try {
-        payload = validateQueuedOperation(op);
+        // Display/dependency hints only. processOperation validates the complete
+        // saved revision and journals it synchronously before any HTTP request.
+        payload = safeJsonParse(op.payload, {}) ?? {};
         if (
           (op.entityType === 'form' && failedPins.has(String(payload.pinId))) ||
           (!staged && hasInflight(op.entityType, op.entityId))
@@ -113,7 +114,6 @@ export async function uploadPendingChanges(
             'An earlier revision or parent pin needs review before uploading this change.'
           );
         }
-        stageOperation(op);
         const acknowledged = await processOperation(op);
         markCompleted(op, acknowledged);
         if (op.entityType === 'pin' && op.operation === 'delete')

@@ -38,7 +38,6 @@ type FormEditorProps = {
   onClose: () => void;
   isEditing: boolean;
   onToggleEdit?: (next: boolean) => void;
-  onBusyChange?: (busy: boolean) => void;
   onCloseGuardChange?: (guard: (() => void) | null) => void;
 };
 
@@ -57,7 +56,6 @@ export function FormEditor({
   onClose,
   isEditing,
   onToggleEdit,
-  onBusyChange,
   onCloseGuardChange,
 }: FormEditorProps) {
   const { createFormAsync } = useCreateForm();
@@ -282,13 +280,11 @@ export function FormEditor({
     if (actionRunning.current || transferBusy) return;
     actionRunning.current = true;
     setBusy(true);
-    onBusyChange?.(true);
     try {
       await action();
     } finally {
       actionRunning.current = false;
       setBusy(false);
-      onBusyChange?.(false);
     }
   };
 
