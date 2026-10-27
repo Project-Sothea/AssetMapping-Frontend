@@ -19,6 +19,18 @@ test('a missing reset marker must never erase a saved response or outbox', async
   assert.equal(f.calls.length, 0);
 });
 
+test('an older download arriving after a newer one must not regress answers or version', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 3 });
+  f.setForms([{ ...form, name: 'QA current', version: 3 }]);
+  await f.pulls.pullAllForms();
+  f.setForms([{ ...form, name: 'QA stale download', version: 2 }]);
+  await f.pulls.pullAllForms();
+  assert.equal((await f.formService.getFormById(form.id)).name, 'QA current');
+  assert.equal((await f.formService.getFormById(form.id)).version, 3);
+});
+
 test('editing an unsent create retains create semantics for a missing server row', async (t) => {
   const f = setup(t);
   const form = await f.formService.createForm(f.values);

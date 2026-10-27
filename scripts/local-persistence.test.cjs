@@ -85,11 +85,71 @@ test('repeated attempts use persisted idempotency key; server conflict preserves
   assert.equal((await f.formService.getFormById(form.id)).name, f.values.name);
 });
 
+test('downloads protect pending/failed edits and pending deletions', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  f.setForms([{ ...form, name: 'QA server copy', version: 9 }]);
+  await f.pulls.pullAllForms();
+  assert.equal((await f.formService.getFormById(form.id)).name, f.values.name);
+  f.sqlite.exec("UPDATE sync_queue SET status='failed' WHERE entityType='form'");
+  await f.pulls.pullAllForms();
+  assert.equal((await f.formService.getFormById(form.id)).name, f.values.name);
+  await f.formService.deleteForm(form.id);
+  await f.pulls.pullAllForms();
+  assert.equal(await f.formService.getFormById(form.id), null);
+});
+
+test('unchanged full pulls perform zero row writes; changed answers with same version are applied', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 2 });
+  const remote = { ...form, version: 2 };
+  f.setForms([remote]);
+  f.setPins([{ ...f.pin, updatedAt: form.updatedAt, version: 2 }]);
+  await f.pulls.pullAllForms();
+  await f.pulls.pullAllPins();
+  const before = f.sqlite.prepare('SELECT total_changes() n').get().n;
+  await f.pulls.pullAllForms();
+  await f.pulls.pullAllPins();
+  assert.equal(f.sqlite.prepare('SELECT total_changes() n').get().n, before);
+  f.setForms([{ ...remote, handwashingBeforeMeals: 'QA changed answer' }]);
+  await f.pulls.pullAllForms();
+  assert.equal(
+    (await f.formService.getFormById(form.id)).handwashingBeforeMeals,
+    'QA changed answer'
+  );
+});
+
+test('invalid row rejects download and rolls back that chunk', async (t) => {
+  const f = setup(t);
+  const valid = {
+    ...f.values,
+    id: 'qa-remote',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    version: 1,
+  };
+  f.setForms([valid, { ...valid, id: 'qa-invalid', name: null }]);
+  await assert.rejects(f.pulls.pullAllForms());
+  assert.equal(f.sqlite.prepare('SELECT count(*) n FROM forms').get().n, 0);
+});
+
+test('live remote deletion preserves pending work; removes clean local rows', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  assert.equal(f.pulls.applyRemoteDeletion('pin', f.pin.id), false);
+  assert.equal(f.pulls.applyRemoteDeletion('form', form.id), false);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 2 });
+  assert.equal(f.pulls.applyRemoteDeletion('pin', f.pin.id), true);
+  assert.equal(await f.formService.getFormById(form.id), null);
+  assert.equal(f.sqlite.prepare('SELECT count(*) n FROM pins').get().n, 0);
+});
+
 test('simultaneous manual uploads reject the second session without duplicate writes', async (t) => {
   const f = setup(t);
   await f.formService.createForm(f.values);
-  const first = f.syncQueue.uploadPendingChanges();
-  const second = f.syncQueue.uploadPendingChanges();
+  const first = f.syncQueue.processQueue();
+  const second = f.syncQueue.processQueue();
   const results = await Promise.allSettled([first, second]);
   assert.equal(results[0].status, 'fulfilled');
   assert.equal(results[1].status, 'rejected');

@@ -11,7 +11,7 @@ import { db } from '~/services/drizzleDb';
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
-import { createCurrentServer, createForm, createPin } from './fixtures';
+import { createForm, createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
 let mockExists = true;
@@ -46,7 +46,6 @@ jest.mock('~/services/api/storageApi', () => ({
   deleteObjects: jest.fn(),
 }));
 jest.mock('~/services/api/syncApi', () => ({ sync: jest.fn() }));
-const server = createCurrentServer();
 
 beforeAll(initializeTestDb);
 beforeEach(() => {
@@ -62,9 +61,20 @@ beforeEach(() => {
   jest
     .mocked(getUploadUrl)
     .mockResolvedValue({ success: true, data: 'https://storage.example.test/photo' });
-  server.clear();
-  jest.mocked(fetchPin).mockReset().mockImplementation(server.fetchPin);
-  jest.mocked(sync).mockReset().mockImplementation(server.sync);
+  jest.mocked(fetchPin).mockResolvedValue({ success: true, data: { images: [] } } as never);
+  jest.mocked(sync).mockImplementation(
+    async (request) =>
+      ({
+        success: true,
+        data:
+          request.operation === 'delete'
+            ? { id: request.payload.id, deleted: true }
+            : {
+                ...request.payload,
+                version: request.operation === 'create' ? 1 : Number(request.payload.version) + 1,
+              },
+      }) as never
+  );
 });
 afterEach(() => {
   jest.clearAllTimers();
@@ -170,10 +180,7 @@ test('failed remote photo lookup never guesses that cached photos need reupload'
   await photoPin();
   await uploadPendingChanges();
   await updatePin('p', { name: 'Renamed' });
-  jest
-    .mocked(fetchPin)
-    .mockImplementationOnce(server.fetchPin)
-    .mockResolvedValueOnce({ success: false, error: 'Request timed out' });
+  jest.mocked(fetchPin).mockResolvedValue({ success: false, error: 'Request timed out' });
   jest.mocked(createUploadTask).mockClear();
   jest.mocked(sync).mockClear();
   const result = await uploadPendingChanges();
@@ -208,7 +215,9 @@ test('metadata-only edit does not need a local file for a photo already on the s
   await uploadPendingChanges();
   await updatePin('p', { name: 'Renamed' });
   mockExists = false;
-  jest.mocked(fetchPin).mockImplementation(server.fetchPin);
+  jest
+    .mocked(fetchPin)
+    .mockResolvedValue({ success: true, data: { images: ['photo.jpg'] } } as never);
   jest.mocked(createUploadTask).mockClear();
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, remaining: 0 });
   expect(createUploadTask).not.toHaveBeenCalled();
@@ -221,10 +230,7 @@ test.each([{}, { images: null }, 'invalid pin'])(
     await photoPin();
     await uploadPendingChanges();
     await updatePin('p', { name: 'Renamed' });
-    jest
-      .mocked(fetchPin)
-      .mockImplementationOnce(server.fetchPin)
-      .mockResolvedValueOnce({ success: true, data } as never);
+    jest.mocked(fetchPin).mockResolvedValue({ success: true, data } as never);
     jest.mocked(createUploadTask).mockClear();
     jest.mocked(getUploadUrl).mockClear();
     jest.mocked(sync).mockClear();

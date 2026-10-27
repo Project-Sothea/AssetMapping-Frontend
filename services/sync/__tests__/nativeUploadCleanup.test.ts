@@ -1,14 +1,12 @@
 /** @jest-environment node */
 import { pins } from '~/db/schema';
 import { updatePin } from '~/features/pins/services/PinService';
-import { fetchPin } from '~/services/api/pinsApi';
-import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
-import { createCurrentServer, createPin } from './fixtures';
+import { createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
 const mockListeners = new Set<object>();
@@ -41,17 +39,20 @@ jest.mock('~/services/drizzleDb', () => require('./testDb'));
 jest.mock('~/services/api/storageApi', () => ({
   getUploadUrl: async () => ({ success: true, data: 'https://storage.example.test/photo' }),
 }));
-jest.mock('~/services/api/syncApi', () => ({ sync: jest.fn() }));
-jest.mock('~/services/api/pinsApi', () => ({ fetchPin: jest.fn() }));
-const server = createCurrentServer();
+jest.mock('~/services/api/syncApi', () => ({
+  sync: async (request: { payload: Record<string, unknown>; operation: string }) => ({
+    success: true,
+    data: {
+      ...request.payload,
+      version: request.operation === 'create' ? 1 : Number(request.payload.version) + 1,
+    },
+  }),
+}));
 
 beforeAll(initializeTestDb);
 beforeEach(() => {
   resetTestDb();
   finishSetup();
-  server.clear();
-  jest.mocked(fetchPin).mockImplementation(server.fetchPin);
-  jest.mocked(sync).mockImplementation(server.sync);
   mockListeners.clear();
   mockNativeUpload.mockReset().mockRejectedValue(new Error('Native network failed'));
   mockNativeCancel.mockReset().mockResolvedValue(undefined);

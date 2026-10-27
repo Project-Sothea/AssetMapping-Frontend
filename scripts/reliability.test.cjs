@@ -6,8 +6,8 @@ const vm = require('node:vm');
 
 const ts = require('typescript');
 
-function loadUtility(name) {
-  const source = fs.readFileSync(path.join(__dirname, '../shared/utils', `${name}.ts`), 'utf8');
+function loadUtility(name, directory = '../shared/utils') {
+  const source = fs.readFileSync(path.join(__dirname, directory, `${name}.ts`), 'utf8');
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
@@ -46,6 +46,53 @@ test('a navigation exception releases the gate for a retry', () => {
     gate.run(() => {}),
     true
   );
+});
+
+test('QA snapshot tools share one in-progress operation', async () => {
+  const states = [];
+  const flight = loadUtility('singleFlight', 'test-support').createSingleFlight(() =>
+    states.push(flight.isRunning())
+  );
+  let finish;
+  let starts = 0;
+  const work = new Promise((resolve) => {
+    finish = resolve;
+  });
+  const first = flight.run(async () => {
+    starts++;
+    await work;
+  });
+  const concurrent = Array.from({ length: 20 }, () =>
+    flight.run(async () => {
+      starts++;
+    })
+  );
+  for (const request of concurrent) assert.equal(request, first);
+  assert.equal(flight.isRunning(), true);
+  await Promise.resolve();
+  assert.equal(starts, 1);
+  finish();
+  await first;
+  assert.deepEqual(states, [true, false]);
+  await flight.run(async () => {
+    starts++;
+  });
+  assert.equal(starts, 2);
+});
+
+test('a failed sync releases activity state and permits a fresh attempt', async () => {
+  const flight = loadUtility('singleFlight', 'test-support').createSingleFlight();
+  const failing = flight.run(async () => {
+    throw new Error('network unavailable');
+  });
+  assert.equal(
+    flight.run(async () => {}),
+    failing
+  );
+  await assert.rejects(failing, /network unavailable/);
+  assert.equal(flight.isRunning(), false);
+  await flight.run(async () => {});
+  assert.equal(flight.isRunning(), false);
 });
 /* global __dirname */
 
