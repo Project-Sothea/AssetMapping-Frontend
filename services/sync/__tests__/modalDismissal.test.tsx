@@ -140,45 +140,6 @@ test('unrelated upload still blocks field writes, save and delete', async () => 
 });
 
 test.each(['save', 'delete'] as const)(
-  'own %s prevents dismissal, then releases it after failure even if another upload starts',
-  async (action) => {
-    const operation = deferred();
-    (action === 'save' ? mockUpdate : mockDelete).mockReturnValueOnce(operation.promise);
-    await mount(true);
-    if (action === 'save') await makeDirty();
-    let pending!: Promise<void>;
-    await act(async () => {
-      if (action === 'save') {
-        pending = renderer.root.findByProps({ accessibilityLabel: 'Save form' }).props.onPress();
-        await Promise.resolve();
-        await Promise.resolve();
-      } else {
-        renderer.root.findByProps({ accessibilityLabel: 'Delete form' }).props.onPress();
-        const confirmation = jest.mocked(Alert.alert).mock.calls[0][2];
-        pending = confirmation
-          ?.find((button) => button.text === 'Delete')
-          ?.onPress?.() as unknown as Promise<void>;
-      }
-    });
-    expect(action === 'save' ? mockUpdate : mockDelete).toHaveBeenCalledTimes(1);
-    await act(async () => guard?.());
-    expect(close).not.toHaveBeenCalled();
-    expect(discard()).toBeUndefined();
-    await setTransferBusy(true);
-    await act(async () => {
-      operation.reject(new Error('Synthetic storage failure'));
-      await pending;
-    });
-    await act(async () => guard?.());
-    if (action === 'save') {
-      expect(discard()).toBeDefined();
-      await act(async () => discard()?.onPress?.());
-    }
-    expect(close).toHaveBeenCalledTimes(1);
-  }
-);
-
-test.each(['save', 'delete'] as const)(
   'the modal delegates dismissal to the editor guard during its own %s and after failure',
   async (action) => {
     const operation = deferred();
@@ -209,14 +170,14 @@ test.each(['save', 'delete'] as const)(
       }
     });
     expect(action === 'save' ? mockUpdate : mockDelete).toHaveBeenCalledTimes(1);
+    mockTransferBusy = true;
+    await act(async () => renderer.update(modal()));
     await act(async () => renderer.root.findByType(ModalWrapper).props.onClose());
     expect(close).not.toHaveBeenCalled();
     await act(async () => {
       operation.reject(new Error('Synthetic storage failure'));
       await pending;
     });
-    mockTransferBusy = true;
-    await act(async () => renderer.update(modal()));
     await act(async () => renderer.root.findByType(ModalWrapper).props.onClose());
     if (action === 'save') {
       expect(discard()).toBeDefined();

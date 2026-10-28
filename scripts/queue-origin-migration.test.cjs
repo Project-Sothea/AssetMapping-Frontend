@@ -2,54 +2,148 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
 const test = require('node:test');
 
-test('queue origin migration preserves existing records, pending work and recovery snapshots without backfilling trust', (t) => {
-  const sqlite = new DatabaseSync(':memory:', { enableDoubleQuotedStringLiterals: true });
-  t.after(() => sqlite.close());
-  const directory = path.join(__dirname, '../drizzle');
-  const journal = JSON.parse(fs.readFileSync(path.join(directory, 'meta/_journal.json'), 'utf8'));
-  for (const entry of journal.entries.filter((entry) => entry.idx < 6))
-    sqlite.exec(fs.readFileSync(path.join(directory, `${entry.tag}.sql`), 'utf8'));
-  sqlite.exec('PRAGMA foreign_keys = ON');
-  sqlite.exec(`
-    INSERT INTO pins (id, createdAt, name, lat, lng, status, images)
-      VALUES ('qa-pin', 1767225600, 'QA retained pin', 1, 2, 'unsynced', '["photo.jpg"]');
-    INSERT INTO forms (id, createdAt, pinId, villageId, name, village, age, canAttendHealthScreening, status)
-      VALUES ('qa-form', 1767225600, 'qa-pin', '', '', 'QA village', 0, 0, NULL);
-    INSERT INTO sync_queue (id, entityType, entityId, operation, idempotencyKey, payload, status, attempts, lastError)
-      VALUES ('qa-queue', 'form', 'qa-form', 'update', 'qa-key', '{"id":"qa-form","version":1}', 'failed', 2, 'QA interrupted upload');
-    INSERT INTO sync_inflight (key, queueId, entityType, entityId, operation, status)
-      VALUES ('qa-key', 'qa-queue', 'form', 'qa-form', '{"payload":"retained verbatim"}', 'failed');
-  `);
-  const tables = ['pins', 'forms', 'sync_queue', 'sync_inflight'];
-  const before = Object.fromEntries(
-    tables.map((table) => [table, sqlite.prepare(`SELECT * FROM ${table}`).all()])
+const { migrate } = require('drizzle-orm/expo-sqlite/migrator');
+
+const { fixture } = require('./test-support/local-fixture.cjs');
+
+// Exact DDL/timestamps from earlier unmerged APKs, retained only to test upgrades.
+const prior = [
+  {
+    when: 1792854786931,
+    sql: 'CREATE INDEX `forms_pin_id_idx` ON `forms` (`pinId`);--> statement-breakpoint\nCREATE INDEX `queue_entity_status_idx` ON `sync_queue` (`entityType`,`entityId`,`status`);--> statement-breakpoint\nCREATE INDEX `queue_pending_order_idx` ON `sync_queue` (`status`,`sequenceNumber`);',
+  },
+  {
+    when: 1792856595691,
+    sql: 'CREATE TABLE `sync_inflight` (\n\t`key` text PRIMARY KEY NOT NULL,\n\t`queueId` text NOT NULL,\n\t`entityType` text NOT NULL,\n\t`entityId` text NOT NULL,\n\t`operation` text NOT NULL,\n\t`status` text NOT NULL\n);\n',
+  },
+  {
+    when: 1793070128606,
+    sql: 'ALTER TABLE `sync_queue` ADD `writeOrigin` text;',
+  },
+];
+const directory = path.join(__dirname, '../drizzle');
+const journal = JSON.parse(fs.readFileSync(path.join(directory, 'meta/_journal.json'), 'utf8'));
+const entries = journal.entries.map((entry) => ({
+  ...entry,
+  sql: fs.readFileSync(path.join(directory, `${entry.tag}.sql`), 'utf8'),
+}));
+function bundle(rows) {
+  return {
+    journal: { entries: rows.map((row, idx) => ({ ...row, idx })) },
+    migrations: Object.fromEntries(
+      rows.map((row, idx) => [`m${String(idx).padStart(4, '0')}`, row.sql])
+    ),
+  };
+}
+function records(f) {
+  return Object.fromEntries(
+    ['pins', 'forms', 'sync_queue', 'sync_inflight'].map((table) => {
+      const exists = f.sqlite.prepare('SELECT name FROM sqlite_master WHERE name=?').get(table);
+      return [table, exists ? f.sqlite.prepare(`SELECT * FROM ${table}`).all() : []];
+    })
   );
-  const entry = journal.entries.find((entry) => entry.tag === '0006_queue_write_origin');
-  assert.ok(entry, 'the migration is registered in the checked-in journal');
-  sqlite.exec(fs.readFileSync(path.join(directory, `${entry.tag}.sql`), 'utf8'));
-  for (const table of tables) {
-    const after = sqlite.prepare(`SELECT * FROM ${table}`).all();
-    if (table === 'sync_queue') {
-      assert.equal(after[0].writeOrigin, null);
-      delete after[0].writeOrigin;
-    }
-    assert.deepEqual(after, before[table], table);
-  }
-  assert.equal(sqlite.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
-  assert.deepEqual(sqlite.prepare('PRAGMA foreign_key_check').all(), []);
-  const column = sqlite
-    .prepare('PRAGMA table_info(sync_queue)')
-    .all()
-    .find((row) => row.name === 'writeOrigin');
-  assert.equal(column.notnull, 0);
-  assert.equal(column.dflt_value, null);
-  const bundle = fs.readFileSync(path.join(directory, 'migrations.js'), 'utf8');
+}
+for (const [label, depth] of [
+  ['main', 0],
+  ['indexes APK', 1],
+  ['journal APK', 2],
+  ['origin APK', 3],
+]) {
+  test(`consolidated migration preserves records and upload evidence from ${label}`, async (t) => {
+    const f = fixture(':memory:', { reopen: true });
+    t.after(f.close);
+    await migrate(f.db, bundle([...entries.slice(0, 4), ...prior.slice(0, depth)]));
+    f.sqlite.exec(`
+      INSERT INTO pins (id,createdAt,name,lat,lng,status,images)
+        VALUES ('qa-pin',1767225600,'QA saved pin',1,2,'unsynced','["photo.jpg"]');
+      INSERT INTO forms (id,createdAt,pinId,villageId,name,village,age,canAttendHealthScreening,status)
+        VALUES ('qa-form',1767225600,'qa-pin','','','QA village',0,0,NULL);
+      INSERT INTO sync_queue (id,entityType,entityId,operation,idempotencyKey,payload,status,attempts,lastError)
+        VALUES ('qa-queue','form','qa-form','update','qa-key','{"id":"qa-form","version":1}','failed',2,'Offline');
+    `);
+    if (depth >= 2)
+      f.sqlite.exec(
+        `INSERT INTO sync_inflight VALUES ('qa-key','qa-queue','form','qa-form','{"payload":"keep verbatim"}','failed')`
+      );
+    if (depth === 3) f.sqlite.exec("UPDATE sync_queue SET writeOrigin='atomic-v1'");
+    const before = records(f);
+    await migrate(f.db, bundle(entries));
+    const after = records(f);
+    assert.equal(after.sync_queue[0].writeOrigin, depth === 3 ? 'atomic-v1' : null);
+    if (depth < 3) before.sync_queue[0].writeOrigin = null;
+    assert.deepEqual(after, before);
+    assert.equal(f.sqlite.prepare('PRAGMA integrity_check').get().integrity_check, 'ok');
+    assert.deepEqual(f.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
+    assert.equal(
+      f.sqlite
+        .prepare('PRAGMA table_info(sync_queue)')
+        .all()
+        .find((c) => c.name === 'writeOrigin').notnull,
+      0
+    );
+    for (const name of ['forms_pin_id_idx', 'queue_entity_status_idx', 'queue_pending_order_idx'])
+      assert.ok(
+        f.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name=?").get(name)
+      );
+    const history = f.sqlite.prepare('SELECT * FROM __drizzle_migrations').all();
+    await migrate(f.db, bundle(entries));
+    assert.deepEqual(f.sqlite.prepare('SELECT * FROM __drizzle_migrations').all(), history);
+    assert.deepEqual(records(f), before);
+    await migrate(
+      f.db,
+      bundle([
+        ...entries,
+        { when: entries[4].when + 1, sql: 'CREATE TABLE qa_next_upgrade (id TEXT);' },
+      ])
+    );
+    assert.ok(
+      f.sqlite.prepare("SELECT name FROM sqlite_master WHERE name='qa_next_upgrade'").get()
+    );
+  });
+}
+test('fresh install and failed consolidated migration retry use the actual Expo migrator', async (t) => {
+  const fresh = fixture(':memory:', { reopen: true });
+  t.after(fresh.close);
+  await migrate(fresh.db, bundle(entries));
+  assert.ok(
+    fresh.sqlite.prepare("SELECT name FROM sqlite_master WHERE name='sync_inflight'").get()
+  );
+  const f = fixture(':memory:', { reopen: true });
+  t.after(f.close);
+  await migrate(f.db, bundle(entries.slice(0, 4)));
+  const before = records(f);
+  await assert.rejects(
+    migrate(
+      f.db,
+      bundle([
+        ...entries.slice(0, 4),
+        {
+          ...entries[4],
+          sql:
+            entries[4].sql + '\n--> statement-breakpoint\nINSERT INTO qa_missing_table VALUES (1);',
+        },
+      ])
+    )
+  );
+  assert.deepEqual(records(f), before);
   assert.equal(
-    [...bundle.matchAll(/import m0006 from '\.\/0006_queue_write_origin\.sql'/g)].length,
-    1
+    f.sqlite
+      .prepare('PRAGMA table_info(sync_queue)')
+      .all()
+      .some((c) => c.name === 'writeOrigin'),
+    false
   );
-  assert.equal([...bundle.matchAll(/\bm0006,/g)].length, 1);
+  assert.equal(
+    f.sqlite.prepare("SELECT name FROM sqlite_master WHERE name='sync_inflight'").get(),
+    undefined
+  );
+  await migrate(f.db, bundle(entries));
+  assert.ok(f.sqlite.prepare("SELECT name FROM sqlite_master WHERE name='sync_inflight'").get());
+  assert.equal(entries.length, 5);
+  assert.equal(entries[4].when, prior[2].when);
+  const wiring = fs.readFileSync(path.join(directory, 'migrations.js'), 'utf8');
+  assert.match(wiring, /import m0004 from '\.\/0004_local_reliability\.sql'/);
+  assert.doesNotMatch(wiring, /import m000[56]/);
 });

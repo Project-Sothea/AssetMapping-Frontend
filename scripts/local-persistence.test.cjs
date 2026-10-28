@@ -213,3 +213,21 @@ test('committed form and outbox survive closing and reopening the database file'
     reopened.close();
   }
 });
+
+test('editing an unsent create retains create semantics for a missing server row', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  await f.formService.updateForm(form.id, { name: 'QA latest offline edit' });
+  assert.equal(f.operations().find((op) => op.entityType === 'form').operation, 'create');
+});
+
+test('a timeout wording from the actual HTTP client is retryable', async (t) => {
+  const f = setup(t);
+  await f.formService.createForm(f.values);
+  const op = f.operations().find((row) => row.entityType === 'form');
+  await f.queue.handleError(
+    op,
+    new Error('Request timed out. Please check your internet connection.')
+  );
+  assert.equal(f.operations().find((row) => row.id === op.id).status, 'pending');
+});

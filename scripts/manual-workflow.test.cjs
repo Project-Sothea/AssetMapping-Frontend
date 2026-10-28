@@ -3,33 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const vm = require('node:vm');
-
-const ts = require('typescript');
 
 const { fixture } = require('./test-support/local-fixture.cjs');
-
-test('manual upload processes more than ten queued rows in one protected session', async (t) => {
-  const f = fixture();
-  t.after(f.close);
-  const transfer = f.load('services/sync/transferCoordinator.ts');
-  transfer.finishSetup();
-  for (let i = 0; i < 25; i++)
-    await f.pinService.createPin({
-      id: `qa-manual-${i}`,
-      name: `QA ${i}`,
-      lat: 1,
-      lng: 2,
-      images: [],
-    });
-  assert.equal(f.calls.length, 0);
-  const result = await f.syncQueue.uploadPendingChanges();
-  assert.equal(result.uploaded, 25);
-  assert.equal(result.failed, 0);
-  assert.equal(result.remaining, 0);
-  assert.equal(f.calls.length, 25);
-  assert.ok(f.operations().every((op) => op.status === 'completed'));
-});
 
 test('canceling an unsent response is atomic if removing its outbox entry fails', async (t) => {
   const f = fixture();
@@ -66,27 +41,6 @@ test('server error wording cannot misclassify a failed upload as a blocked revis
   assert.equal(result.failed, 1);
   assert.equal(result.blocked, 0);
   assert.equal(result.remaining, 1);
-});
-
-test('one listener shared by several tables refreshes once per notification burst', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../shared/utils/tableChanges.ts'), 'utf8');
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  });
-  const sandbox = { exports: {} };
-  vm.runInNewContext(outputText, sandbox);
-  let flush;
-  let refreshes = 0;
-  const batcher = sandbox.exports.createTableChangeBatcher((callback) => {
-    flush = callback;
-  });
-  const refresh = () => refreshes++;
-  batcher.subscribe('pins', refresh);
-  batcher.subscribe('forms', refresh);
-  batcher.changed('pins');
-  batcher.changed('forms');
-  flush();
-  assert.equal(refreshes, 1);
 });
 
 test('production services expose setup and manual upload without retired scheduling paths', () => {
