@@ -110,6 +110,7 @@ test('existing form keeps its original parent despite stale screen and hidden ID
   const saved = await createForm({
     pinId: 'parent',
     name: 'Test',
+    dataCollectionDate: '22 May 2026',
     villageId: '',
     village: 'Krang Svat',
   });

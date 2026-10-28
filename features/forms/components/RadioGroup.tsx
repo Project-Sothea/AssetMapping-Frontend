@@ -1,5 +1,5 @@
 import { Checkbox } from 'expo-checkbox';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 
 import { FormValues } from '../types';
 
@@ -32,22 +32,35 @@ export default function RadioGroup({
     <View>
       {options.map((opt) => {
         const isSelected = values[name] === opt.value;
-        const showOther = opt.value === 'others' && isSelected && otherFieldName;
+        const showOther =
+          ['other', 'others'].includes(String(opt.value).toLowerCase()) &&
+          isSelected &&
+          otherFieldName;
 
         return (
           <View key={String(opt.value)} style={styles.optionBlock}>
-            <View style={styles.checkboxContainer}>
-              <Checkbox
-                value={isSelected}
-                onValueChange={() => {
-                  if (disabled) return;
-                  setFieldValue(name, opt.value);
-                }}
-                style={styles.checkbox}
-                disabled={disabled}
-              />
+            <Pressable
+              style={styles.checkboxContainer}
+              accessibilityRole="radio"
+              accessibilityLabel={opt.label}
+              accessibilityState={{ checked: isSelected, disabled }}
+              disabled={disabled}
+              onPress={() => {
+                if (!disabled) setFieldValue(name, opt.value);
+              }}>
+              <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
+                <Checkbox
+                  value={isSelected}
+                  onValueChange={() => {
+                    if (disabled) return;
+                    setFieldValue(name, opt.value);
+                  }}
+                  style={styles.checkbox}
+                  disabled={disabled}
+                />
+              </View>
               <Text style={styles.label}>{opt.label}</Text>
-            </View>
+            </Pressable>
 
             {showOther && (
               <TextInput
@@ -73,6 +86,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   checkboxContainer: {
+    minHeight: 48,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8, // more space between rows

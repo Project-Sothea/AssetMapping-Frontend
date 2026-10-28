@@ -1,10 +1,12 @@
+import type { Form } from '@assetmapping/shared-types';
 import { useMutation } from '@tanstack/react-query';
 
 import { deleteForm } from '../services/FormService';
 
 export const useDeleteForm = () => {
   const mutation = useMutation({
-    mutationFn: (id: string) => deleteForm(id),
+    retry: false,
+    mutationFn: ({ id, baseline }: { id: string; baseline?: Form }) => deleteForm(id, baseline),
   });
 
   return {

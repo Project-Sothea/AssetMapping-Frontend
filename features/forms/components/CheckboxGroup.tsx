@@ -1,5 +1,5 @@
 import { Checkbox } from 'expo-checkbox';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable } from 'react-native';
 
 import { FormValues } from '../types';
 
@@ -44,25 +44,39 @@ export default function CheckboxGroup({
   return (
     <View>
       {options.map((opt) => (
-        <View key={opt} style={styles.checkboxContainer}>
-          <Checkbox
-            value={(Array.isArray(values[name]) ? values[name] : []).includes(opt)}
-            onValueChange={() => handleCheckbox(opt)}
-            style={styles.checkbox}
-            disabled={disabled}
-          />
+        <Pressable
+          key={opt}
+          style={styles.checkboxContainer}
+          accessibilityRole="checkbox"
+          accessibilityLabel={opt}
+          accessibilityState={{
+            checked: (Array.isArray(values[name]) ? values[name] : []).includes(opt),
+            disabled,
+          }}
+          disabled={disabled}
+          onPress={() => handleCheckbox(opt)}>
+          <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
+            <Checkbox
+              value={(Array.isArray(values[name]) ? values[name] : []).includes(opt)}
+              onValueChange={() => handleCheckbox(opt)}
+              style={styles.checkbox}
+              disabled={disabled}
+            />
+          </View>
           <Text style={styles.label}>{opt}</Text>
-        </View>
+        </Pressable>
       ))}
-      {otherFieldName && Array.isArray(values[name]) && values[name].includes('Others') && (
-        <TextInput
-          style={styles.input}
-          placeholder="Please specify"
-          value={otherValue}
-          onChangeText={onOtherChange}
-          editable={!disabled}
-        />
-      )}
+      {otherFieldName &&
+        Array.isArray(values[name]) &&
+        values[name].some((choice) => ['other', 'others'].includes(choice.toLowerCase())) && (
+          <TextInput
+            style={styles.input}
+            placeholder="Please specify"
+            value={otherValue}
+            onChangeText={onOtherChange}
+            editable={!disabled}
+          />
+        )}
       {errors && touched && <Text style={styles.error}>{errors}</Text>}
     </View>
   );
@@ -70,6 +84,8 @@ export default function CheckboxGroup({
 
 const styles = StyleSheet.create({
   checkboxContainer: {
+    minHeight: 48,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,

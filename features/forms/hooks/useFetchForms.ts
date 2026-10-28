@@ -1,14 +1,25 @@
-import { Form } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
-import * as schema from '~/db/schema';
-import { mapFormDbToForm } from '~/db/utils';
+import { forms } from '~/db/schema';
+import { useLocalQuery } from '~/hooks/useLocalQuery';
 import { db } from '~/services/drizzleDb';
 
-export const useFetchForms = (pinId: string): Form[] => {
-  const query = db.select().from(schema.forms).where(eq(schema.forms.pinId, pinId));
-  // useLiveQuery returns an object like { data, error, isLoading }
-  const result = useLiveQuery(query) ?? { data: [] };
-  return (result.data ?? []).map(mapFormDbToForm);
+import type { FormSummary } from '../types';
+
+// Cards need metadata, not all 86 columns and 22 decoded selection arrays.
+export const useFetchForms = (pinId: string): FormSummary[] => {
+  const query = db
+    .select({
+      id: forms.id,
+      pinId: forms.pinId,
+      name: forms.name,
+      village: forms.village,
+      createdAt: forms.createdAt,
+      updatedAt: forms.updatedAt,
+      version: forms.version,
+      status: forms.status,
+    })
+    .from(forms)
+    .where(eq(forms.pinId, pinId));
+  return useLocalQuery(query, 'forms', [pinId]).data;
 };

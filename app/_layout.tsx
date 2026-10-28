@@ -52,6 +52,7 @@ export default function RootLayout() {
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen
                       name="pin/[pinId]/forms"
+                      getId={({ params }) => (params as { pinId?: string } | undefined)?.pinId}
                       options={({ route }) => {
                         const { pinName } = route.params as { pinName?: string };
                         return {

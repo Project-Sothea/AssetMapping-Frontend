@@ -7,16 +7,22 @@ import backgroundImage from '~/assets/home-background.png';
 import { PinCard } from '~/features/pins/components/PinCard';
 import { VillageDropdown } from '~/features/pins/components/VillageDropdown';
 import { useFetchLocalPins } from '~/features/pins/hooks/useFetchPins';
+import { usePinFormCounts } from '~/features/pins/hooks/usePinFormCounts';
 import {
   ALL_VILLAGES_KEY,
   comparePinNames,
   listVillageOptions,
   villageKey,
 } from '~/features/pins/utils/groupPinsByVillage';
+import { usePendingEntityIds } from '~/hooks/RealTimeSync/usePendingEntityIds';
+import { useSingleNavigation } from '~/hooks/useSingleNavigation';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 
 export default function PinScreen() {
   const pins = useFetchLocalPins(); // live reactive pins
+  const formCounts = usePinFormCounts();
+  const pendingPinIds = usePendingEntityIds('pin');
+  const navigateOnce = useSingleNavigation();
   const [query, setQuery] = useState('');
   const [selectedVillage, setSelectedVillage] = useState(ALL_VILLAGES_KEY);
   const router = useRouter();
@@ -50,15 +56,32 @@ export default function PinScreen() {
       .sort(comparePinNames);
   }, [pins, query, activeVillage]);
 
-  const handleNavigateToMap = (pin: Pin) => {
-    router.push({
-      pathname: '/map',
-      params: {
-        lat: pin.lat,
-        lng: pin.lng,
-      },
-    });
-  };
+  const handleViewForms = useCallback(
+    (pin: Pin) => {
+      navigateOnce(() =>
+        router.navigate({
+          pathname: '/pin/[pinId]/forms',
+          params: { pinId: pin.id, pinName: pin.name },
+        })
+      );
+    },
+    [navigateOnce, router]
+  );
+
+  const handleNavigateToMap = useCallback(
+    (pin: Pin) => {
+      navigateOnce(() =>
+        router.navigate({
+          pathname: '/map',
+          params: {
+            lat: pin.lat,
+            lng: pin.lng,
+          },
+        })
+      );
+    },
+    [navigateOnce, router]
+  );
 
   return (
     <ImageBackground
@@ -79,9 +102,19 @@ export default function PinScreen() {
         placeholderTextColor="#888"
       />
       <FlatList
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         data={visiblePins}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
+        renderItem={({ item }) => (
+          <PinCard
+            pin={item}
+            formCount={formCounts.get(item.id) ?? 0}
+            isSynced={!pendingPinIds.has(item.id)}
+            onViewForms={handleViewForms}
+            onNavigateToMap={handleNavigateToMap}
+          />
+        )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={

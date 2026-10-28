@@ -5,6 +5,7 @@ import { FormValues } from '../types';
 
 export const useCreateForm = () => {
   const mutation = useMutation({
+    retry: false,
     mutationFn: (values: FormValues) => createForm(values),
   });
 

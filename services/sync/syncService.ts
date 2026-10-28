@@ -4,16 +4,15 @@ import { finishSetup, getTransferState, runTransfer } from './transferCoordinato
 
 let initialization: Promise<void> | undefined;
 
-/** Startup is local-only except the previously approved legacy reset/download. */
+/** Preserve existing local work; download only during first empty-device setup. */
 export function initializeLocalData(): Promise<void> {
   if (getTransferState().setupReady) return Promise.resolve();
   if (initialization) return initialization;
   initialization = runTransfer('setup', async () => {
-    const reset = await resetLocalDataOnce();
-    // Once the reset marker is safely persisted, a network error must not
-    // cause another reset or stop the team from collecting offline responses.
+    const needsDownload = await resetLocalDataOnce();
+    // A failed initial download must not prevent offline data collection.
     try {
-      if (reset) await downloadSnapshotIntoEmptyDatabase();
+      if (needsDownload) await downloadSnapshotIntoEmptyDatabase();
     } finally {
       finishSetup();
     }

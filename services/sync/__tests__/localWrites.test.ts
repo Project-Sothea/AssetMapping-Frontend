@@ -10,7 +10,10 @@ import { createForm, createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
-jest.mock('~/services/images/ImageManager', () => ({ deleteImagesByFilename: jest.fn() }));
+jest.mock('~/services/images/ImageManager', () => ({
+  deleteImagesByFilename: jest.fn(),
+  deletePinImageDirectory: jest.fn(),
+}));
 
 const pin = { id: 'pin-1', name: 'A1', lat: 1, lng: 2 };
 

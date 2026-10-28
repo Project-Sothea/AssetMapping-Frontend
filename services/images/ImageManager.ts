@@ -16,9 +16,11 @@
 import { Directory, File, Paths } from 'expo-file-system/next';
 import * as ImagePicker from 'expo-image-picker';
 
+import { createSharedImageLoader } from '~/shared/utils/sharedImageLoader';
+
 import { getDownloadUrl } from '../api/storageApi';
 
-import { assertSafeImageReference } from './imagePaths';
+import { assertSafeImageComponent, assertSafeImageReference } from './imagePaths';
 
 // ============================================
 // PICK IMAGE
@@ -107,6 +109,13 @@ export async function deleteImagesByFilename(pinId: string, filenames: string[])
   }
 }
 
+/** Caller must first prove that no saved pin or unresolved upload needs these files. */
+export async function deletePinImageDirectory(pinId: string): Promise<void> {
+  assertSafeImageComponent(pinId);
+  const directory = new Directory(Paths.document, 'pins', pinId);
+  if (directory.exists) directory.delete();
+}
+
 // ============================================
 // UTILITIES - FILENAME BASED
 // ============================================
@@ -178,3 +187,10 @@ export function fileExistsLocally(pinId: string, filename: string): boolean {
     return false;
   }
 }
+
+export const loadCachedImage = createSharedImageLoader({
+  exists: fileExistsLocally,
+  local: getLocalPath,
+  remote: getRemoteUrl,
+  cache: cacheRemoteImage,
+});

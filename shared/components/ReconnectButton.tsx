@@ -12,18 +12,30 @@ export function ReconnectButton() {
   const { showPopup } = usePopup();
   const [isSpinning, setIsSpinning] = useState(false);
   const wasConnectedRef = useRef(isConnected);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    },
+    []
+  );
 
   useEffect(() => {
     const wasConnected = wasConnectedRef.current;
     wasConnectedRef.current = isConnected;
 
     if (!wasConnected && isConnected) {
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+      setIsSpinning(false);
       showPopup('Connected!', '#10B981');
     }
   }, [isConnected, showPopup]);
 
   const handleReconnect = () => {
-    if (isConnected) {
+    if (reconnectTimer.current) return;
+    if (webSocketManager.isConnected()) {
       showPopup('Connected!', '#10B981');
       return;
     }
@@ -33,9 +45,10 @@ export function ReconnectButton() {
     setIsSpinning(true);
     showPopup('Connecting...', '#3498db');
     // Stop spinning after 2 seconds
-    setTimeout(() => {
+    reconnectTimer.current = setTimeout(() => {
+      reconnectTimer.current = null;
       setIsSpinning(false);
-      if (!isConnected) {
+      if (!webSocketManager.isConnected()) {
         showPopup('Failed to connect', '#EF4444');
       }
     }, 2000);

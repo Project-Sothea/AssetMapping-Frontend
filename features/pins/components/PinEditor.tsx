@@ -1,6 +1,6 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
 import { useCreatePin } from '~/features/pins/hooks/useCreatePin';
@@ -12,7 +12,9 @@ import type { PinValues } from '../types';
 
 import { PinForm } from './PinForm';
 
-type PinEditorProps =
+type PinEditorProps = {
+  onBusyChange?: (busy: boolean) => void;
+} & (
   | {
       mode: 'create';
       coords: { lat: number; lng: number };
@@ -23,28 +25,47 @@ type PinEditorProps =
       pin: Pin;
       onClose: () => void;
       onCancel: () => void;
-    };
+    }
+);
 
 export function PinEditor(props: PinEditorProps) {
-  const { busy } = useTransferState();
   const { createPinAsync } = useCreatePin();
   const { updatePinAsync } = useUpdatePin();
   const { deletePinAsync } = useDeletePin();
+  const { busy: transferBusy } = useTransferState();
+  const actionRunning = useRef(false);
+  const [busy, setBusy] = useState(false);
   const submitRef = useRef<(() => void) | null>(null);
   const isCreate = props.mode === 'create';
+
+  const runAction = async (
+    action: () => Promise<unknown>,
+    successMessage: string,
+    errorTitle: string
+  ) => {
+    if (actionRunning.current || transferBusy) return;
+    actionRunning.current = true;
+    setBusy(true);
+    props.onBusyChange?.(true);
+    try {
+      await action();
+      Alert.alert(successMessage);
+      props.onClose();
+    } catch (error) {
+      Alert.alert(errorTitle, error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      actionRunning.current = false;
+      setBusy(false);
+      props.onBusyChange?.(false);
+    }
+  };
 
   const handleCreateSubmit = async (values: PinValues) => {
     if (!values.lat || !values.lng) {
       Alert.alert('Error creating pin');
       return;
     }
-    try {
-      await createPinAsync(values);
-      Alert.alert('Saved on this device');
-      props.onClose();
-    } catch (error) {
-      Alert.alert('Failed to create pin', error instanceof Error ? error.message : 'Unknown error');
-    }
+    return runAction(() => createPinAsync(values), 'Pin Created!', 'Failed to create pin');
   };
 
   const handleUpdateSubmit = async (values: PinValues) => {
@@ -52,23 +73,23 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error updating pin');
       return;
     }
-    try {
-      await updatePinAsync({
-        id: values.id,
-        updates: {
-          name: values.name,
-          cityVillage: values.cityVillage,
-          address: values.address,
-          description: values.description,
-          type: values.type,
-          images: values.images,
-        },
-      });
-      Alert.alert('Saved on this device');
-      props.onClose();
-    } catch (error) {
-      Alert.alert('Failed to update pin', error instanceof Error ? error.message : 'Unknown error');
-    }
+    return runAction(
+      () =>
+        updatePinAsync({
+          id: values.id,
+          baseline: props.mode === 'edit' ? props.pin : undefined,
+          updates: {
+            name: values.name,
+            cityVillage: values.cityVillage,
+            address: values.address,
+            description: values.description,
+            type: values.type,
+            images: values.images,
+          },
+        }),
+      'Pin Updated!',
+      'Failed to update pin'
+    );
   };
 
   const handleDelete = async () => {
@@ -77,18 +98,17 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error deleting pin');
       return;
     }
-    try {
-      await deletePinAsync(props.pin.id);
-      Alert.alert('Deleted on this device', 'The deletion will be sent when you upload.');
-      props.onClose();
-    } catch (error) {
-      Alert.alert('Failed to delete pin', error instanceof Error ? error.message : 'Unknown error');
-    }
+    return runAction(
+      () => deletePinAsync({ id: props.pin.id, baseline: props.pin }),
+      'Pin Deleted!',
+      'Failed to delete pin'
+    );
   };
 
   return (
-    <View style={styles.container} pointerEvents={busy ? 'none' : 'auto'}>
+    <View style={styles.container}>
       <PinForm
+        disabled={busy || transferBusy}
         onSubmit={isCreate ? handleCreateSubmit : handleUpdateSubmit}
         selectedPin={isCreate ? null : props.pin}
         coords={isCreate ? props.coords : undefined}
@@ -98,19 +118,32 @@ export function PinEditor(props: PinEditorProps) {
       />
       <View style={styles.toolbar}>
         <TouchableOpacity
-          disabled={busy}
+          accessibilityLabel="Save pin"
+          disabled={busy || transferBusy}
           onPress={() => submitRef.current?.()}
           style={[styles.iconBtn, styles.primary]}>
           <MaterialIcons name="save" size={22} color="#fff" />
         </TouchableOpacity>
         {!isCreate && (
           <>
-            <TouchableOpacity onPress={props.onCancel} style={[styles.iconBtn, styles.muted]}>
+            <TouchableOpacity
+              disabled={busy}
+              onPress={props.onCancel}
+              style={[styles.iconBtn, styles.muted]}>
               <MaterialIcons name="visibility" size={22} color="#111" />
             </TouchableOpacity>
             <TouchableOpacity
-              disabled={busy}
-              onPress={handleDelete}
+              disabled={busy || transferBusy}
+              onPress={() =>
+                Alert.alert(
+                  'Delete this pin and its forms?',
+                  'This will remove the household and all linked responses when synced.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: handleDelete },
+                  ]
+                )
+              }
               style={[styles.iconBtn, styles.danger]}>
               <MaterialIcons name="delete" size={22} color="#fff" />
             </TouchableOpacity>
