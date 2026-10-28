@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e527c26d-fd73-4263-8667-3fbc0d1de4d7",
+  "id": "41028f5f-758b-4f89-913d-56ab2c109c2b",
   "prevId": "78b4d39f-7eb6-4dc6-a8c8-9392863519fd",
   "tables": {
     "forms": {
@@ -735,6 +735,58 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "sync_inflight": {
+      "name": "sync_inflight",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "queueId": {
+          "name": "queueId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entityType": {
+          "name": "entityType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entityId": {
+          "name": "entityId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation": {
+          "name": "operation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "sync_queue": {
       "name": "sync_queue",
       "columns": {
@@ -841,6 +893,13 @@
         },
         "deviceId": {
           "name": "deviceId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "writeOrigin": {
+          "name": "writeOrigin",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

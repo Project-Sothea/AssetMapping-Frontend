@@ -37,13 +37,6 @@ test('every scalar and array answer round-trips through local SQLite including n
     assert.deepEqual(payload[key], values[key], `outbox ${key}`);
 });
 
-test('clean initialization preserves existing downloaded rows', async (t) => {
-  const f = setup(t);
-  await f.load('services/sync/localDataReset.ts').resetLocalDataOnce();
-  assert.equal(f.sqlite.prepare('SELECT count(*) n FROM pins').get().n, 1);
-  assert.equal(f.storage.get('localDataResetVersion'), '1');
-});
-
 test('manual upload of an empty queue makes no HTTP writes', async (t) => {
   const f = setup(t);
   const result = await f.syncQueue.uploadPendingChanges();

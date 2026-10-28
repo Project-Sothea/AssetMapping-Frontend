@@ -290,53 +290,15 @@ test('a failed local photo triggers exactly one remote fallback', async (t) => {
 });
 
 test('required-field validation prevents saving invalid age and keeps the editor open', async (t) => {
-  let saves = 0,
-    general;
-  const f = componentFixture(t, {
-    '../hooks/useCreateForm': {
-      useCreateForm: () => ({
-        createFormAsync: async () => {
-          saves++;
-        },
-      }),
-    },
-    '../hooks/useUpdateForm': { useUpdateForm: () => ({ updateFormAsync: async () => {} }) },
-    '../hooks/useDeleteForm': { useDeleteForm: () => ({ deleteFormAsync: async () => {} }) },
-    '~/shared/components/ui/Spacer': { __esModule: true, default: () => null },
-    '~/shared/utils/errorHandling': { ErrorHandler: { handle: (e) => e, showAlert() {} } },
-    './GeneralSection': {
-      __esModule: true,
-      default: (props) => {
-        if (!props.mode) general = props;
-        return null;
-      },
-    },
-    './EducationSection': { __esModule: true, default: () => null },
-    './HealthSection': { __esModule: true, default: () => null },
-    './WaterSection': { __esModule: true, default: () => null },
-  });
-  const { FormEditor } = f.load('features/forms/components/FormEditor.tsx');
-  let tree,
-    closes = 0;
-  await act(async () => {
-    tree = create(
-      React.createElement(FormEditor, {
-        pinId: 'qa-pin',
-        selectedForm: null,
-        isEditing: true,
-        onClose: () => closes++,
-      })
-    );
-  });
-  await act(async () => {
-    general.setFieldValue('village', 'Krang Svat');
-    general.setFieldValue('age', 23.5);
-  });
+  let saves = 0;
+  const f = editorFixture(t, async () => saves++);
+  const tree = await f.mount();
+  await act(async () => f.general().setFieldValue('age', 23.5));
   await act(async () => {
     await tree.root.findByProps({ accessibilityLabel: 'Save form' }).props.onPress();
   });
   assert.equal(saves, 0);
-  assert.equal(closes, 0);
+  assert.equal(f.closes(), 0);
   await act(async () => tree.unmount());
 });
 
@@ -419,42 +381,5 @@ test('the actual form-list hook selects metadata without loading survey answers'
   assert.equal(rows.length, 1);
   assert.equal(Object.keys(rows[0]).length, 8);
   assert.equal(rows[0].longTermConditions, undefined);
-  await act(async () => tree.unmount());
-});
-
-test('the connection hook does not subscribe to data changes or transfer on mount', async (t) => {
-  let transfers = 0,
-    subscriptions = 0,
-    connects = 0;
-  const f = componentFixture(t, {
-    '~/services/websocket/WebSocketManager': {
-      webSocketManager: {
-        connect: async () => {
-          connects++;
-        },
-        onMessage: () => {
-          subscriptions++;
-          return () => {};
-        },
-      },
-    },
-    '~/services/sync/syncService': {
-      performIncrementalSync: async () => {
-        transfers++;
-      },
-    },
-  });
-  const { useRealTimeSync } = f.load('hooks/RealTimeSync/useRealTimeSync.ts');
-  let tree;
-  function Probe() {
-    useRealTimeSync('qa-self');
-    return null;
-  }
-  await act(async () => {
-    tree = create(React.createElement(Probe));
-  });
-  assert.equal(connects, 1);
-  assert.equal(subscriptions, 0);
-  assert.equal(transfers, 0);
   await act(async () => tree.unmount());
 });

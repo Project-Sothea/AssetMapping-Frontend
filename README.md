@@ -25,7 +25,7 @@ The existing `localDataResetVersion = '1'` marker remains supported, including o
 
 If an empty device's initial download fails, offline collection is still allowed after setup; retry Download Latest while the device remains empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the marker, so future updates do not flush the device again.
 
-Upload validates individual queued changes against saved answers before starting a new request. Invalid or mismatched changes stay unresolved while unrelated valid changes can upload. Local SQLite migration `0006_queue_write_origin` adds a nullable queue field recording new atomic writes; existing rows are not backfilled as trusted. An old queued deletion without that evidence or a matching recovery journal is held instead of being sent automatically. Unsynced records with no queue entry remain local; opening the app does not invent upload operations for them. These errors do not open a review wizard or lock normal navigation.
+Upload validates individual queued changes against saved answers before starting a new request. Invalid or mismatched changes stay unresolved while unrelated valid changes can upload. Local SQLite migration `0004_local_reliability` adds a nullable queue field recording new atomic writes; existing rows are not backfilled as trusted. An old queued deletion without that evidence or a matching recovery journal is held instead of being sent automatically. Unsynced records with no queue entry remain local; opening the app does not invent upload operations for them. These errors do not open a review wizard or lock normal navigation.
 
 ### Transfer Tests
 
