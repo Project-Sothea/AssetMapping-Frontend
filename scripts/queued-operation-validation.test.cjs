@@ -148,7 +148,7 @@ test('new atomic creates send complete optional answer meaning without changing 
 });
 
 test('an unknown create cannot falsely complete against a server row with additional omitted answers', async (t) => {
-  const f = fixture();
+  const f = fixture(':memory:', { legacy: true });
   t.after(f.close);
   f.setPins([await f.pinService.getPinById(f.pin.id)]);
   const form = await f.formService.createForm(f.values);
@@ -228,7 +228,6 @@ test('a complete unknown update journal replays its exact original wire body', a
   t.after(f.close);
   const form = await f.formService.createForm(f.values);
   for (const op of f.operations()) f.queue.markCompleted(op, { version: 1 });
-  f.setForms([await f.formService.getFormById(form.id)]);
   await f.formService.updateForm(form.id, { name: 'QA complete prior update' });
   const op = formOperation(f);
   op.writeOrigin = null;

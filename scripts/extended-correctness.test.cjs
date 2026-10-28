@@ -12,6 +12,18 @@ function setup(t, options = {}) {
   t.after(f.close);
   return f;
 }
+function fullForm(f, form) {
+  return { ...Object.fromEntries(FORM_ARRAY_FIELDS.map((key) => [key, []])), ...form };
+}
+function useSnapshot(f, initial) {
+  let data = initial;
+  const api = f.load('services/api/client.ts');
+  // The source module imports this exact object through the isolated module loader.
+  api.request = async () => (typeof data === 'function' ? data() : { success: true, data });
+  return (value) => {
+    data = value;
+  };
+}
 
 test('every scalar and array answer round-trips through local SQLite including null, blank, false, zero and Unicode', async (t) => {
   const f = setup(t);
@@ -37,12 +49,125 @@ test('every scalar and array answer round-trips through local SQLite including n
     assert.deepEqual(payload[key], values[key], `outbox ${key}`);
 });
 
+test('snapshot catches deletions missed while offline', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 2 });
+  useSnapshot(f, { protocolVersion: 1, pins: [], forms: [] });
+  await f.pulls.pullSnapshot();
+  assert.equal(await f.formService.getFormById(form.id), null);
+  assert.equal(f.sqlite.prepare('SELECT count(*) n FROM pins').get().n, 0);
+});
+
+test('snapshot absence never deletes pending/failed answers or their parent pin', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  f.sqlite.exec("UPDATE sync_queue SET status='failed'");
+  useSnapshot(f, { protocolVersion: 1, pins: [], forms: [] });
+  await f.pulls.pullSnapshot();
+  assert.equal((await f.formService.getFormById(form.id)).name, f.values.name);
+  assert.equal(f.operations().length, 2);
+});
+
+test('snapshot started before a create acknowledgement cannot prune that newly synced response', async (t) => {
+  const f = setup(t);
+  let release;
+  useSnapshot(
+    f,
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      })
+  );
+  const pulling = f.pulls.pullSnapshot();
+  const form = await f.formService.createForm(f.values);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 1 });
+  release({ success: true, data: { protocolVersion: 1, pins: [f.pin], forms: [] } });
+  await pulling;
+  assert.ok(await f.formService.getFormById(form.id));
+});
+
+test('snapshot started before an edit acknowledgement cannot prune the changed response', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  for (const op of f.operations()) f.queue.markCompleted(op, { version: 1 });
+  let release;
+  useSnapshot(
+    f,
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      })
+  );
+  const pulling = f.pulls.pullSnapshot();
+  await f.formService.updateForm(form.id, { name: 'QA newer answer' });
+  for (const op of f.operations().filter((op) => op.status === 'pending'))
+    f.queue.markCompleted(op, { version: 2 });
+  release({ success: true, data: { protocolVersion: 1, pins: [f.pin], forms: [] } });
+  await pulling;
+  assert.equal((await f.formService.getFormById(form.id)).name, 'QA newer answer');
+});
+
+for (const badCase of [
+  'duplicate ID',
+  'orphan',
+  'invalid age',
+  'invalid selection',
+  'unsupported protocol',
+]) {
+  test(`rejects ${badCase} snapshot before making any row changes`, async (t) => {
+    const f = setup(t);
+    const saved = await f.formService.createForm(f.values);
+    const form = fullForm(f, { ...saved, name: 'QA server replacement' });
+    const snapshot = { protocolVersion: 1, pins: [f.pin], forms: [form] };
+    if (badCase === 'duplicate ID') snapshot.pins.push(f.pin);
+    if (badCase === 'orphan') form.pinId = 'missing';
+    if (badCase === 'invalid age') form.age = 1.5;
+    if (badCase === 'invalid selection') form.longTermConditions = 'not an array';
+    if (badCase === 'unsupported protocol') snapshot.protocolVersion = 99;
+    useSnapshot(f, snapshot);
+    const before = f.sqlite.prepare('SELECT total_changes() n').get().n;
+    await assert.rejects(f.pulls.pullSnapshot());
+    assert.equal(f.sqlite.prepare('SELECT total_changes() n').get().n, before);
+  });
+}
+
+test('failed snapshot request cannot prune local rows or mark pending work synced', async (t) => {
+  const f = setup(t);
+  const form = await f.formService.createForm(f.values);
+  useSnapshot(f, () => ({ success: false, error: 'HTTP 500' }));
+  await assert.rejects(f.pulls.pullSnapshot(), /500/);
+  assert.equal((await f.formService.getFormById(form.id)).status, 'unsynced');
+  assert.equal(f.operations().filter((op) => op.status === 'pending').length, 2);
+});
+
 test('manual upload of an empty queue makes no HTTP writes', async (t) => {
   const f = setup(t);
   const result = await f.syncQueue.uploadPendingChanges();
   assert.equal(result.uploaded, 0);
   assert.equal(result.remaining, 0);
   assert.equal(f.calls.length, 0);
+});
+
+test('a refresh requested during a snapshot runs a fresh follow-up pass', async (t) => {
+  const f = setup(t, { storage: [['localDataResetVersion', '1']] });
+  let release;
+  let calls = 0;
+  useSnapshot(f, () => {
+    calls++;
+    return calls === 1
+      ? new Promise((resolve) => {
+          release = resolve;
+        })
+      : { success: true, data: { protocolVersion: 1, pins: [f.pin], forms: [] } };
+  });
+  const service = f.load('scripts/test-support/sync-tools.ts');
+  const first = service.performFullSync();
+  while (!release) await Promise.resolve();
+  const second = service.performIncrementalSync();
+  release({ success: true, data: { protocolVersion: 1, pins: [f.pin], forms: [] } });
+  await Promise.all([first, second]);
+  assert.equal(calls, 2);
 });
 
 for (const seed of [1, 7, 42, 8675309]) {
@@ -103,17 +228,18 @@ for (const seed of [1, 7, 42, 8675309]) {
   });
 }
 
-test('a stale open editor cannot overwrite answers saved by another local editor', async (t) => {
+test('a stale open editor cannot overwrite answers downloaded since editing began', async (t) => {
   const f = setup(t);
   const created = await f.formService.createForm(f.values);
   for (const op of f.operations()) f.queue.markCompleted(op, { version: 1 });
   const baseline = await f.formService.getFormById(created.id);
-  await f.formService.updateForm(created.id, { name: 'QA newer local answer' });
+  f.setForms([fullForm(f, { ...baseline, name: 'QA newer server answer', version: 2 })]);
+  await f.pulls.pullAllForms();
   await assert.rejects(
     f.formService.updateForm(created.id, { ...baseline, name: 'QA stale draft' }, baseline),
     /changed while.*editing/i
   );
-  assert.equal((await f.formService.getFormById(created.id)).name, 'QA newer local answer');
+  assert.equal((await f.formService.getFormById(created.id)).name, 'QA newer server answer');
 });
 
 test('an acknowledgement with unchanged answers does not invalidate the open editor', async (t) => {
@@ -146,7 +272,7 @@ for (const malformed of [undefined, { id: 'wrong-id', version: 1 }, { version: 1
     const f = setup(t);
     const form = await f.formService.createForm(f.values);
     f.setSyncResponse(async () => ({ success: true, data: malformed }));
-    await f.syncQueue.uploadPendingChanges();
+    await f.syncQueue.processQueue();
     assert.equal((await f.formService.getFormById(form.id)).status, 'unsynced');
     assert.ok(f.operations().every((op) => op.status !== 'completed'));
   });
@@ -159,7 +285,7 @@ test('an acknowledgement containing different answers preserves the original loc
     success: true,
     data: { ...request.payload, version: 2, name: 'QA wrong server answer' },
   }));
-  await f.syncQueue.uploadPendingChanges();
+  await f.syncQueue.processQueue();
   assert.equal((await f.formService.getFormById(form.id)).name, f.values.name);
   assert.equal((await f.formService.getFormById(form.id)).status, 'unsynced');
 });
@@ -190,7 +316,7 @@ test('an in-flight create replay rebases the newer queued edit before sending it
   const old = f.operations().find((op) => op.entityType === 'form');
   f.queue.stageOperation(old);
   await f.formService.updateForm(form.id, { name: 'QA latest after uncertain create' });
-  await f.syncQueue.uploadPendingChanges();
+  await f.syncQueue.processQueue();
   assert.equal((await f.formService.getFormById(form.id)).name, 'QA latest after uncertain create');
   assert.equal((await f.formService.getFormById(form.id)).status, 'synced');
   const calls = f.calls.filter((request) => request.entityType === 'form');

@@ -286,7 +286,7 @@ Pin images are stored locally using Expo's filesystem and synced to the backend 
 
 ## Reliability and testing
 
-The app keeps the existing manual Upload/Download workflow and backend contract. There is one regular SO'FORM package; this PR does not add a QA app variant or a future-protocol switch.
+The app keeps the existing manual Upload/Download workflow and backend contract. There is one regular SO'FORM package. This future-work branch adds an explicit protocol switch; it does not add a QA app variant.
 
 - Saving, reconnecting, notifications and changing the API URL do not upload survey responses. Empty-device setup may download once.
 - Blank names and household/village IDs stay blank; cards/details display “Not provided”. Existing collection dates are not guessed.
@@ -302,7 +302,7 @@ npm test -- --runInBand
 npx tsc --noEmit
 ```
 
-These tests use synthetic SQLite/network/native fixtures. Future snapshot reconciliation and its research tooling are excluded from this PR.
+These tests use synthetic SQLite/network/native fixtures. This future-work branch also retains isolated snapshot/reconciliation experiments; they are not used by the manual download screen.
 
 ### Testing PR #38 before merge
 
@@ -322,3 +322,9 @@ Minimum checks:
 - Update with existing/pending data and a missing historical setup marker. Preserve answers/outbox/journals without implicit transfers. Hold malformed uploads individually; incompatible schemas and unknown future setup versions still require recovery assistance. Do not uninstall or clear storage to bypass a failure.
 
 Report source SHA, package/build number, OS/device, steps and expected/actual results. Physical-device endurance, low-storage and exact-build Android/iOS sign-off remain pending. Survey forms have no photo field; image resizing/caps are outside this PR.
+
+## Future protocol draft (separate from PR #38)
+
+This branch depends on PR #38 and is not part of its current-server release. `EXPO_PUBLIC_SYNC_PROTOCOL=durable` selects the proposed protocol-2 backend contract; absent configuration continues using the existing contract. Coordinate any rollout with backend PR #13 and compatible Android/iOS clients. This branch retains the future snapshot/reconciliation test helpers and optional `npm run test:perf` benchmark. It does not restore the SO'FORM QA identity, QA profiles, networking plugin or runtime URL guard.
+
+The companion backend draft's durable system checks require this frontend branch beside that backend checkout. Ordinary current-server regression checks belong on PR #38. Neither draft is a deployment instruction.

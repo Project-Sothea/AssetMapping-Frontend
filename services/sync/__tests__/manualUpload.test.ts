@@ -3,34 +3,38 @@ import { eq } from 'drizzle-orm';
 
 import { forms, pins, syncQueue } from '~/db/schema';
 import { deletePin } from '~/features/pins/services/PinService';
-import { fetchForm } from '~/services/api/formsApi';
-import { fetchPin } from '~/services/api/pinsApi';
 import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
-import { createCurrentServer, createForm, createPin } from './fixtures';
+import { createForm, createPin } from './fixtures';
 import { initializeTestDb, resetTestDb } from './testDb';
 
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
 jest.mock('~/services/images/ImageManager', () => ({ deleteImagesByFilename: jest.fn() }));
 jest.mock('~/services/api/syncApi', () => ({ sync: jest.fn() }));
-jest.mock('~/services/api/pinsApi', () => ({ fetchPin: jest.fn() }));
-jest.mock('~/services/api/formsApi', () => ({ fetchForm: jest.fn() }));
 const api = jest.mocked(sync);
-const server = createCurrentServer();
 beforeAll(initializeTestDb);
 beforeEach(() => {
   resetTestDb();
   finishSetup();
   jest.useFakeTimers();
   api.mockReset();
-  server.clear();
-  jest.mocked(fetchPin).mockImplementation(server.fetchPin);
-  jest.mocked(fetchForm).mockImplementation(server.fetchForm);
-  api.mockImplementation(server.sync);
+  api.mockImplementation(
+    async (request) =>
+      ({
+        success: true,
+        data:
+          request.operation === 'delete'
+            ? { id: request.payload.id, deleted: true }
+            : {
+                ...request.payload,
+                version: request.operation === 'create' ? 1 : Number(request.payload.version) + 1,
+              },
+      }) as never
+  );
 });
 afterEach(() => {
   jest.clearAllTimers();
@@ -68,16 +72,19 @@ test('a timed-out operation retries with the same idempotency key on the next ma
 
 test('a committed write with a lost acknowledgement is applied only once across manual retries', async () => {
   await createPin({ id: 'p', name: 'A', lat: 1, lng: 2 });
+  const committedKeys = new Set<string>();
   let serverWrites = 0;
   api.mockImplementation(async (request) => {
-    server.commit(request);
-    serverWrites++;
-    throw new Error('Response lost after commit');
+    if (!committedKeys.has(request.idempotencyKey)) {
+      committedKeys.add(request.idempotencyKey);
+      serverWrites++;
+      throw new Error('Response lost after commit');
+    }
+    return { success: true, data: { ...request.payload, version: 1 } } as never;
   });
   expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, remaining: 0 });
   expect(serverWrites).toBe(1);
-  expect(api).toHaveBeenCalledTimes(1);
   expect(db.select().from(pins).get()?.version).toBe(1);
 });
 

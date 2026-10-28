@@ -7,20 +7,29 @@ import { fetchPin } from '~/services/api/pinsApi';
 import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 import { deletePinImageDirectory } from '~/services/images/ImageManager';
+import { isLegacySync } from '~/services/sync/protocol';
 
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
-import { createCurrentServer, createPin } from './fixtures';
+import { createPin } from './fixtures';
 import { exportTestDb, initializeTestDb, resetTestDb } from './testDb';
 
 const mockPhotos = new Set<string>();
 const mockUploadedPhotos = new Set<string>();
-const server = createCurrentServer();
-const mockServerPins = server.pins;
+const mockServerPins = new Map<string, Record<string, unknown>>();
+const mockReceipts = new Map<string, Record<string, unknown>>();
 const mockNativeUpload = jest.fn();
 let mockLoseReply = false;
 let mockFailBeforeMetadata = false;
+let mockLegacy = false;
+// Select the deployment contract as a test parameter only. The preflight/content
+// recovery, ACK validation, queue, CRUD and cleanup code remain the real services.
+jest.mock('~/services/sync/protocol', () => ({
+  get isLegacySync() {
+    return mockLegacy;
+  },
+}));
 jest.mock('expo-file-system/next', () => ({
   File: class {
     private uri: string;
@@ -73,22 +82,47 @@ beforeEach(() => {
   mockPhotos.clear();
   mockPhotos.add('file:///pins/p/photo.jpg');
   mockUploadedPhotos.clear();
-  server.clear();
+  mockServerPins.clear();
+  mockReceipts.clear();
   mockLoseReply = false;
   mockFailBeforeMetadata = false;
   mockNativeUpload.mockReset().mockResolvedValue({ status: 200 });
-  jest.mocked(fetchPin).mockImplementation(server.fetchPin);
+  jest.mocked(fetchPin).mockImplementation(async (id) => {
+    const pin = mockServerPins.get(id);
+    return pin
+      ? ({ success: true, data: pin } as never)
+      : { success: false, error: 'HTTP 404: Pin not found' };
+  });
   jest.mocked(sync).mockImplementation(async (request) => {
     if (mockFailBeforeMetadata) {
       mockFailBeforeMetadata = false;
       throw new Error('Network timeout before metadata commit');
     }
-    const result = server.commit(request);
+    // Legacy recovery must rely on the real GET/content comparison, not the
+    // durable server receipt behavior used by the protocol-2 test double.
+    let result = mockLegacy ? undefined : mockReceipts.get(request.idempotencyKey);
+    if (!result) {
+      const existing = mockServerPins.get(String(request.payload.id));
+      if (request.operation === 'create' && existing)
+        return { success: false, error: 'HTTP 409: Pin already exists' };
+      if (request.operation !== 'create' && !existing)
+        return { success: false, error: 'HTTP 404: Pin not found' };
+      result =
+        request.operation === 'delete'
+          ? { id: request.payload.id, deleted: true }
+          : {
+              ...request.payload,
+              version: request.operation === 'create' ? 1 : Number(existing?.version) + 1,
+            };
+      if (!mockLegacy) mockReceipts.set(request.idempotencyKey, result);
+      if (request.operation === 'delete') mockServerPins.delete(String(request.payload.id));
+      else mockServerPins.set(String(request.payload.id), result);
+    }
     if (mockLoseReply) {
       mockLoseReply = false;
       throw new Error('Network timeout after server commit');
     }
-    return result;
+    return { success: true, data: result } as never;
   });
 });
 
@@ -112,7 +146,12 @@ function expectDeletionComplete() {
 // These reload an exported SQLite image while deliberately retaining simulated
 // remote state/photos. Actual OS force-stop and native filesystem persistence
 // still require Android/iOS device QA.
-describe('current-server photo deletion recovery', () => {
+describe.each(['legacy', 'durable'] as const)('%s photo deletion recovery', (protocol) => {
+  beforeEach(() => {
+    mockLegacy = protocol === 'legacy';
+    expect(isLegacySync).toBe(mockLegacy);
+  });
+
   test('lost create ACK retains photos through reload and repeated contract-specific replay failures', async () => {
     await photoPin();
     mockLoseReply = true;
@@ -123,20 +162,25 @@ describe('current-server photo deletion recovery', () => {
     expect(deletePinImageDirectory).not.toHaveBeenCalled();
     resetTestDb(exportTestDb());
     for (let attempt = 0; attempt < 3; attempt++) {
-      jest
-        .mocked(fetchPin)
-        .mockResolvedValueOnce({ success: false, error: 'HTTP 503: Network unavailable' });
+      if (mockLegacy)
+        jest
+          .mocked(fetchPin)
+          .mockResolvedValueOnce({ success: false, error: 'HTTP 503: Network unavailable' });
+      else mockNativeUpload.mockRejectedValueOnce(new Error('Network error'));
       expect(await uploadPendingChanges()).toMatchObject({ failed: 1, blocked: 1, remaining: 1 });
       expect(new File('file:///pins/p/photo.jpg').exists).toBe(true);
       expect(db.select().from(syncInflight).all()).toHaveLength(1);
     }
     expect(await uploadPendingChanges()).toMatchObject({ uploaded: 2, failed: 0, remaining: 0 });
     expectDeletionComplete();
-    expect(mockNativeUpload).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(sync).mock.calls.map(([request]) => request.operation)).toEqual([
-      'create',
-      'delete',
-    ]);
+    if (mockLegacy) {
+      expect(mockNativeUpload).toHaveBeenCalledTimes(1);
+      expect(jest.mocked(sync).mock.calls.map(([request]) => request.operation)).toEqual([
+        'create',
+        'delete',
+      ]);
+      expect(mockReceipts.size).toBe(0);
+    } else expect(mockReceipts.size).toBe(2);
   });
 
   test('photo uploaded but metadata never committed retains its journal and file until replay then deletion', async () => {
@@ -202,10 +246,11 @@ describe('current-server photo deletion recovery', () => {
       operation: 'delete',
       payload: { id: 'p', version: 2 },
     });
-    expect(requests.filter((request) => request.operation === 'update')).toHaveLength(1);
+    if (mockLegacy)
+      expect(requests.filter((request) => request.operation === 'update')).toHaveLength(1);
   });
 
-  test('lost delete ACK preserves files across reload until GET404 confirms deletion', async () => {
+  test('lost delete ACK preserves files across reload until GET404 or durable receipt confirms deletion', async () => {
     await photoPin();
     await uploadPendingChanges();
     await deletePin('p');
@@ -216,9 +261,10 @@ describe('current-server photo deletion recovery', () => {
     resetTestDb(exportTestDb());
     expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
     expectDeletionComplete();
-    expect(
-      jest.mocked(sync).mock.calls.filter(([request]) => request.operation === 'delete')
-    ).toHaveLength(1);
+    if (mockLegacy)
+      expect(
+        jest.mocked(sync).mock.calls.filter(([request]) => request.operation === 'delete')
+      ).toHaveLength(1);
   });
 
   test('cleanup failure after persisted ACK recovers on a subsequent explicit upload after database reload', async () => {
