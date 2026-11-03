@@ -1,10 +1,8 @@
-import { Image } from 'react-native';
-
 import { MAX_PHOTO_BYTES, prepareImageUpload } from './prepareImageUpload';
 
 const original = 'file:///pins/p/photo.png';
 const mockFiles = new Map<string, number>();
-const mockDimensions = jest.fn<Promise<{ width: number; height: number }>, [string]>();
+const mockDimensions = { width: 4000, height: 3000 };
 const mockDeleted: string[] = [];
 const mockResize = jest.fn();
 const mockReleaseImage = jest.fn();
@@ -39,9 +37,12 @@ beforeEach(() => {
   mockFiles.clear();
   mockDeleted.length = 0;
   mockFiles.set(original, 4 * MAX_PHOTO_BYTES);
-  mockDimensions.mockResolvedValue({ width: 4000, height: 3000 });
-  jest.spyOn(Image, 'getSize').mockImplementation((uri) => mockDimensions(uri));
-  mockRender.mockResolvedValue({ saveAsync: mockSave, release: mockReleaseImage });
+  Object.assign(mockDimensions, { width: 4000, height: 3000 });
+  mockRender.mockImplementation(async () => ({
+    ...mockDimensions,
+    saveAsync: mockSave,
+    release: mockReleaseImage,
+  }));
   mockManipulate.mockReturnValue({
     resize: mockResize,
     renderAsync: mockRender,
@@ -60,24 +61,26 @@ test('large landscape photo gets a bounded JPEG copy; original survives cleanup'
   expect(mockResize).toHaveBeenCalledWith({ width: 1600 });
   expect(mockSave).toHaveBeenCalledWith({ format: 'jpeg', compress: 0.8, base64: false });
   expect(photo).toMatchObject({ uri: 'file:///cache/0.8.jpg', contentType: 'image/jpeg' });
-  expect(mockReleaseImage).toHaveBeenCalledTimes(1);
+  expect(mockReleaseImage).toHaveBeenCalledTimes(2);
   expect(mockReleaseContext).toHaveBeenCalledTimes(1);
   photo.dispose();
   expect(mockDeleted).toEqual(['file:///cache/0.8.jpg']);
   expect(mockFiles.has(original)).toBe(true);
 });
 test('portrait resizing preserves aspect ratio by specifying only height', async () => {
-  mockDimensions.mockResolvedValue({ width: 3000, height: 4000 });
+  Object.assign(mockDimensions, { width: 3000, height: 4000 });
   (await prepareImageUpload(original, 'image/heic')).dispose();
   expect(mockResize).toHaveBeenCalledWith({ height: 1600 });
 });
 test('small JPEG avoids encoding, enlargement and original deletion', async () => {
   mockFiles.set(original, 100000);
-  mockDimensions.mockResolvedValue({ width: 800, height: 600 });
+  Object.assign(mockDimensions, { width: 800, height: 600 });
   const photo = await prepareImageUpload(original, 'image/jpeg');
   expect(photo).toMatchObject({ uri: original, contentType: 'image/jpeg' });
   photo.dispose();
-  expect(mockManipulate).not.toHaveBeenCalled();
+  expect(mockSave).not.toHaveBeenCalled();
+  expect(mockReleaseImage).toHaveBeenCalledTimes(1);
+  expect(mockReleaseContext).toHaveBeenCalledTimes(1);
   expect(mockDeleted).toEqual([]);
 });
 test('oversize encoded output retries quality and removes unused copies', async () => {
@@ -120,14 +123,15 @@ test('oversized animation is rejected without flattening it', async () => {
   expect(mockDeleted).toEqual([]);
 });
 test.each([0, Infinity])('invalid width %s cannot produce an upload', async (width) => {
-  mockDimensions.mockResolvedValue({ width, height: 3000 });
+  Object.assign(mockDimensions, { width, height: 3000 });
   await expect(prepareImageUpload(original, 'image/jpeg')).rejects.toThrow(/dimensions/);
-  expect(mockManipulate).not.toHaveBeenCalled();
+  expect(mockReleaseImage).toHaveBeenCalledTimes(1);
+  expect(mockReleaseContext).toHaveBeenCalledTimes(1);
 });
 
 test('small photo with a legacy non-JPEG key gets actual JPEG MIME on reupload', async () => {
   mockFiles.set(original, 100000);
-  mockDimensions.mockResolvedValue({ width: 800, height: 600 });
+  Object.assign(mockDimensions, { width: 800, height: 600 });
   mockSave.mockImplementationOnce(async () => {
     mockFiles.set('file:///cache/new.jpg', 90000);
     return { uri: 'file:///cache/new.jpg', width: 800, height: 600 };
@@ -136,5 +140,25 @@ test('small photo with a legacy non-JPEG key gets actual JPEG MIME on reupload',
   expect(photo.contentType).toBe('image/jpeg');
   expect(mockResize).not.toHaveBeenCalled();
   photo.dispose();
+  expect(mockFiles.has(original)).toBe(true);
+});
+
+test('a sub-2 MiB JPEG still resizes when its codec bitmap exceeds 1600px', async () => {
+  mockFiles.set(original, 353734);
+  Object.assign(mockDimensions, { width: 2200, height: 1650 });
+  const photo = await prepareImageUpload(original, 'image/jpeg');
+  expect(mockResize).toHaveBeenCalledWith({ width: 1600 });
+  expect(photo.uri).not.toBe(original);
+  photo.dispose();
+  expect(mockFiles.has(original)).toBe(true);
+});
+
+test('failure while rendering the resize releases the initial bitmap too', async () => {
+  // First decode succeeds; the second (resize) render fails.
+  mockRender.mockResolvedValueOnce({ ...mockDimensions, release: mockReleaseImage });
+  mockRender.mockRejectedValueOnce(new Error('Resize failed'));
+  await expect(prepareImageUpload(original, 'image/jpeg')).rejects.toThrow('Resize failed');
+  expect(mockReleaseImage).toHaveBeenCalledTimes(1);
+  expect(mockReleaseContext).toHaveBeenCalledTimes(1);
   expect(mockFiles.has(original)).toBe(true);
 });

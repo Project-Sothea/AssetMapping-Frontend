@@ -1,6 +1,5 @@
 import { File } from 'expo-file-system/next';
 import type { ImageRef } from 'expo-image-manipulator';
-import { Image } from 'react-native';
 
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 export const MAX_PHOTO_EDGE = 1600;
@@ -29,18 +28,6 @@ export async function prepareImageUpload(uri: string, contentType: string) {
     return { uri, contentType, dispose: () => {} };
   }
 
-  const { width, height } = await Image.getSize(uri);
-  if (!(width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height)))
-    throw new Error('Could not read photo dimensions.');
-  // A downloaded JPEG can retain an older PNG/HEIC object key. Normalize non-JPEG
-  // inputs on every upload so MIME always describes the bytes, not the key suffix.
-  if (
-    contentType === 'image/jpeg' &&
-    original.size <= MAX_PHOTO_BYTES &&
-    Math.max(width, height) <= MAX_PHOTO_EDGE
-  )
-    return { uri, contentType, dispose: () => {} };
-
   // Load the native codec only when required. Never read photo bytes/base64 into JS.
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy native codec loading
   const codec = require('expo-image-manipulator') as typeof import('expo-image-manipulator');
@@ -49,9 +36,26 @@ export async function prepareImageUpload(uri: string, contentType: string) {
   const temporary = new Set<string>();
   let retained: string | undefined;
   try {
-    if (Math.max(width, height) > MAX_PHOTO_EDGE)
-      context.resize(width >= height ? { width: MAX_PHOTO_EDGE } : { height: MAX_PHOTO_EDGE });
+    // Android's display image pipeline can report downsampled dimensions. Make
+    // both the pass-through and resize decisions from the actual codec bitmap.
     rendered = await context.renderAsync();
+    const { width, height } = rendered;
+    if (!(width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height)))
+      throw new Error('Could not read photo dimensions.');
+    if (
+      contentType === 'image/jpeg' &&
+      original.size <= MAX_PHOTO_BYTES &&
+      Math.max(width, height) <= MAX_PHOTO_EDGE
+    )
+      return { uri, contentType, dispose: () => {} };
+
+    if (Math.max(width, height) > MAX_PHOTO_EDGE) {
+      context.resize(width >= height ? { width: MAX_PHOTO_EDGE } : { height: MAX_PHOTO_EDGE });
+      const resized = await context.renderAsync();
+      rendered.release();
+      rendered = resized;
+    }
+    // Normalize non-JPEG keys too: a cached JPEG may retain a PNG/HEIC suffix.
     for (const compress of [0.8, 0.6, 0.4]) {
       const result = await rendered.saveAsync({
         format: codec.SaveFormat.JPEG,
