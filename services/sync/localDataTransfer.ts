@@ -1,8 +1,8 @@
-import { count, getTableColumns, sql } from 'drizzle-orm';
+import { getTableColumns } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { FORM_ARRAY_FIELDS } from '~/db/formArrayFields';
-import { forms, pins, syncQueue, syncInflight } from '~/db/schema';
+import { forms, pins, syncQueue } from '~/db/schema';
 import { mapPinDbToPin, sanitizeFormForDb, sanitizePinForDb } from '~/db/utils';
 import { fetchForms } from '~/services/api/formsApi';
 import { fetchPins } from '~/services/api/pinsApi';
@@ -10,32 +10,20 @@ import { db } from '~/services/drizzleDb';
 import { deleteImageByFilename } from '~/services/images/ImageManager';
 import { assertSafeImageComponent } from '~/services/images/imagePaths';
 
-import { getQueueMetrics } from './queue/syncQueue';
+import { outstanding } from './queue/queueOperations';
 import { clearLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 import { getTransferState, runTransfer } from './transferCoordinator';
 
 export async function getLocalDataSummary() {
-  const pinCounts = db
-    .select({
-      total: count(),
-      unsynced: sql<number>`coalesce(sum(case when ${pins.status} = 'synced' then 0 else 1 end), 0)`,
-    })
-    .from(pins)
-    .get()!;
-  const formCounts = db
-    .select({
-      total: count(),
-      unsynced: sql<number>`coalesce(sum(case when ${forms.status} = 'synced' then 0 else 1 end), 0)`,
-    })
-    .from(forms)
-    .get()!;
-  const metrics = await getQueueMetrics();
+  const localPins = db.select().from(pins).all();
+  const localForms = db.select().from(forms).all();
+  const queue = db.select().from(syncQueue).where(outstanding).all();
   return {
-    pins: pinCounts.total,
-    forms: formCounts.total,
-    pending: metrics.pending,
-    failed: metrics.failed,
-    unsynced: pinCounts.unsynced + formCounts.unsynced,
+    pins: localPins.length,
+    forms: localForms.length,
+    pending: queue.filter((row) => row.status === 'pending').length,
+    failed: queue.filter((row) => row.status === 'failed').length,
+    unsynced: [...localPins, ...localForms].filter((row) => row.status !== 'synced').length,
   };
 }
 
@@ -145,7 +133,6 @@ export async function clearLocalData(): Promise<{ cleanupWarnings: string[] }> {
       tx.delete(forms).run();
       tx.delete(pins).run();
       tx.delete(syncQueue).run();
-      tx.delete(syncInflight).run();
     });
     const cleanupWarnings: string[] = [];
     for (const pin of localPins) {

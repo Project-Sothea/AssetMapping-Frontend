@@ -13,7 +13,7 @@ import {
 } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import type { Feature } from 'geojson';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppState, View, Text, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 
 import pin from '~/assets/pin.png';
@@ -31,7 +31,6 @@ const OFFLINE_STYLE_URL = MapboxGL.StyleURL.Street;
 
 type MapProps = {
   initialCoords?: { lat: number; lng: number };
-  onInitialCoordsHandled?: () => void;
 };
 
 const DEFAULT_COORDS = { lat: 12.794459, lng: 103.308443 };
@@ -44,9 +43,8 @@ type PinModalState =
   | { mode: 'view'; pin: Pin }
   | null;
 
-export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps = {}) {
+export default function Map({ initialCoords }: MapProps = {}) {
   const pins = useFetchLocalPins();
-  const pinCollection = useMemo(() => convertPinsToPointCollection(pins), [pins]);
   const [mapKey, setMapKey] = useState(0);
   const cameraRef = useRef<Camera>(null);
   const [styleUrl, setStyleUrl] = useState<string>(DEFAULT_STYLE_URL);
@@ -55,34 +53,24 @@ export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps 
   const [pinModalState, setPinModalState] = useState<PinModalState>(null);
 
   const screenIsFocused = useIsFocused();
-  const savedCamera = useRef({
-    centerCoordinate: [
-      (initialCoords ?? DEFAULT_COORDS).lng,
-      (initialCoords ?? DEFAULT_COORDS).lat,
-    ],
-    zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
-  });
+  const targetCoords = initialCoords ?? DEFAULT_COORDS;
 
   // Open initial pin and center camera if provided
   useEffect(() => {
-    if (!initialCoords) return;
     const timer = setTimeout(() => {
-      if (cameraRef.current) {
+      if (cameraRef.current && targetCoords.lng && targetCoords.lat) {
         cameraRef.current.setCamera({
-          centerCoordinate: [initialCoords.lng, initialCoords.lat],
-          zoomLevel: PIN_ZOOM,
+          centerCoordinate: [targetCoords.lng, targetCoords.lat],
+          zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
           animationDuration: 1000,
         });
-        onInitialCoordsHandled?.();
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [initialCoords, onInitialCoordsHandled]);
+  }, [initialCoords, targetCoords.lng, targetCoords.lat]);
 
   useEffect(() => {
-    if (!screenIsFocused) return;
-    let active = true;
     const setupLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -91,7 +79,7 @@ export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps 
           return;
         }
 
-        if (active) MapboxGL.locationManager.start();
+        MapboxGL.locationManager.start();
       } catch (e) {
         console.warn('Failed to start Mapbox location manager', e);
       }
@@ -100,10 +88,9 @@ export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps 
     setupLocation();
 
     return () => {
-      active = false;
       MapboxGL.locationManager.stop();
     };
-  }, [screenIsFocused]);
+  }, []);
 
   // Recreate the native map surface after the app resumes from the background.
   useEffect(() => {
@@ -181,12 +168,6 @@ export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps 
         key={mapKey}
         style={{ flex: 1 }}
         styleURL={styleUrl}
-        onCameraChanged={(event) => {
-          savedCamera.current = {
-            centerCoordinate: event.properties.center,
-            zoomLevel: event.properties.zoom,
-          };
-        }}
         compassEnabled
         scaleBarEnabled
         onMapLoadingError={() => {
@@ -195,16 +176,22 @@ export default function Map({ initialCoords, onInitialCoordsHandled }: MapProps 
         }}
         onDidFinishRenderingMapFully={() => setMapLoadFailed(false)}
         onLongPress={handleDropPin}>
-        <Camera ref={cameraRef} maxZoomLevel={MAX_ZOOM} defaultSettings={savedCamera.current} />
-        <LocationPuck
-          visible={screenIsFocused}
-          puckBearingEnabled={screenIsFocused}
-          puckBearing="heading"
-          pulsing={{ isEnabled: screenIsFocused }}
+        <Camera
+          ref={cameraRef}
+          maxZoomLevel={MAX_ZOOM}
+          defaultSettings={{
+            centerCoordinate: [targetCoords.lng, targetCoords.lat],
+            zoomLevel: initialCoords ? PIN_ZOOM : DEFAULT_ZOOM,
+          }}
         />
+        <LocationPuck puckBearingEnabled puckBearing="heading" pulsing={{ isEnabled: true }} />
         <Images images={{ pin }} />
         {pins && (
-          <ShapeSource id="pins" shape={pinCollection} onPress={handleOpenPin} cluster>
+          <ShapeSource
+            id="pins"
+            shape={convertPinsToPointCollection(pins)}
+            onPress={handleOpenPin}
+            cluster>
             <SymbolLayer
               id="pointCount"
               style={{

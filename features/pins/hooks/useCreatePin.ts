@@ -5,7 +5,6 @@ import { PinValues } from '../types/';
 
 export const useCreatePin = () => {
   const mutation = useMutation({
-    retry: false,
     mutationFn: (pin: PinValues) => createPin(pin),
   });
 

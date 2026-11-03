@@ -1,94 +1,72 @@
 import type { Form } from '@assetmapping/shared-types';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, Alert } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, ScrollView, Button, StyleSheet } from 'react-native';
 
 import { FormCard } from '~/features/forms/components/FormCard';
 import { FormModal } from '~/features/forms/components/FormModal';
 import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
-import { getFormById } from '~/features/forms/services/FormService';
-import type { FormSummary } from '~/features/forms/types';
-import { usePendingEntityIds } from '~/hooks/RealTimeSync/usePendingEntityIds';
 
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const forms = useFetchForms(pinId);
-  const pendingFormIds = usePendingEntityIds('form');
+  const opening = useRef(false);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
-  const opening = useRef(false);
   const handleModalClose = () => {
     opening.current = false;
     setSelectedForm(null);
     setModalVisible(false);
   };
 
-  const handleFormPress = useCallback(async (summary: FormSummary) => {
+  const handleFormPress = (form: Form) => {
     if (opening.current) return;
     opening.current = true;
-    try {
-      const form = await getFormById(summary.id);
-      if (!form) throw new Error('This form is no longer on this device.');
-      setSelectedForm(form);
-      setModalVisible(true);
-    } catch (error) {
-      opening.current = false;
-      Alert.alert('Unable to open form', error instanceof Error ? error.message : 'Try again.');
-    }
-  }, []);
+    setSelectedForm(form);
+    setModalVisible(true);
+  };
 
   return (
-    <View style={styles.screen}>
-      <FlatList
-        style={styles.scrollView}
-        contentContainerStyle={styles.container}
-        data={forms}
-        keyExtractor={(form) => form.id}
-        renderItem={({ item }) => (
-          <FormCard
-            form={item}
-            isSynced={item.status === 'synced' && !pendingFormIds.has(item.id)}
-            onPress={handleFormPress}
-          />
-        )}
-        ListHeaderComponent={<Text style={styles.heading}>{`${pinName}'s Forms`}</Text>}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
-        }
-        ListFooterComponent={
-          <View style={styles.newFormSection}>
-            <Button
-              title="Create New Form"
-              color="#3498db"
-              onPress={() => {
-                setSelectedForm(null);
-                setModalVisible(true);
-              }}
-            />
-          </View>
-        }
-      />
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>{`${pinName}'s Forms`}</Text>
+
+      {forms?.length === 0 && (
+        <Text style={styles.emptyText}>No forms submitted yet. Start by creating one below!</Text>
+      )}
+
+      <View style={styles.formsList}>
+        {forms?.map((form) => (
+          <FormCard key={form.id} form={form} onPress={handleFormPress} />
+        ))}
+      </View>
+
+      <View style={styles.newFormSection}>
+        <Button
+          title="Create New Form"
+          color="#3498db"
+          onPress={() => {
+            if (opening.current) return;
+            opening.current = true;
+            setSelectedForm(null);
+            setModalVisible(true);
+          }}
+        />
+      </View>
 
       {modalVisible && (
         <FormModal
           visible={modalVisible}
           pinId={pinId}
           selectedForm={selectedForm}
-          isSynced={
-            !!selectedForm &&
-            forms.find((form) => form.id === selectedForm.id)?.status === 'synced' &&
-            !pendingFormIds.has(selectedForm.id)
-          }
           onClose={handleModalClose}
         />
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   scrollView: {
     backgroundColor: '#f7f9fc', // light background
   },
@@ -105,6 +83,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
     marginBottom: 12,
+  },
+  formsList: {
+    marginBottom: 24,
   },
   newFormSection: {
     padding: 16,

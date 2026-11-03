@@ -17,15 +17,11 @@ The app is written in TypeScript using React Native and Expo Router. It uses loc
 - Upload, clearing, and download are separate actions. Opening the app, saving the API URL, reconnecting, and changing tabs do not automatically transfer records after setup.
 - The header's **No pending uploads** describes the upload queue, not whether the device is an exact mirror of the backend.
 
-### Legacy Data Preservation During Setup
+### One-Time Legacy Reset: Release Warning
 
-This branch preserves existing local records instead of performing the historical one-time reset. Before migrations, populated older schemas that cannot safely use the current migrations block database setup. A missing historical setup marker does not block compatible databases: records, pending/failed uploads and recovery journals remain intact, the marker is recorded, and the app opens. No existing records are automatically enqueued or uploaded. Initial download runs only when pins, forms, queue and recovery journal are all empty.
+The existing `localDataResetVersion = '1'` marker is unchanged. Devices that have already completed the reset keep their data. Devices skipping build 14/the first reset APK still clear their old local pins, forms, and queued uploads once on first launch, then attempt one initial download. **Unsent legacy responses are deleted: back up needed work before updating.**
 
-The existing `localDataResetVersion = '1'` marker remains supported, including ordinary pending work. Unknown non-null marker values still block setup rather than silently downgrade another app version. A known marker does not bypass the schema check. For incompatible schemas or unknown setup versions, normal navigation remains blocked and the saved database/photos remain on the device. There is no in-app conversion/export/unlock workflow for those unsupported cases. **Keep the app installed and contact the project team; do not clear storage or uninstall to bypass the guard.** Recovery for affected older installations is required before rollout to those phones.
-
-If an empty device's initial download fails, offline collection is still allowed after setup; retry Download Latest while the device remains empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the marker, so future updates do not flush the device again.
-
-Upload validates individual queued changes against saved answers before starting a new request. Invalid or mismatched changes stay unresolved while unrelated valid changes can upload. Local SQLite migration `0004_local_reliability` adds a nullable queue field recording new atomic writes; existing rows are not backfilled as trusted. An old queued deletion without that evidence or a matching recovery journal is held instead of being sent automatically. Unsynced records with no queue entry remain local; opening the app does not invent upload operations for them. These errors do not open a review wizard or lock normal navigation.
+If the initial download fails, the reset is not repeated; retry the download manually while the device is empty. If the reset marker cannot be persisted, editing remains blocked until setup can safely finish. Manual clearing retains the reset marker, so future updates do not flush the device again.
 
 ### Transfer Tests
 
@@ -228,6 +224,7 @@ Key sync files:
 │   │       ├── syncQueue.ts        - Explicit upload sessions and queue metrics.
 │   │       ├── syncOperations.ts   - Executes individual sync operations against the API.
 │   │       ├── queueOperations.ts  - Low-level queue DB operations.
+│   │       ├── operationMerge.ts   - Preserve create semantics across offline edits/deletes.
 │   │       └── types.ts            - Sync queue TypeScript types.
 │   ├── websocket/
 │   │   └── WebSocketManager.ts     - WebSocket connection lifecycle and message handling.
@@ -270,7 +267,7 @@ e.g. `pinId`, `createdAt`
 
 ### Offline-First with Idempotent Sync
 
-Mutations commit to SQLite and the outbox together, then wait for an explicit manual Upload. A persisted revision key and in-flight journal protect retries and local answers across restarts. The existing server uses a 24-hour Redis retry cache and non-atomic conflict handling; simultaneous edits to one record can still race despite client preflight checks.
+All mutations go to local SQLite first, then are enqueued for background sync. Each sync queue entry has an `idempotencyKey` so that retried operations are safe to re-submit to the backend without creating duplicates. This ensures correctness under poor network conditions and app restarts.
 
 ### Array Fields as JSON Strings
 
@@ -284,41 +281,37 @@ Each device generates a stable UUID on first launch (stored in AsyncStorage) via
 
 Pin images are stored locally using Expo's filesystem and synced to the backend via the storage API. `services/images/ImageManager.ts` handles upload, download, and local cache management. Images are referenced by UUID filenames.
 
-## Reliability and testing
+## Testing the focused PR #38
 
-The app keeps the existing manual Upload/Download workflow and backend contract. There is one regular SO'FORM package; this PR does not add a QA app variant or a future-protocol switch.
+This draft adds three things to main's manual Upload/Download workflow:
 
-- Saving, reconnecting, notifications and changing the API URL do not upload survey responses. Empty-device setup may download once.
-- Blank names and household/village IDs stay blank; cards/details display “Not provided”. Existing collection dates are not guessed.
-- Local query indexes, upload recovery journals and queue-origin metadata preserve responsive reads and interrupted uploads. Unsupported populated older schemas stop before destructive historical migrations.
-- Photo bytes stay on the device while a related upload/deletion is unresolved. Cleanup is best effort and can leave unused files; housekeeping errors do not invalidate a confirmed upload.
-- Current-server checks cannot eliminate its concurrent-write race. Backend PR #13 and its future-protocol experiments are separate work.
+- One navigation per burst of repeated pin/form taps; Back returns normally.
+- Form/pin Save and Delete guards, a fixed modal Close button, and form discard
+  confirmation. Only an editor's own action blocks dismissal; unrelated transfers
+  still block writes but allow closing. Removing a draft photo keeps its saved file.
+- Upload-time photo preparation with `expo-image-manipulator` 14.0.8 (Expo SDK 54).
+  Supported still photos use JPEG, longest edge at most 1,600 px, at most 2 MiB.
+  JPEGs already within both limits upload unchanged. Encoding tries quality 0.8,
+  0.6, then 0.4; a failed cap/encode keeps the original and queued upload.
+  Small GIF/unknown formats are preserved; oversize ones require a different photo.
 
-Run the current-app regression suites with Node 24:
+Upload preparation preserves the local original and existing object key. A converted
+JPEG can retain an older `.png`/`.heic` key; signing and PUT use the actual JPEG MIME.
+Temporary files are removed after success or failure. Previously uploaded photos are
+not recompressed until they actually need uploading. JPEG conversion loses PNG
+transparency and GIFs are never silently flattened.
 
-```sh
-npm run test:unit
-npm test -- --runInBand
-npx tsc --noEmit
-```
+Use disposable data and an isolated backend/object bucket for upload tests. Rebuild
+the Android/iOS native app to include the added native codec; earlier APKs and OTA-only
+updates do not provide it. Check large portrait/landscape/rotated JPEG, PNG and HEIC,
+small images, offline/retry, failed URL/PUT, repeated Save/Back and dirty form Close.
+Check dimensions, byte cap, orientation and visual detail on Android and iOS.
+Automated codec tests mock the native layer and do not replace these device checks.
+Regenerate native folders cleanly before a release build and inspect the manifest;
+the earlier locally generated APKs retained an HTTP-allowing QA setting.
 
-These tests use synthetic SQLite/network/native fixtures. Future snapshot reconciliation and its research tooling are excluded from this PR.
-
-### Testing PR #38 before merge
-
-Check out `codex/android-reliability` and record the source SHA. Keep the backend checkout beside the frontend for the existing shared-types dependency: install its dependencies and run `npm run build:types`, then install frontend dependencies. Use the existing Mapbox/build credentials without committing them.
-
-Test the regular app in a disposable emulator/simulator using synthetic records and a dedicated test backend/object bucket. Set `EXPO_PUBLIC_API_URL` before building, then verify the effective URL in Download settings: a previously saved URL overrides that environment variable. Ordinary Android/iOS network security rules apply; use HTTPS where required. This branch has no special QA networking plugin or endpoint restrictions. Do not use production for failure or write tests.
-
-Use the normal `npm run android` / `npm run ios` build commands. Existing APKs labelled SO'FORM QA predate this scope reduction and do not represent the current branch. A fresh install does not prove update safety; test an update over a matching-signed regular build containing synthetic pending work too.
-
-Minimum checks:
-
-- Save offline with blank name/ID/age, zero and false; force-close/reopen and verify every value. Saving, reconnecting and resuming must not upload. Explicit Upload must preserve the UUID, answers and parent link.
-- Upload more than ten changes; interrupt/retry and verify totals and duplicates. Pending/failed/unconfirmed records must prevent Clear/Download. Clearing after successful upload is local-only; downloading into an empty device restores server records.
-- Interrupt a pin-photo upload, delete the pin, restart and retry. Keep prior photos until recovery/deletion resolves. Repeat for child-form upload followed by parent deletion.
-- Close/Back must work during an unrelated upload, with dirty-discard confirmation. Block dismissal/mutation during that editor's own Save/Delete; test a delayed photo picker.
-- Burst-tap entries and Save, use Back/Close, switch Map/Pins, zoom and background/resume. Check the four villages and offline Streets packs.
-- Update with existing/pending data and a missing historical setup marker. Preserve answers/outbox/journals without implicit transfers. Hold malformed uploads individually; incompatible schemas and unknown future setup versions still require recovery assistance. Do not uninstall or clear storage to bypass a failure.
-
-Report source SHA, package/build number, OS/device, steps and expected/actual results. Physical-device endurance, low-storage and exact-build Android/iOS sign-off remain pending. Survey forms have no photo field; image resizing/caps are outside this PR.
+No database migration or backend change is included. The larger earlier PR is retained
+on `codex/reliability-archive-fe3cfca`; its query/map/socket/recovery changes and blank
+field policy are outside this focused draft. Main's existing data reset and field
+mapping behavior remains. Use fresh/spare devices; this draft is not an upgrade path
+for older experimental reliability APK schemas. Keep those devices' data intact.

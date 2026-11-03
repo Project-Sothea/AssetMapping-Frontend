@@ -3,6 +3,7 @@
  */
 
 import { Form, OperationType, Pin } from '@assetmapping/shared-types';
+import { eq } from 'drizzle-orm';
 import {
   createUploadTask,
   FileSystemSessionType,
@@ -10,13 +11,13 @@ import {
 } from 'expo-file-system/legacy';
 import { File } from 'expo-file-system/next';
 
+import { pins, forms } from '~/db/schema';
 import { fetchPin } from '~/services/api/pinsApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
+import { db } from '~/services/drizzleDb';
 import { getLocalPath } from '~/services/images/ImageManager';
-import { getDeviceId } from '~/shared/utils/getDeviceId';
-
-import { validateServerAcknowledgement } from './acknowledgement';
+import { prepareImageUpload } from '~/services/images/prepareImageUpload';
 
 /**
  * Sync pin to backend
@@ -25,14 +26,17 @@ export async function syncPin(
   operation: OperationType,
   data: Pin,
   idempotencyKey: string
-): Promise<Record<string, unknown> | undefined> {
+): Promise<void> {
   // Handle delete operations
   if (operation === 'delete') {
-    return deletePinOnBackend(data, idempotencyKey);
+    await deletePinOnBackend(data.id, idempotencyKey);
+    return;
   }
 
   // Handle create/update operations with image upload
-  return syncPinToBackend(operation, data, idempotencyKey);
+  const syncedData = await syncPinToBackend(operation, data, idempotencyKey);
+
+  await updateLocalPinAfterSync(data.id, syncedData);
 }
 
 /**
@@ -42,12 +46,14 @@ export async function syncForm(
   operation: OperationType,
   data: Form,
   idempotencyKey: string
-): Promise<Record<string, unknown> | undefined> {
+): Promise<void> {
   if (operation === 'delete') {
-    return deleteFormOnBackend(data, idempotencyKey);
+    await deleteFormOnBackend(data.id, idempotencyKey);
+    return;
   }
 
-  return syncFormToBackend(operation, data, idempotencyKey);
+  const syncedData = await syncFormToBackend(operation, data, idempotencyKey);
+  await updateLocalFormAfterSync(data.id, syncedData);
 }
 
 // ========== Helper Functions ==========
@@ -78,52 +84,63 @@ async function syncPinToBackend(
     entityType: 'pin',
     operation,
     payload,
-    deviceId: getDeviceId(),
+    deviceId: 'mobile-app',
     timestamp: new Date(),
   });
 
+  // Handle version conflicts - pull latest data
   if (!response.success) {
+    // Other errors - throw to trigger retry
     throw new Error(response.error || 'Sync failed');
   }
 
   // Return the synced data from backend (includes updated version)
   const synced = response.data;
 
-  // An HTTP success alone is insufficient: keep originals if the server did not
-  // confirm this exact record. Storage cleanup must not invalidate a valid entity
-  // acknowledgement or lose its version when the record has already committed.
-  validateServerAcknowledgement(payload.id, operation, payload, synced);
+  // Delete removed images from S3 (only after successful sync to avoid drift)
   if (imagesToDelete.length > 0) {
-    try {
-      await deleteImagesFromS3(payload.id, imagesToDelete);
-    } catch {
-      console.warn('Pin uploaded; unused remote photos could not be removed.');
-    }
+    await deleteImagesFromS3(payload.id, imagesToDelete);
   }
 
   return synced;
 }
 
 /**
+ * Update local database after successful sync
+ * Updates version and image filenames from backend to keep local and remote in sync
+ */
+async function updateLocalPinAfterSync(
+  pinId: string,
+  syncedData?: Record<string, unknown>
+): Promise<void> {
+  const updates: Record<string, unknown> = {
+    status: 'synced',
+  };
+
+  // Update version from backend response to stay in sync
+  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
+    updates.version = syncedData.version;
+  }
+
+  await db.update(pins).set(updates).where(eq(pins.id, pinId));
+}
+
+/**
  * Delete pin on backend
  */
-async function deletePinOnBackend(
-  pin: Pin,
-  idempotencyKey: string
-): Promise<Record<string, unknown>> {
+async function deletePinOnBackend(pinId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
     idempotencyKey,
     entityType: 'pin',
     operation: 'delete',
-    payload: { id: pin.id, version: pin.version },
-    deviceId: getDeviceId(),
+    payload: { id: pinId },
+    deviceId: 'mobile-app',
     timestamp: new Date(),
   });
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to delete pin');
   }
-  return response.data;
 }
 
 async function syncFormToBackend(
@@ -136,7 +153,7 @@ async function syncFormToBackend(
     entityType: 'form',
     operation,
     payload,
-    deviceId: getDeviceId(),
+    deviceId: 'mobile-app',
     timestamp: new Date(),
   });
 
@@ -147,23 +164,34 @@ async function syncFormToBackend(
   return response.data;
 }
 
-async function deleteFormOnBackend(
-  form: Form,
-  idempotencyKey: string
-): Promise<Record<string, unknown>> {
+async function deleteFormOnBackend(formId: string, idempotencyKey: string): Promise<void> {
   const response = await sync({
     idempotencyKey,
     entityType: 'form',
     operation: 'delete',
-    payload: { id: form.id, version: form.version, pinId: form.pinId },
-    deviceId: getDeviceId(),
+    payload: { id: formId },
+    deviceId: 'mobile-app',
     timestamp: new Date(),
   });
 
   if (!response.success) {
     throw new Error(response.error || 'Failed to delete form');
   }
-  return response.data;
+}
+
+async function updateLocalFormAfterSync(
+  formId: string,
+  syncedData?: Record<string, unknown>
+): Promise<void> {
+  const updates: Record<string, unknown> = {
+    status: 'synced',
+  };
+
+  if (syncedData && typeof syncedData === 'object' && 'version' in syncedData) {
+    updates.version = (syncedData as Record<string, unknown>).version;
+  }
+
+  await db.update(forms).set(updates).where(eq(forms.id, formId));
 }
 
 function buildImageKey(pinId: string, imageId: string): string {
@@ -192,55 +220,60 @@ async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void
     const contentType = contentTypes[ext || ''] || 'application/octet-stream';
     const key = buildImageKey(pinId, imageId);
 
-    const upload = await getUploadUrl(key, contentType);
-    if (!upload.success || typeof upload.data !== 'string' || !upload.data) {
-      const reason = upload.success ? 'storage returned no upload URL' : upload.error;
-      throw new Error(
-        `Photo ${imageId}: could not obtain upload URL (${reason || 'storage unavailable'}).`
-      );
-    }
-    const uploadUrl = upload.data;
-
-    const task = createUploadTask(uploadUrl, uri, {
-      httpMethod: 'PUT',
-      uploadType: FileSystemUploadType.BINARY_CONTENT,
-      sessionType: FileSystemSessionType.FOREGROUND,
-      headers: { 'Content-Type': contentType },
-    });
-    let timedOut = false;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const prepared = await prepareImageUpload(uri, contentType);
     try {
-      // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
-      const response = await Promise.race([
-        task.uploadAsync(),
-        new Promise<never>((_, reject) => {
-          timeout = setTimeout(() => {
-            timedOut = true;
-            void task.cancelAsync().catch(() => {});
-            reject(new Error('Upload timed out'));
-          }, 60000);
-        }),
-      ]);
-      if (!response) throw new Error('Upload cancelled');
-      if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
-      }
-    } catch (error) {
-      // Expo removes progress subscriptions on resolution, but not rejection.
-      if (!timedOut) void task.cancelAsync().catch(() => {});
-      if (timedOut) {
+      const upload = await getUploadUrl(key, prepared.contentType);
+      if (!upload.success || typeof upload.data !== 'string' || !upload.data) {
+        const reason = upload.success ? 'storage returned no upload URL' : upload.error;
         throw new Error(
-          `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
+          `Photo ${imageId}: could not obtain upload URL (${reason || 'storage unavailable'}).`
         );
       }
-      // Do not expose signed storage URLs in native network error messages.
-      if (error instanceof Error && error.message.startsWith(`Photo ${imageId} upload failed`))
-        throw error;
-      throw new Error(
-        `Photo ${imageId} could not upload. Your data is kept on this device; check your connection and retry.`
-      );
+      const uploadUrl = upload.data;
+
+      const task = createUploadTask(uploadUrl, prepared.uri, {
+        httpMethod: 'PUT',
+        uploadType: FileSystemUploadType.BINARY_CONTENT,
+        sessionType: FileSystemSessionType.FOREGROUND,
+        headers: { 'Content-Type': prepared.contentType },
+      });
+      let timedOut = false;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
+        const response = await Promise.race([
+          task.uploadAsync(),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(() => {
+              timedOut = true;
+              void task.cancelAsync().catch(() => {});
+              reject(new Error('Upload timed out'));
+            }, 60000);
+          }),
+        ]);
+        if (!response) throw new Error('Upload cancelled');
+        if (response.status < 200 || response.status >= 300) {
+          throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
+        }
+      } catch (error) {
+        // Expo removes progress subscriptions on resolution, but not rejection.
+        if (!timedOut) void task.cancelAsync().catch(() => {});
+        if (timedOut) {
+          throw new Error(
+            `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
+          );
+        }
+        // Do not expose signed storage URLs in native network error messages.
+        if (error instanceof Error && error.message.startsWith(`Photo ${imageId} upload failed`))
+          throw error;
+        throw new Error(
+          `Photo ${imageId} could not upload. Your data is kept on this device; check your connection and retry.`
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
     } finally {
-      clearTimeout(timeout);
+      prepared.dispose();
     }
   }
 }

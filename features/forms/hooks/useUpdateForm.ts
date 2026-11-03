@@ -1,4 +1,3 @@
-import type { Form } from '@assetmapping/shared-types';
 import { useMutation } from '@tanstack/react-query';
 
 import { updateForm } from '../services/FormService';
@@ -6,9 +5,7 @@ import { FormValues } from '../types/';
 
 export const useUpdateForm = () => {
   const mutation = useMutation({
-    retry: false,
-    mutationFn: ({ id, values, baseline }: { id: string; values: FormValues; baseline?: Form }) =>
-      updateForm(id, values, baseline),
+    mutationFn: ({ id, values }: { id: string; values: FormValues }) => updateForm(id, values),
   });
 
   return {

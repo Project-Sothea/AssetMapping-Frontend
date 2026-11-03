@@ -65,7 +65,7 @@ export function PinEditor(props: PinEditorProps) {
       Alert.alert('Error creating pin');
       return;
     }
-    return runAction(() => createPinAsync(values), 'Pin Created!', 'Failed to create pin');
+    return runAction(() => createPinAsync(values), 'Saved on this device', 'Failed to create pin');
   };
 
   const handleUpdateSubmit = async (values: PinValues) => {
@@ -77,7 +77,6 @@ export function PinEditor(props: PinEditorProps) {
       () =>
         updatePinAsync({
           id: values.id,
-          baseline: props.mode === 'edit' ? props.pin : undefined,
           updates: {
             name: values.name,
             cityVillage: values.cityVillage,
@@ -87,7 +86,7 @@ export function PinEditor(props: PinEditorProps) {
             images: values.images,
           },
         }),
-      'Pin Updated!',
+      'Saved on this device',
       'Failed to update pin'
     );
   };
@@ -99,8 +98,8 @@ export function PinEditor(props: PinEditorProps) {
       return;
     }
     return runAction(
-      () => deletePinAsync({ id: props.pin.id, baseline: props.pin }),
-      'Pin Deleted!',
+      () => deletePinAsync(props.pin.id),
+      'Deleted on this device',
       'Failed to delete pin'
     );
   };

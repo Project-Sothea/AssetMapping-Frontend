@@ -1,18 +1,17 @@
-import { memo } from 'react';
+import type { Form } from '@assetmapping/shared-types';
 import { Text, StyleSheet, Pressable } from 'react-native';
 
-import { displayOptionalText } from '~/shared/utils/displayOptionalText';
-
-import type { FormSummary } from '../types';
+import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 
 type FormCardProps = {
-  form: FormSummary;
-  isSynced: boolean;
-  onPress: (form: FormSummary) => void;
+  form: Form;
+  onPress: (form: Form) => void;
 };
 
-export const FormCard = memo(function FormCard({ form, isSynced, onPress }: FormCardProps) {
-  const borderColor = isSynced ? '#2ecc71' : '#b45309';
+export const FormCard = ({ form, onPress }: FormCardProps) => {
+  // Determine border color based on sync status from operations table
+  const isSynced = useFormQueueStatus(form.id);
+  const borderColor = isSynced ? '#2ecc71' : '#e74c3c'; // green for synced, red for unsynced
 
   return (
     <Pressable
@@ -22,19 +21,18 @@ export const FormCard = memo(function FormCard({ form, isSynced, onPress }: Form
         pressed && styles.cardPressed,
       ]}
       onPress={() => onPress(form)}>
-      <Text style={styles.nameText}>{displayOptionalText(form.name)}</Text>
-      <Text
-        accessibilityLiveRegion="polite"
-        style={[styles.dateText, { color: isSynced ? '#166534' : '#92400e' }]}>
-        {isSynced ? 'Synced' : 'Saved on this device · waiting to sync'}
-      </Text>
+      {form.name ? (
+        <Text style={styles.nameText}>{form.name}</Text>
+      ) : (
+        <Text style={styles.villageText}>{form.village}</Text>
+      )}
       <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
       {form.updatedAt && (
         <Text style={styles.dateText}>Updated: {new Date(form.updatedAt).toLocaleString()}</Text>
       )}
     </Pressable>
   );
-});
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -52,6 +50,12 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.98 }],
+  },
+  villageText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#2c3e50',
   },
   nameText: {
     fontSize: 18,

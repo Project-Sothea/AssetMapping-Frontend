@@ -1,7 +1,6 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
 import { VILLAGES } from '~/shared/constants/villages';
-import { displayOptionalText } from '~/shared/utils/displayOptionalText';
 
 import { FormValues } from '../types';
 
@@ -10,7 +9,7 @@ import RadioGroup from './RadioGroup';
 interface GeneralSectionProps {
   values: FormValues;
   setFieldValue: (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
-  handleChange: (field: keyof FormValues) => (value: string | number | boolean | null) => void;
+  handleChange: (field: keyof FormValues) => (value: string) => void;
   errors: Partial<Record<keyof FormValues, string>>;
   touched: Partial<Record<keyof FormValues, boolean>>;
   disabled?: boolean;
@@ -86,14 +85,6 @@ export default function GeneralSection({
 
   return (
     <View style={{ gap: 12 }}>
-      {disabled && (
-        <>
-          <Text style={styles.question}>Household ID</Text>
-          <Text>{displayOptionalText(values.householdNumber)}</Text>
-          <Text style={styles.question}>Village ID</Text>
-          <Text>{displayOptionalText(values.villageId)}</Text>
-        </>
-      )}
       <Text style={styles.question}>Which village are you from?*</Text>
       <RadioGroup
         name="village"
@@ -112,16 +103,13 @@ export default function GeneralSection({
       />
 
       <Text style={styles.question}>What is your name?</Text>
-      {disabled ? (
-        <Text style={styles.input}>{displayOptionalText(values.name)}</Text>
-      ) : (
-        <TextInput
-          style={styles.input}
-          onChangeText={handleChange('name')}
-          value={values.name ?? ''}
-          placeholder="Name"
-        />
-      )}
+      <TextInput
+        style={styles.input}
+        onChangeText={handleChange('name')}
+        value={values.name ?? ''}
+        placeholder="Name"
+        editable={!disabled}
+      />
 
       <Text style={styles.question}>What is your gender?</Text>
       <RadioGroup
@@ -138,25 +126,19 @@ export default function GeneralSection({
       <Text style={styles.question}>How old are you this year?</Text>
       <TextInput
         style={styles.input}
-        onChangeText={(value) =>
-          handleChange('age')(
-            value.trim() === '' ? null : /^\d+$/.test(value.trim()) ? Number(value) : value
-          )
-        }
+        onChangeText={(value) => setFieldValue('age', value.trim() === '' ? null : Number(value))}
         value={values.age === null || values.age === undefined ? '' : String(values.age)}
         placeholder="Age"
         keyboardType="number-pad"
         editable={!disabled}
       />
 
-      {errors.age && <Text style={styles.error}>{errors.age}</Text>}
-
       <Text style={styles.question}>Date of data collection*</Text>
       <TextInput
         style={styles.input}
         onChangeText={handleChange('dataCollectionDate')}
         value={values.dataCollectionDate ?? ''}
-        placeholder={disabled ? 'Not provided' : 'e.g. 22 May 2026'}
+        placeholder="e.g. 22 May 2026"
         editable={!disabled}
       />
       {errors.dataCollectionDate && touched.dataCollectionDate && (

@@ -4,45 +4,39 @@ import { v4 } from 'uuid';
 
 import { forms, pins } from '~/db/schema';
 import { mapFormDbToForm, mapPinDbToPin, sanitizeFormForDb, sanitizePinForDb } from '~/db/utils';
-import { validateLocal } from '~/db/validateLocal';
 import { db } from '~/services/drizzleDb';
-import { enqueueInTransaction } from '~/services/sync/queue/queueOperations';
+import { enqueueInTransaction, LocalTransaction } from '~/services/sync/queue/queueOperations';
 import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
-import { sameContent } from '~/shared/utils/sameContent';
 
 import type { FormUpdate, FormValues } from '../types';
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-function touchParent(tx: Transaction, pinId: string, updatedAt: Date) {
-  const row = tx.select().from(pins).where(eq(pins.id, pinId)).get();
-  if (!row) throw new Error('The household pin is missing. Reopen the pin before saving.');
-  const pin = { ...mapPinDbToPin(row), updatedAt, status: 'unsynced' };
-  tx.update(pins).set(sanitizePinForDb(pin)).where(eq(pins.id, pinId)).run();
+function touchParent(tx: LocalTransaction, pinId: string) {
+  if (typeof pinId !== 'string' || !pinId.trim()) {
+    throw new Error('Please reopen the pin before saving this form. The pin link is missing.');
+  }
+  const parent = tx.select().from(pins).where(eq(pins.id, pinId)).get();
+  if (!parent) throw new Error('The parent pin is missing. Save the pin before saving a form.');
+  const updated = { ...mapPinDbToPin(parent), updatedAt: new Date(), status: 'unsynced' };
+  tx.update(pins).set(sanitizePinForDb(updated)).where(eq(pins.id, pinId)).run();
   enqueueInTransaction(tx, {
     operation: 'update',
     entityType: 'pin',
     entityId: pinId,
-    payload: pin,
+    payload: updated,
   });
 }
-
 export async function createForm(values: FormValues): Promise<Form> {
   assertLocalWritesAllowed();
-  if (typeof values.pinId !== 'string' || !values.pinId.trim())
-    throw new Error('Please reopen the pin before saving this form.');
-  const now = new Date();
   const form: Form = {
     ...values,
     id: v4(),
-    createdAt: now,
-    updatedAt: now,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     version: 1,
     status: 'unsynced',
   };
-  validateLocal('form', form);
   db.transaction((tx) => {
-    touchParent(tx, form.pinId, now);
+    touchParent(tx, form.pinId);
     tx.insert(forms).values(sanitizeFormForDb(form)).run();
     enqueueInTransaction(tx, {
       operation: 'create',
@@ -53,28 +47,18 @@ export async function createForm(values: FormValues): Promise<Form> {
   });
   return form;
 }
-
-export async function updateForm(id: string, updates: FormUpdate, baseline?: Form): Promise<Form> {
+export async function updateForm(id: string, updates: FormUpdate): Promise<Form> {
   assertLocalWritesAllowed();
-  const form = db.transaction((tx) => {
-    const existing = tx.select().from(forms).where(eq(forms.id, id)).get();
-    if (!existing) throw new Error('This form no longer exists on this device.');
-    if (baseline && !sameContent(mapFormDbToForm(existing), baseline))
-      throw new Error(
-        'This form changed while you were editing. Your draft is still open; review the latest saved answers before trying again.'
-      );
-    const updated: Form = {
-      ...mapFormDbToForm(existing),
-      ...updates,
-      id,
-      pinId: existing.pinId,
-      createdAt: existing.createdAt,
-      version: existing.version,
-      updatedAt: new Date(),
-      status: 'unsynced',
-    };
-    validateLocal('form', updated);
-    touchParent(tx, updated.pinId, updated.updatedAt!);
+  const row = db.select().from(forms).where(eq(forms.id, id)).get();
+  if (!row) throw new Error(`Form ${id} not found`);
+  const updated: Form = {
+    ...mapFormDbToForm(row),
+    ...updates,
+    updatedAt: new Date(),
+    status: 'unsynced',
+  };
+  db.transaction((tx) => {
+    touchParent(tx, updated.pinId);
     tx.update(forms).set(sanitizeFormForDb(updated)).where(eq(forms.id, id)).run();
     enqueueInTransaction(tx, {
       operation: 'update',
@@ -82,22 +66,16 @@ export async function updateForm(id: string, updates: FormUpdate, baseline?: For
       entityId: id,
       payload: updated,
     });
-    return updated;
   });
-  return form;
+  return updated;
 }
-
-export async function deleteForm(id: string, baseline?: Form): Promise<void> {
+export async function deleteForm(id: string): Promise<void> {
   assertLocalWritesAllowed();
+  const row = db.select().from(forms).where(eq(forms.id, id)).get();
+  if (!row) throw new Error(`Form ${id} not found`);
+  const form = mapFormDbToForm(row);
   db.transaction((tx) => {
-    const existing = tx.select().from(forms).where(eq(forms.id, id)).get();
-    if (!existing) throw new Error('This form no longer exists on this device.');
-    const form = mapFormDbToForm(existing);
-    if (baseline && !sameContent(form, baseline))
-      throw new Error(
-        'This form changed since you opened it. Review its saved answers before deleting.'
-      );
-    touchParent(tx, form.pinId, new Date());
+    touchParent(tx, form.pinId);
     tx.delete(forms).where(eq(forms.id, id)).run();
     enqueueInTransaction(tx, {
       operation: 'delete',
@@ -107,7 +85,6 @@ export async function deleteForm(id: string, baseline?: Form): Promise<void> {
     });
   });
 }
-
 export async function getFormById(id: string): Promise<Form | null> {
   const result = db.select().from(forms).where(eq(forms.id, id)).get();
   return result ? mapFormDbToForm(result) : null;

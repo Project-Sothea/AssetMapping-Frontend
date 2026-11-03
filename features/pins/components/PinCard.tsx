@@ -3,24 +3,23 @@ import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
+import { usePinQueueStatus } from '~/hooks/RealTimeSync/usePinQueueStatus';
 import { FallbackImageList } from '~/shared/components/FallbackImageList';
 import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type PinCardProps = {
   pin: Pin;
-  formCount: number;
-  isSynced: boolean;
   onViewForms: (pin: Pin) => void;
   onNavigateToMap?: (pin: Pin) => void;
 };
 
-export const PinCard = React.memo(function PinCard({
-  pin,
-  formCount,
-  isSynced,
-  onViewForms,
-  onNavigateToMap,
-}: PinCardProps) {
+export const PinCard: React.FC<PinCardProps> = ({ pin, onViewForms, onNavigateToMap }) => {
+  const forms = useFetchForms(pin.id);
+
+  // Check sync status from operations table
+  const isSynced = usePinQueueStatus(pin.id);
+
   // Dynamic accent color based on synced status
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
@@ -52,10 +51,11 @@ export const PinCard = React.memo(function PinCard({
             <View
               style={[
                 styles.formCountBadge,
-                { backgroundColor: formCount === 0 ? '#E5E7EB' : '#4F46E5' },
+                { backgroundColor: forms.length === 0 ? '#E5E7EB' : '#4F46E5' },
               ]}>
-              <Text style={[styles.formCountText, { color: formCount === 0 ? '#9CA3AF' : '#fff' }]}>
-                {formCount}
+              <Text
+                style={[styles.formCountText, { color: forms.length === 0 ? '#9CA3AF' : '#fff' }]}>
+                {forms.length}
               </Text>
             </View>
           </View>
@@ -74,7 +74,7 @@ export const PinCard = React.memo(function PinCard({
       </TouchableOpacity>
     </SwipeableCard>
   );
-});
+};
 
 const styles = StyleSheet.create({
   card: {

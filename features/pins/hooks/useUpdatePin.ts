@@ -1,4 +1,3 @@
-import type { Pin } from '@assetmapping/shared-types';
 import { useMutation } from '@tanstack/react-query';
 
 import { updatePin } from '../services/PinService';
@@ -6,16 +5,8 @@ import { PinValues } from '../types/';
 
 export const useUpdatePin = () => {
   const mutation = useMutation({
-    retry: false,
-    mutationFn: ({
-      id,
-      updates,
-      baseline,
-    }: {
-      id: string;
-      updates: Partial<PinValues>;
-      baseline?: Pin;
-    }) => updatePin(id, updates, baseline),
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<PinValues> }) =>
+      updatePin(id, updates),
   });
 
   return {

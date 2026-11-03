@@ -24,12 +24,6 @@ import WaterSection from './WaterSection';
 const formSchema = z.looseObject({
   village: z.string().trim().min(1, 'Required'),
   dataCollectionDate: z.string().trim().min(1, 'Required'),
-  age: z
-    .number()
-    .int('Use a whole number')
-    .nonnegative('Age cannot be negative')
-    .nullable()
-    .optional(),
 });
 
 type FormEditorProps = {
@@ -70,7 +64,14 @@ export function FormEditor({
 
   const defaults = useMemo((): FormValues => {
     if (!isCreate) {
-      return { ...selectedForm! };
+      return {
+        ...selectedForm!,
+        dataCollectionDate:
+          selectedForm!.dataCollectionDate ||
+          selectedForm!.householdNumber ||
+          selectedForm!.villageId ||
+          formatCollectionDate(),
+      };
     }
     return {
       pinId,
@@ -232,28 +233,32 @@ export function FormEditor({
   const handleSubmitForm = async (vals: FormValues) => {
     try {
       const parentPinId = selectedForm ? selectedForm.pinId : pinId;
-      if (typeof parentPinId !== 'string' || !parentPinId.trim())
+      if (typeof parentPinId !== 'string' || !parentPinId.trim()) {
         throw new Error(
           'Please reopen the pin before saving this form. Your answers are still here.'
         );
+      }
+      const dataCollectionDate =
+        vals.dataCollectionDate?.trim() ||
+        vals.householdNumber?.trim() ||
+        vals.villageId?.trim() ||
+        '';
       const submissionValues: FormValues = {
         ...vals,
+        // Relationship IDs come from the open record, not editable form state.
         pinId: parentPinId,
-        name: vals.name?.trim() ?? '',
-        dataCollectionDate: vals.dataCollectionDate?.trim() ?? vals.dataCollectionDate,
-        householdNumber: vals.householdNumber?.trim() ?? vals.householdNumber,
-        villageId: vals.villageId?.trim() ?? '',
+        name:
+          vals.name?.trim() || (dataCollectionDate ? `Date collected ${dataCollectionDate}` : ''),
+        dataCollectionDate,
+        householdNumber: vals.householdNumber?.trim() || dataCollectionDate,
+        villageId: vals.villageId?.trim() || dataCollectionDate,
       };
       if (selectedForm) {
-        await updateFormAsync({
-          id: selectedForm.id,
-          values: submissionValues,
-          baseline: selectedForm,
-        });
-        Alert.alert('Form Updated', 'Saved on this device · waiting to sync');
+        await updateFormAsync({ id: selectedForm.id, values: submissionValues });
+        Alert.alert('Saved on this device');
       } else {
         await createFormAsync(submissionValues);
-        Alert.alert('Form Created', 'Saved on this device · waiting to sync');
+        Alert.alert('Saved on this device');
       }
       onClose();
       onToggleEdit?.(!selectedForm);
@@ -266,8 +271,8 @@ export function FormEditor({
   const handleDelete = async () => {
     if (!selectedForm) return;
     try {
-      await deleteFormAsync({ id: selectedForm.id, baseline: selectedForm });
-      Alert.alert('Form Deleted!');
+      await deleteFormAsync(selectedForm.id);
+      Alert.alert('Deleted on this device', 'The deletion will be sent when you upload.');
       onClose();
       onToggleEdit?.(false);
     } catch (error) {
@@ -381,7 +386,7 @@ export function FormEditor({
                   setExpandedSection('general');
                   Alert.alert(
                     'Please review the form',
-                    'Choose a village, enter the collection date, and use a whole number for age or leave it blank.'
+                    'Choose a village and enter the collection date.'
                   );
                 })
               )
