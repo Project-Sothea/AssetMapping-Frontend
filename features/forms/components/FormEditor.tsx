@@ -1,9 +1,9 @@
 import type { Form } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
-import { ScrollView, Alert, View, TouchableOpacity, StyleSheet } from 'react-native';
+import { ScrollView, Alert, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { z } from 'zod';
 
 import { useTransferState } from '~/hooks/RealTimeSync/useTransferState';
@@ -32,6 +32,7 @@ type FormEditorProps = {
   onClose: () => void;
   isEditing: boolean;
   onToggleEdit?: (next: boolean) => void;
+  onCloseGuardChange?: (guard: (() => void) | null) => void;
 };
 
 type SectionOrder = 'general' | 'conflict' | 'health' | 'education' | 'water';
@@ -49,11 +50,14 @@ export function FormEditor({
   onClose,
   isEditing,
   onToggleEdit,
+  onCloseGuardChange,
 }: FormEditorProps) {
-  const { busy } = useTransferState();
   const { createFormAsync } = useCreateForm();
   const { updateFormAsync } = useUpdateForm();
   const { deleteFormAsync } = useDeleteForm();
+  const { busy: transferBusy } = useTransferState();
+  const actionRunning = useRef(false);
+  const [busy, setBusy] = useState(false);
   const [expandedSection, setExpandedSection] = useState<SectionOrder>('general');
 
   const isCreate = selectedForm === null;
@@ -159,7 +163,7 @@ export function FormEditor({
     setValue,
     watch,
     reset,
-    formState: { errors, touchedFields },
+    formState: { errors, touchedFields, isDirty },
   } = useForm<FormValues>({
     defaultValues: defaults,
     resolver: zodResolver(formSchema) as unknown as Resolver<FormValues>,
@@ -174,6 +178,24 @@ export function FormEditor({
     setExpandedSection('general');
     onToggleEdit?.(!selectedForm);
   }, [selectedForm, onToggleEdit]);
+
+  useEffect(() => {
+    onCloseGuardChange?.(() => {
+      // A transfer elsewhere blocks writes, but must not trap this editor on screen.
+      if (actionRunning.current) return;
+      if (isDirty)
+        Alert.alert(
+          'Discard unsaved changes?',
+          'These changes have not been saved on this device.',
+          [
+            { text: 'Keep editing', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: onClose },
+          ]
+        );
+      else onClose();
+    });
+    return () => onCloseGuardChange?.(null);
+  }, [isDirty, onClose, onCloseGuardChange]);
 
   const values = watch();
 
@@ -198,7 +220,7 @@ export function FormEditor({
   type SetFieldValue = (field: keyof FormValues, value: FormValues[keyof FormValues]) => void;
 
   const setFieldValue: SetFieldValue = (field, value) => {
-    if (!isEditing || busy) return;
+    if (!isEditing || transferBusy || actionRunning.current) return;
     setValue(field, value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
@@ -259,8 +281,32 @@ export function FormEditor({
     }
   };
 
+  const runAction = async (action: () => Promise<void>) => {
+    if (actionRunning.current || transferBusy) return;
+    actionRunning.current = true;
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      actionRunning.current = false;
+      setBusy(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (actionRunning.current || transferBusy) return;
+    Alert.alert('Delete this form?', 'This will also delete it from the server when synced.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => runAction(handleDelete) },
+    ]);
+  };
+
   return (
-    <ScrollView keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={{ flex: 1 }}
+      keyboardDismissMode="on-drag"
+      keyboardShouldPersistTaps="handled">
+      {isDirty && <Text accessibilityLiveRegion="polite">Unsaved changes · tap Save</Text>}
       <FormSection
         title="General"
         isOpen={expandedSection === 'general'}
@@ -271,7 +317,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -285,7 +331,7 @@ export function FormEditor({
           handleChange={handleChange}
           errors={fieldErrors}
           touched={touched}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
           mode="conflict"
         />
       </FormSection>
@@ -298,7 +344,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -310,7 +356,7 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
@@ -322,27 +368,42 @@ export function FormEditor({
           values={values}
           setFieldValue={setFieldValue}
           handleChange={handleChange}
-          disabled={!isEditing || busy}
+          disabled={!isEditing || busy || transferBusy}
         />
       </FormSection>
 
       {isEditing ? (
         <View style={styles.actionRow}>
+          {busy && <Text accessibilityLiveRegion="polite">Saving on this device…</Text>}
           <TouchableOpacity
-            disabled={busy}
             style={[styles.iconBtn, styles.save]}
-            onPress={handleSubmit(handleSubmitForm)}>
+            accessibilityLabel="Save form"
+            accessibilityState={{ disabled: busy, busy }}
+            disabled={busy || transferBusy}
+            onPress={() =>
+              runAction(
+                handleSubmit(handleSubmitForm, () => {
+                  setExpandedSection('general');
+                  Alert.alert(
+                    'Please review the form',
+                    'Choose a village and enter the collection date.'
+                  );
+                })
+              )
+            }>
             <MaterialIcons name="save" size={24} color="#fff" />
           </TouchableOpacity>
           {!isCreate && (
             <>
               <TouchableOpacity
-                disabled={busy}
-                onPress={handleDelete}
+                accessibilityLabel="Delete form"
+                disabled={busy || transferBusy}
+                onPress={confirmDelete}
                 style={[styles.iconBtn, styles.danger]}>
                 <MaterialIcons name="delete" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
+                disabled={busy || transferBusy}
                 onPress={() => onToggleEdit?.(false)}
                 style={[styles.iconBtn, styles.muted]}>
                 <MaterialIcons name="visibility" size={24} color="#111" />

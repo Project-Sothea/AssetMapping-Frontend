@@ -13,6 +13,7 @@ import {
   listVillageOptions,
   villageKey,
 } from '~/features/pins/utils/groupPinsByVillage';
+import { useSingleNavigation } from '~/hooks/useSingleNavigation';
 import { closeCurrentSwipeable } from '~/shared/components/ui/SwipeableCard';
 
 export default function PinScreen() {
@@ -20,6 +21,7 @@ export default function PinScreen() {
   const [query, setQuery] = useState('');
   const [selectedVillage, setSelectedVillage] = useState(ALL_VILLAGES_KEY);
   const router = useRouter();
+  const navigateOnce = useSingleNavigation();
 
   // Close any open swipeable when leaving this screen
   useFocusEffect(
@@ -50,14 +52,21 @@ export default function PinScreen() {
       .sort(comparePinNames);
   }, [pins, query, activeVillage]);
 
+  const handleViewForms = (pin: Pin) => {
+    navigateOnce(() =>
+      router.navigate({
+        pathname: '/pin/[pinId]/forms',
+        params: { pinId: pin.id, pinName: pin.name },
+      })
+    );
+  };
   const handleNavigateToMap = (pin: Pin) => {
-    router.push({
-      pathname: '/map',
-      params: {
-        lat: pin.lat,
-        lng: pin.lng,
-      },
-    });
+    navigateOnce(() =>
+      router.navigate({
+        pathname: '/map',
+        params: { lat: pin.lat, lng: pin.lng },
+      })
+    );
   };
 
   return (
@@ -81,7 +90,9 @@ export default function PinScreen() {
       <FlatList
         data={visiblePins}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <PinCard pin={item} onNavigateToMap={handleNavigateToMap} />}
+        renderItem={({ item }) => (
+          <PinCard pin={item} onViewForms={handleViewForms} onNavigateToMap={handleNavigateToMap} />
+        )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={

@@ -280,3 +280,38 @@ Each device generates a stable UUID on first launch (stored in AsyncStorage) via
 ### Image Storage
 
 Pin images are stored locally using Expo's filesystem and synced to the backend via the storage API. `services/images/ImageManager.ts` handles upload, download, and local cache management. Images are referenced by UUID filenames.
+
+## Testing the focused PR #38
+
+This draft adds three things to main's manual Upload/Download workflow:
+
+- One navigation per burst of repeated pin/form taps; Back returns normally.
+- Form/pin Save and Delete guards, a fixed modal Close button, and form discard
+  confirmation. Only an editor's own action blocks dismissal; unrelated transfers
+  still block writes but allow closing. Removing a draft photo keeps its saved file.
+- Upload-time photo preparation with `expo-image-manipulator` 14.0.8 (Expo SDK 54).
+  Supported still photos use JPEG, longest edge at most 1,600 px, at most 2 MiB.
+  JPEGs already within both limits upload unchanged. Encoding tries quality 0.8,
+  0.6, then 0.4; a failed cap/encode keeps the original and queued upload.
+  Small GIF/unknown formats are preserved; oversize ones require a different photo.
+
+Upload preparation preserves the local original and existing object key. A converted
+JPEG can retain an older `.png`/`.heic` key; signing and PUT use the actual JPEG MIME.
+Temporary files are removed after success or failure. Previously uploaded photos are
+not recompressed until they actually need uploading. JPEG conversion loses PNG
+transparency and GIFs are never silently flattened.
+
+Use disposable data and an isolated backend/object bucket for upload tests. Rebuild
+the Android/iOS native app to include the added native codec; earlier APKs and OTA-only
+updates do not provide it. Check large portrait/landscape/rotated JPEG, PNG and HEIC,
+small images, offline/retry, failed URL/PUT, repeated Save/Back and dirty form Close.
+Check dimensions, byte cap, orientation and visual detail on Android and iOS.
+Automated codec tests mock the native layer and do not replace these device checks.
+Regenerate native folders cleanly before a release build and inspect the manifest;
+the earlier locally generated APKs retained an HTTP-allowing QA setting.
+
+No database migration or backend change is included. The larger earlier PR is retained
+on `codex/reliability-archive-fe3cfca`; its query/map/socket/recovery changes and blank
+field policy are outside this focused draft. Main's existing data reset and field
+mapping behavior remains. Use fresh/spare devices; this draft is not an upgrade path
+for older experimental reliability APK schemas. Keep those devices' data intact.

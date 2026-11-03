@@ -17,6 +17,7 @@ import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
 import { getLocalPath } from '~/services/images/ImageManager';
+import { prepareImageUpload } from '~/services/images/prepareImageUpload';
 
 /**
  * Sync pin to backend
@@ -219,55 +220,60 @@ async function uploadImagesToS3(pinId: string, imageIds: string[]): Promise<void
     const contentType = contentTypes[ext || ''] || 'application/octet-stream';
     const key = buildImageKey(pinId, imageId);
 
-    const upload = await getUploadUrl(key, contentType);
-    if (!upload.success || typeof upload.data !== 'string' || !upload.data) {
-      const reason = upload.success ? 'storage returned no upload URL' : upload.error;
-      throw new Error(
-        `Photo ${imageId}: could not obtain upload URL (${reason || 'storage unavailable'}).`
-      );
-    }
-    const uploadUrl = upload.data;
-
-    const task = createUploadTask(uploadUrl, uri, {
-      httpMethod: 'PUT',
-      uploadType: FileSystemUploadType.BINARY_CONTENT,
-      sessionType: FileSystemSessionType.FOREGROUND,
-      headers: { 'Content-Type': contentType },
-    });
-    let timedOut = false;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const prepared = await prepareImageUpload(uri, contentType);
     try {
-      // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
-      const response = await Promise.race([
-        task.uploadAsync(),
-        new Promise<never>((_, reject) => {
-          timeout = setTimeout(() => {
-            timedOut = true;
-            void task.cancelAsync().catch(() => {});
-            reject(new Error('Upload timed out'));
-          }, 60000);
-        }),
-      ]);
-      if (!response) throw new Error('Upload cancelled');
-      if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
-      }
-    } catch (error) {
-      // Expo removes progress subscriptions on resolution, but not rejection.
-      if (!timedOut) void task.cancelAsync().catch(() => {});
-      if (timedOut) {
+      const upload = await getUploadUrl(key, prepared.contentType);
+      if (!upload.success || typeof upload.data !== 'string' || !upload.data) {
+        const reason = upload.success ? 'storage returned no upload URL' : upload.error;
         throw new Error(
-          `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
+          `Photo ${imageId}: could not obtain upload URL (${reason || 'storage unavailable'}).`
         );
       }
-      // Do not expose signed storage URLs in native network error messages.
-      if (error instanceof Error && error.message.startsWith(`Photo ${imageId} upload failed`))
-        throw error;
-      throw new Error(
-        `Photo ${imageId} could not upload. Your data is kept on this device; check your connection and retry.`
-      );
+      const uploadUrl = upload.data;
+
+      const task = createUploadTask(uploadUrl, prepared.uri, {
+        httpMethod: 'PUT',
+        uploadType: FileSystemUploadType.BINARY_CONTENT,
+        sessionType: FileSystemSessionType.FOREGROUND,
+        headers: { 'Content-Type': prepared.contentType },
+      });
+      let timedOut = false;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        // Native URLSession/OkHttp reads the file; no photo-sized JS buffer is allocated.
+        const response = await Promise.race([
+          task.uploadAsync(),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(() => {
+              timedOut = true;
+              void task.cancelAsync().catch(() => {});
+              reject(new Error('Upload timed out'));
+            }, 60000);
+          }),
+        ]);
+        if (!response) throw new Error('Upload cancelled');
+        if (response.status < 200 || response.status >= 300) {
+          throw new Error(`Photo ${imageId} upload failed (HTTP ${response.status}).`);
+        }
+      } catch (error) {
+        // Expo removes progress subscriptions on resolution, but not rejection.
+        if (!timedOut) void task.cancelAsync().catch(() => {});
+        if (timedOut) {
+          throw new Error(
+            `Photo ${imageId} upload timed out. Your data is kept on this device; retry when the connection improves.`
+          );
+        }
+        // Do not expose signed storage URLs in native network error messages.
+        if (error instanceof Error && error.message.startsWith(`Photo ${imageId} upload failed`))
+          throw error;
+        throw new Error(
+          `Photo ${imageId} could not upload. Your data is kept on this device; check your connection and retry.`
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
     } finally {
-      clearTimeout(timeout);
+      prepared.dispose();
     }
   }
 }

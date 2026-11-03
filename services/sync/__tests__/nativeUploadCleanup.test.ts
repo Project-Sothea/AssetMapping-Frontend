@@ -35,6 +35,13 @@ jest.mock('expo-file-system/next', () => ({
 jest.mock('~/services/images/ImageManager', () => ({
   getLocalPath: () => 'file:///pins/p/photo.jpg',
 }));
+jest.mock('~/services/images/prepareImageUpload', () => ({
+  prepareImageUpload: jest.fn(async (uri: string, contentType: string) => ({
+    uri,
+    contentType,
+    dispose: jest.fn(),
+  })),
+}));
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
 jest.mock('~/services/api/storageApi', () => ({
   getUploadUrl: async () => ({ success: true, data: 'https://storage.example.test/photo' }),

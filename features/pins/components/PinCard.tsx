@@ -1,6 +1,5 @@
 import type { Pin } from '@assetmapping/shared-types';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -11,11 +10,11 @@ import { SwipeableCard } from '~/shared/components/ui/SwipeableCard';
 
 type PinCardProps = {
   pin: Pin;
+  onViewForms: (pin: Pin) => void;
   onNavigateToMap?: (pin: Pin) => void;
 };
 
-export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
-  const router = useRouter();
+export const PinCard: React.FC<PinCardProps> = ({ pin, onViewForms, onNavigateToMap }) => {
   const forms = useFetchForms(pin.id);
 
   // Check sync status from operations table
@@ -25,7 +24,7 @@ export const PinCard: React.FC<PinCardProps> = ({ pin, onNavigateToMap }) => {
   const accentColor = isSynced ? '#10B981' : '#e74c3c'; // green if synced, red if not
 
   const handleViewForms = () => {
-    router.push({ pathname: '/pin/[pinId]/forms', params: { pinId: pin.id, pinName: pin.name } });
+    onViewForms(pin);
   };
 
   const renderRightActions = () => {

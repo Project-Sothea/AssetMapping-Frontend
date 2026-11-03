@@ -1,6 +1,6 @@
 import type { Form } from '@assetmapping/shared-types';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, ScrollView, Button, StyleSheet } from 'react-native';
 
 import { FormCard } from '~/features/forms/components/FormCard';
@@ -10,15 +10,19 @@ import { useFetchForms } from '~/features/forms/hooks/useFetchForms';
 export default function FormScreen() {
   const { pinId, pinName } = useLocalSearchParams<{ pinId: string; pinName: string }>();
   const forms = useFetchForms(pinId);
+  const opening = useRef(false);
   const [selectedForm, setSelectedForm] = useState<Form | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
 
   const handleModalClose = () => {
+    opening.current = false;
     setSelectedForm(null);
     setModalVisible(false);
   };
 
   const handleFormPress = (form: Form) => {
+    if (opening.current) return;
+    opening.current = true;
     setSelectedForm(form);
     setModalVisible(true);
   };
@@ -42,18 +46,22 @@ export default function FormScreen() {
           title="Create New Form"
           color="#3498db"
           onPress={() => {
+            if (opening.current) return;
+            opening.current = true;
             setSelectedForm(null);
             setModalVisible(true);
           }}
         />
       </View>
 
-      <FormModal
-        visible={modalVisible}
-        pinId={pinId}
-        selectedForm={selectedForm}
-        onClose={handleModalClose}
-      />
+      {modalVisible && (
+        <FormModal
+          visible={modalVisible}
+          pinId={pinId}
+          selectedForm={selectedForm}
+          onClose={handleModalClose}
+        />
+      )}
     </ScrollView>
   );
 }

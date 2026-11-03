@@ -2,17 +2,19 @@
 import { createUploadTask } from 'expo-file-system/legacy';
 
 import { forms, pins, syncQueue } from '~/db/schema';
-import { updatePin } from '~/features/pins/services/PinService';
+import { deletePin, updatePin } from '~/features/pins/services/PinService';
 import { fetchPin } from '~/services/api/pinsApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
+import { deleteImagesByFilename } from '~/services/images/ImageManager';
+import { prepareImageUpload } from '~/services/images/prepareImageUpload';
 
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
 import { createForm, createPin } from './fixtures';
-import { initializeTestDb, resetTestDb } from './testDb';
+import { exportTestDb, initializeTestDb, resetTestDb } from './testDb';
 
 let mockExists = true;
 let mockSize = 4;
@@ -34,6 +36,13 @@ jest.mock('expo-file-system/legacy', () => ({
   FileSystemUploadType: { BINARY_CONTENT: 0 },
   FileSystemSessionType: { FOREGROUND: 1 },
   createUploadTask: jest.fn(() => ({ uploadAsync: mockUpload, cancelAsync: mockCancel })),
+}));
+jest.mock('~/services/images/prepareImageUpload', () => ({
+  prepareImageUpload: jest.fn(async (uri: string, contentType: string) => ({
+    uri,
+    contentType,
+    dispose: jest.fn(),
+  })),
 }));
 jest.mock('~/services/drizzleDb', () => require('./testDb'));
 jest.mock('~/services/images/ImageManager', () => ({
@@ -73,13 +82,17 @@ async function photoPin(filename = 'photo.jpg') {
   await updatePin('p', { images: [filename] });
 }
 
-test('large photo is uploaded from its file URI without allocating JS photo bytes', async () => {
+test('large photo uploads its prepared copy without allocating JS photo bytes', async () => {
   await photoPin();
   mockSize = 64 * 1024 * 1024;
+  const dispose = jest.fn();
+  jest
+    .mocked(prepareImageUpload)
+    .mockResolvedValueOnce({ uri: 'file:///cache/small.jpg', contentType: 'image/jpeg', dispose });
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
   expect(createUploadTask).toHaveBeenCalledWith(
     'https://storage.example.test/photo',
-    'file:///pins/p/photo.jpg',
+    'file:///cache/small.jpg',
     expect.objectContaining({
       httpMethod: 'PUT',
       uploadType: 0,
@@ -88,6 +101,7 @@ test('large photo is uploaded from its file URI without allocating JS photo byte
     })
   );
   expect(mockReadBytes).not.toHaveBeenCalled();
+  expect(dispose).toHaveBeenCalledTimes(1);
   expect(db.select().from(pins).get()?.status).toBe('synced');
 });
 
@@ -229,5 +243,87 @@ test.each([{}, { images: null }, 'invalid pin'])(
     expect(createUploadTask).not.toHaveBeenCalled();
     expect(sync).not.toHaveBeenCalled();
     expect(deleteObjects).not.toHaveBeenCalled();
+  }
+);
+
+test.each(['url', 'upload'])(
+  'prepared copy is cleaned after %s failure; original filename stays queued',
+  async (stage) => {
+    await photoPin('photo.HEIC');
+    const dispose = jest.fn();
+    jest.mocked(prepareImageUpload).mockResolvedValueOnce({
+      uri: 'file:///cache/small.jpg',
+      contentType: 'image/jpeg',
+      dispose,
+    });
+    if (stage === 'url')
+      jest.mocked(getUploadUrl).mockResolvedValueOnce({ success: false, error: 'No storage' });
+    else mockUpload.mockRejectedValueOnce(new Error('Network failed'));
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(getUploadUrl).toHaveBeenCalledWith('pins/p/photo.HEIC', 'image/jpeg');
+    expect(db.select().from(pins).get()?.images).toBe('["photo.HEIC"]');
+    expect(sync).not.toHaveBeenCalled();
+  }
+);
+
+test('compression failure keeps the queued photo and never requests an upload URL', async () => {
+  await photoPin();
+  jest
+    .mocked(prepareImageUpload)
+    .mockRejectedValueOnce(new Error('Photo still exceeds the upload limit'));
+  expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+  expect(getUploadUrl).not.toHaveBeenCalled();
+  expect(sync).not.toHaveBeenCalled();
+});
+
+test.each([
+  ['create', 'photo'],
+  ['create', 'metadata'],
+  ['update', 'photo'],
+  ['update', 'metadata'],
+])(
+  'deleting a photo pin after interrupted %s/%s cannot require photo replay',
+  async (operation, stage) => {
+    await createPin({ id: 'p', name: 'Photo pin', lat: 1, lng: 2 });
+    if (operation === 'update') await uploadPendingChanges();
+    await updatePin('p', { images: ['photo.jpg'] });
+    if (stage === 'photo') mockUpload.mockResolvedValueOnce({ status: 503 });
+    else jest.mocked(sync).mockRejectedValueOnce(new Error('Response lost after possible commit'));
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+
+    // Reopen persisted SQLite state, then remove the actual photo boundary too.
+    resetTestDb(exportTestDb());
+    jest.mocked(deleteImagesByFilename).mockImplementationOnce(async () => {
+      mockExists = false;
+    });
+    await deletePin('p');
+    expect(deleteImagesByFilename).toHaveBeenLastCalledWith('p', ['photo.jpg']);
+    expect(db.select().from(pins).all()).toHaveLength(0);
+    expect(
+      db
+        .select()
+        .from(syncQueue)
+        .all()
+        .filter((row) => row.status !== 'completed')
+    ).toEqual([
+      expect.objectContaining({ operation: 'delete', entityType: 'pin', status: 'pending' }),
+    ]);
+    jest.mocked(sync).mockClear();
+    jest.mocked(createUploadTask).mockClear();
+    jest.mocked(fetchPin).mockClear();
+    jest.mocked(prepareImageUpload).mockClear();
+    jest.mocked(sync).mockRejectedValueOnce(new Error('Delete temporarily unavailable'));
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+    expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
+    expect(jest.mocked(sync).mock.calls.every(([request]) => request.operation === 'delete')).toBe(
+      true
+    );
+    expect(jest.mocked(sync).mock.calls[0][0].idempotencyKey).toBe(
+      jest.mocked(sync).mock.calls[1][0].idempotencyKey
+    );
+    expect(createUploadTask).not.toHaveBeenCalled();
+    expect(prepareImageUpload).not.toHaveBeenCalled();
+    expect(fetchPin).not.toHaveBeenCalled();
   }
 );
