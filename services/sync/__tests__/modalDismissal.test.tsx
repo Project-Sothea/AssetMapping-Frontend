@@ -1,6 +1,6 @@
 import type { Form } from '@assetmapping/shared-types';
 import React from 'react';
-import { Alert, TouchableOpacity } from 'react-native';
+import { Alert, Modal, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 import { FormEditor } from '~/features/forms/components/FormEditor';
@@ -103,6 +103,30 @@ test('read-only form can dismiss while an unrelated upload is busy', async () =>
   expect(close).toHaveBeenCalledTimes(1);
   expect(Alert.alert).not.toHaveBeenCalled();
 });
+
+test.each(['close', 'backdrop', 'androidBack'])(
+  'an unrelated upload does not block the modal’s %s dismissal entry point',
+  async (entry) => {
+    mockTransferBusy = true;
+    await act(async () => {
+      renderer = create(
+        <FormModal pinId="test-pin" selectedForm={selectedForm} visible onClose={close} />
+      );
+    });
+    await act(async () => {
+      if (entry === 'androidBack') renderer.root.findByType(Modal).props.onRequestClose();
+      else if (entry === 'backdrop')
+        renderer.root.findByType(TouchableWithoutFeedback).props.onPress();
+      else
+        renderer.root
+          .findAllByType(TouchableOpacity)
+          .find((button) => button.props.accessibilityLabel === 'Close')!
+          .props.onPress();
+    });
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(Alert.alert).not.toHaveBeenCalled();
+  }
+);
 
 test('dirty form still offers discard while an unrelated upload is busy', async () => {
   await mount(true);

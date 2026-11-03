@@ -2,18 +2,19 @@
 import { createUploadTask } from 'expo-file-system/legacy';
 
 import { forms, pins, syncQueue } from '~/db/schema';
-import { updatePin } from '~/features/pins/services/PinService';
+import { deletePin, updatePin } from '~/features/pins/services/PinService';
 import { fetchPin } from '~/services/api/pinsApi';
 import { deleteObjects, getUploadUrl } from '~/services/api/storageApi';
 import { sync } from '~/services/api/syncApi';
 import { db } from '~/services/drizzleDb';
+import { deleteImagesByFilename } from '~/services/images/ImageManager';
 import { prepareImageUpload } from '~/services/images/prepareImageUpload';
 
 import { uploadPendingChanges } from '../queue/syncQueue';
 import { finishSetup } from '../transferCoordinator';
 
 import { createForm, createPin } from './fixtures';
-import { initializeTestDb, resetTestDb } from './testDb';
+import { exportTestDb, initializeTestDb, resetTestDb } from './testDb';
 
 let mockExists = true;
 let mockSize = 4;
@@ -275,3 +276,54 @@ test('compression failure keeps the queued photo and never requests an upload UR
   expect(getUploadUrl).not.toHaveBeenCalled();
   expect(sync).not.toHaveBeenCalled();
 });
+
+test.each([
+  ['create', 'photo'],
+  ['create', 'metadata'],
+  ['update', 'photo'],
+  ['update', 'metadata'],
+])(
+  'deleting a photo pin after interrupted %s/%s cannot require photo replay',
+  async (operation, stage) => {
+    await createPin({ id: 'p', name: 'Photo pin', lat: 1, lng: 2 });
+    if (operation === 'update') await uploadPendingChanges();
+    await updatePin('p', { images: ['photo.jpg'] });
+    if (stage === 'photo') mockUpload.mockResolvedValueOnce({ status: 503 });
+    else jest.mocked(sync).mockRejectedValueOnce(new Error('Response lost after possible commit'));
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+
+    // Reopen persisted SQLite state, then remove the actual photo boundary too.
+    resetTestDb(exportTestDb());
+    jest.mocked(deleteImagesByFilename).mockImplementationOnce(async () => {
+      mockExists = false;
+    });
+    await deletePin('p');
+    expect(deleteImagesByFilename).toHaveBeenLastCalledWith('p', ['photo.jpg']);
+    expect(db.select().from(pins).all()).toHaveLength(0);
+    expect(
+      db
+        .select()
+        .from(syncQueue)
+        .all()
+        .filter((row) => row.status !== 'completed')
+    ).toEqual([
+      expect.objectContaining({ operation: 'delete', entityType: 'pin', status: 'pending' }),
+    ]);
+    jest.mocked(sync).mockClear();
+    jest.mocked(createUploadTask).mockClear();
+    jest.mocked(fetchPin).mockClear();
+    jest.mocked(prepareImageUpload).mockClear();
+    jest.mocked(sync).mockRejectedValueOnce(new Error('Delete temporarily unavailable'));
+    expect(await uploadPendingChanges()).toMatchObject({ failed: 1, remaining: 1 });
+    expect(await uploadPendingChanges()).toMatchObject({ uploaded: 1, failed: 0, remaining: 0 });
+    expect(jest.mocked(sync).mock.calls.every(([request]) => request.operation === 'delete')).toBe(
+      true
+    );
+    expect(jest.mocked(sync).mock.calls[0][0].idempotencyKey).toBe(
+      jest.mocked(sync).mock.calls[1][0].idempotencyKey
+    );
+    expect(createUploadTask).not.toHaveBeenCalled();
+    expect(prepareImageUpload).not.toHaveBeenCalled();
+    expect(fetchPin).not.toHaveBeenCalled();
+  }
+);
