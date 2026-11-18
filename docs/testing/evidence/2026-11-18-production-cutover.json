@@ -1,0 +1,53 @@
+{
+  "verifiedAt": "2026-11-18T06:34:01.636Z",
+  "production": {
+    "url": "https://assetmapping-backend.up.railway.app",
+    "database": "sothea_village_20261118",
+    "pins": 208,
+    "forms": 268,
+    "archivedVillageAnswers": 268,
+    "blankPins": 13,
+    "sourceAndDestinationHash": "a68fb6902f1c607a8dc77d5dc5db07f1c96d3e746b684a99de275b0b5798204c",
+    "originalDatabaseRetained": true,
+    "originalPins": 248,
+    "originalForms": 226,
+    "independentEncryptedBackupsVerified": true,
+    "oldCacheRetained": true,
+    "restoreRehearsalPassed": true,
+    "mainDeployment": "8f65b164-6e38-4dd2-840a-245e493fb2f7",
+    "health": 200
+  },
+  "repositories": {
+    "backend": "2fb984fc51e353cd92d5a82f9a6d3afb3e2801ee",
+    "frontendBuildCommit": "20c9952b2b58782837367a39df80b0107c62944d"
+  },
+  "tests": {
+    "frontendSuites": 19,
+    "frontendTests": 125,
+    "frontendTypes": true,
+    "frontendLint": true,
+    "isolatedEasArchiveInstall": true,
+    "isolatedEasArchiveIosBundle": true,
+    "backendTests": 6,
+    "backendBuild": true,
+    "backendLint": true,
+    "restoreFailureRollbackAndRetry": true,
+    "restoreSchemaMismatchRollback": true
+  },
+  "ios": {
+    "buildId": "894092c2-fd58-46f6-aafe-21782f1269a2",
+    "status": "FINISHED",
+    "version": "1.0.2",
+    "buildNumber": "16",
+    "bundleIdentifier": "com.anonymous.AssetMapApp",
+    "distribution": "STORE",
+    "buildUrl": "https://expo.dev/accounts/j4ryl/projects/AssetMapApp/builds/894092c2-fd58-46f6-aafe-21782f1269a2",
+    "submittedToTestFlight": false,
+    "physicalDeviceUpdateVerified": false
+  },
+  "existingDevices": {
+    "reinstallRequired": false,
+    "oldProductionCacheNeedsInAppRefresh": true,
+    "unsyncedDataMustBeReconciledBeforeClearing": true
+  }
+}

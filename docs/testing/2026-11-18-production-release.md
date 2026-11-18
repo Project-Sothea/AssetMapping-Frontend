@@ -29,8 +29,14 @@ Verification on the exact isolated EAS upload archive, with no sibling backend c
 - iOS production-API JavaScript export: passed (Hermes bundle generated).
 - Frontend lint/formatting: passed after the packaging change; tarball integrity matches the lockfile.
 
-This verifies packaging and JavaScript compatibility. The signed EAS iOS build still needs to finish, followed by a physical-device TestFlight update check. An iOS build does not itself publish an App Store release.
+This verifies packaging and JavaScript compatibility. The signed EAS iOS build finished successfully. A physical-device TestFlight update check remains after submission. An iOS build does not itself publish an App Store release.
 
 ## Release status
 
-Production initial cutover deployment `2d6697de-d09d-443b-9d80-af7174a0fa40` succeeded. Production health, full pin/form API equality and exact SQL fingerprint passed, with the old production database unchanged. Backend main is `2fb984f`. The signed iOS build identifier will be recorded after launch.
+Production initial cutover deployment `2d6697de-d09d-443b-9d80-af7174a0fa40` succeeded. Production health, full pin/form API equality and exact SQL fingerprint passed, with the old production database unchanged. Backend main is `2fb984f`; its GitHub-triggered deployment `8f65b164-6e38-4dd2-840a-245e493fb2f7` succeeded after approving that specific commit in Railway. Ordinary Drizzle migrations completed, health returned 200 and the complete cleaned SQL hash stayed unchanged. Frontend release code is `20c9952`.
+
+Production signed iOS build **1.0.2 (16)** finished successfully: [EAS build 894092c2-fd58-46f6-aafe-21782f1269a2](https://expo.dev/accounts/j4ryl/projects/AssetMapApp/builds/894092c2-fd58-46f6-aafe-21782f1269a2). It uses the existing remote distribution certificate/profile and the production API environment. The signed App Store distribution artifact is available in EAS. This task started and completed the build; it did not submit it to App Store Connect or publish an App Store release.
+
+## Cloud build diagnostics
+
+The first cloud checks reported missing direct declarations for `expo-font` and `react-native-worklets`, plus existing Expo package-version warnings. The actual prebuild and CocoaPods logs confirmed both modules were found and linked (`ExpoFont 14.0.10`, `RNWorklets 0.7.1`). Prebuild, CocoaPods, bundling, Xcode compilation and signed archive creation all completed successfully. This release does not broadly update the SDK or native dependency versions; do not describe Expo Doctor as passing. Align the dependency declarations and SDK versions in a separately verified native dependency update.
