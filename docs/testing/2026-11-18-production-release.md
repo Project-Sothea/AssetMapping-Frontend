@@ -33,4 +33,4 @@ This verifies packaging and JavaScript compatibility. The signed EAS iOS build s
 
 ## Release status
 
-Production deployment and signed iOS build identifiers will be recorded after they complete.
+Production initial cutover deployment `2d6697de-d09d-443b-9d80-af7174a0fa40` succeeded. Production health, full pin/form API equality and exact SQL fingerprint passed, with the old production database unchanged. Backend main is `2fb984f`. The signed iOS build identifier will be recorded after launch.
