@@ -43,7 +43,14 @@
     "distribution": "STORE",
     "buildUrl": "https://expo.dev/accounts/j4ryl/projects/AssetMapApp/builds/894092c2-fd58-46f6-aafe-21782f1269a2",
     "submittedToTestFlight": false,
-    "physicalDeviceUpdateVerified": false
+    "physicalDeviceUpdateVerified": false,
+    "submission": {
+      "id": "2979898e-6040-430a-85a4-692ef7ed3f45",
+      "status": "ERRORED",
+      "errorCode": "EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED",
+      "completedAt": "2026-11-18T06:39:47.056Z",
+      "accountHolderActionRequired": true
+    }
   },
   "existingDevices": {
     "reinstallRequired": false,

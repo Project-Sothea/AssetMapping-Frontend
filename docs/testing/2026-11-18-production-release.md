@@ -40,3 +40,11 @@ Production signed iOS build **1.0.2 (16)** finished successfully: [EAS build 894
 ## Cloud build diagnostics
 
 The first cloud checks reported missing direct declarations for `expo-font` and `react-native-worklets`, plus existing Expo package-version warnings. The actual prebuild and CocoaPods logs confirmed both modules were found and linked (`ExpoFont 14.0.10`, `RNWorklets 0.7.1`). Prebuild, CocoaPods, bundling, Xcode compilation and signed archive creation all completed successfully. This release does not broadly update the SDK or native dependency versions; do not describe Expo Doctor as passing. Align the dependency declarations and SDK versions in a separately verified native dependency update.
+
+## Build 15 download mismatch and TestFlight submission
+
+The user confirmed their installed app is **1.0.2 (15)**. Its schema still requires `forms.village`, so its Download Latest validation rejects the migrated server response before importing anything. The new database migration runs only when build 16 is installed; reinstalling build 15 cannot apply it. Production was cut over before build 16 was available in TestFlight.
+
+Build 16 submission was attempted using the existing production submit profile: [submission 2979898e-6040-430a-85a4-692ef7ed3f45](https://expo.dev/accounts/j4ryl/projects/AssetMapApp/submissions/2979898e-6040-430a-85a4-692ef7ed3f45). It failed on 18 November at 14:39:47 SGT with `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Apple requires the Account Holder to accept the pending agreement in App Store Connect → Business and, if prompted, the Apple Developer account portal. No legal agreement was accepted by the agent. The same completed build can be submitted again after acceptance; a rebuild is unnecessary. Until then build 16 is not available to testers.
+
+After successful submission and Apple processing, update the existing TestFlight installation to **1.0.2 (16)**, open it so the local migration runs, and retry Download Latest. Do not clear unsynced records or reinstall as a workaround. No backend data was changed while diagnosing this mismatch.
