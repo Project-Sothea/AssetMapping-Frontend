@@ -48,3 +48,11 @@ The user confirmed their installed app is **1.0.2 (15)**. Its schema still requi
 Build 16 submission was attempted using the existing production submit profile: [submission 2979898e-6040-430a-85a4-692ef7ed3f45](https://expo.dev/accounts/j4ryl/projects/AssetMapApp/submissions/2979898e-6040-430a-85a4-692ef7ed3f45). It failed on 18 November at 14:39:47 SGT with `EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED`. Apple requires the Account Holder to accept the pending agreement in App Store Connect → Business and, if prompted, the Apple Developer account portal. No legal agreement was accepted by the agent. The same completed build can be submitted again after acceptance; a rebuild is unnecessary. Until then build 16 is not available to testers.
 
 After successful submission and Apple processing, update the existing TestFlight installation to **1.0.2 (16)**, open it so the local migration runs, and retry Download Latest. Do not clear unsynced records or reinstall as a workaround. No backend data was changed while diagnosing this mismatch.
+
+## Successful TestFlight upload after agreement acceptance
+
+After the Account Holder accepted an additional Apple agreement, submission **`e43411be-9873-4295-8685-d27201803dc1`** finished successfully on 18 November 2026 at **14:47:03 SGT**, reusing build **1.0.2 (16)**. No rebuild or reinstall was required. Earlier retry `560a49e0-e1af-4e84-85ba-a6c195a63910` had still received the agreement error.
+
+App Store Connect subsequently reported build 16 as **VALID / IN_BETA_TESTING** for internal testers, and **READY_FOR_BETA_SUBMISSION** for external testers. Internal availability is verified; external Beta App Review/distribution is not complete. This is not a public App Store release.
+
+Apple warning 90725 about the iOS 26 SDK did not block this upload or internal testing. Apple’s published deadline requires iOS 27 SDK or later for new uploads starting April 2027: https://developer.apple.com/news/?id=k1mtkt1k . Upgrade and verify the Expo/Xcode toolchain before that deadline; the build SDK requirement is separate from the minimum iOS version supported on users’ phones.

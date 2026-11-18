@@ -42,14 +42,25 @@
     "bundleIdentifier": "com.anonymous.AssetMapApp",
     "distribution": "STORE",
     "buildUrl": "https://expo.dev/accounts/j4ryl/projects/AssetMapApp/builds/894092c2-fd58-46f6-aafe-21782f1269a2",
-    "submittedToTestFlight": false,
+    "submittedToTestFlight": true,
     "physicalDeviceUpdateVerified": false,
     "submission": {
-      "id": "2979898e-6040-430a-85a4-692ef7ed3f45",
-      "status": "ERRORED",
-      "errorCode": "EAS_ASC_REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED",
-      "completedAt": "2026-11-18T06:39:47.056Z",
-      "accountHolderActionRequired": true
+      "id": "e43411be-9873-4295-8685-d27201803dc1",
+      "status": "FINISHED",
+      "completedAt": "2026-11-18T06:47:03.065Z"
+    },
+    "testFlight": {
+      "processingState": "VALID",
+      "internalState": "IN_BETA_TESTING",
+      "externalState": "READY_FOR_BETA_SUBMISSION",
+      "internalAvailabilityVerified": true,
+      "externalReviewSubmitted": false
+    },
+    "sdkWarning": {
+      "code": "90725",
+      "blockingThisUpload": false,
+      "buildSdk": "iOS 26.0",
+      "futureRequirement": "iOS 27 SDK or later starting April 2027"
     }
   },
   "existingDevices": {
