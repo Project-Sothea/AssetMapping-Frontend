@@ -66,3 +66,11 @@ A second native update case removed the setup marker from an older nonempty inst
 The original simulator was left untouched. The populated updated app remains available in **SOFORM Native Upgrade Verification** (`EC8DB080-9696-44DC-B1CB-C55AE6610B58`), on its data-transfer screen. De-identified machine-readable results are in [the verification report](evidence/2026-11-18-ios-in-place-update.json). Private database snapshots, simulator packages and before/after screenshots are outside the repository at `/tmp/sothea-ios-upgrade-evidence`.
 
 The local native build required temporary corrections to generated shell-script quoting for the workspace path containing spaces and the local Node path. All those build-only changes were restored; no runtime code fix was needed for this test. No downloaded offline-map pack was present, so map-pack retention was not tested. Physical-device distribution/signing remains a separate release check. The simulator result supports a normal in-place update with the same application identity; reinstallation is not required for the tested migration.
+
+## Village control follow-up
+
+Restored the rectangular `VillageSelect` appearance from the earlier village-dropdown branch, replacing the pin-list filter control inside the pin form. Both the form and pin details now say **Village**. The five canonical options, including Test Village, open in a floating menu; the menu does not resize the form or move Submit. Selecting an option closes it.
+
+Native iPhone 16/iOS 18.6 screenshots confirmed that the visible Submit button pixels stay at y=1428–1531 both closed and open. Test Village was selected successfully. The full local dataset (210 pins/271 forms), queue, settings and cached photo still matched the pre-update snapshot. All 124 tests, TypeScript and lint pass. See [the layout evidence](evidence/2026-11-18-village-popup.json); screenshots are in `/tmp/sothea-village-popup-preview`.
+
+Upload new or re-saved records only to the migrated test backend. Do not upload the simulator's disposable fixtures into the shared dataset. Legacy queued form payloads containing the retired village fields are preserved and blocked until the form is reviewed and re-saved in the updated app. Updating the app does not merge old production IDs into the cleaned test dataset.

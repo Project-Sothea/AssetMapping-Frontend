@@ -25,7 +25,7 @@ import { VILLAGES } from '~/shared/constants/villages';
 
 import { PinValues } from '../types/';
 
-import { VillageDropdown } from './VillageDropdown';
+import { VillageSelect } from './VillageSelect';
 
 const pinSchema = z.looseObject({
   name: z.string().trim().min(1, 'Name is required'),
@@ -145,12 +145,8 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
         </View>
       ))}
 
-      <Text>City/Village *</Text>
-      <VillageDropdown
-        options={[
-          { key: '', label: 'Choose village' },
-          ...VILLAGES.map((label) => ({ key: label, label })),
-        ]}
+      <Text>Village *</Text>
+      <VillageSelect
         value={values.cityVillage ?? ''}
         onChange={(value) =>
           setValue('cityVillage', value, { shouldDirty: true, shouldValidate: true })

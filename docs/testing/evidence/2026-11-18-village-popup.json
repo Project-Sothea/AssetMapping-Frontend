@@ -1,0 +1,20 @@
+{
+  "submitButtonDidNotMove": true,
+  "submitButtonVerticalBoundsPixels": {
+    "closed": [1428, 1531],
+    "open": [1428, 1531]
+  },
+  "date": "2026-11-18",
+  "device": "iPhone 16",
+  "runtime": "iOS 18.6",
+  "rectangularHistoricalDesignRestored": true,
+  "menuFloatsOverForm": true,
+  "villageOnlyLabel": true,
+  "testVillageSelectedInNativeUI": true,
+  "testSuitesPassed": 19,
+  "testsPassed": 124,
+  "typeCheckPassed": true,
+  "lintPassed": true,
+  "storedDataUnchanged": true,
+  "uploadsPerformed": false
+}

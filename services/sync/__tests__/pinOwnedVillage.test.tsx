@@ -1,14 +1,13 @@
 /** @jest-environment node */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { Text, TextInput } from 'react-native';
+import { Modal, Text, TextInput } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 
 import { pins, syncQueue } from '~/db/schema';
 import { FormEditor } from '~/features/forms/components/FormEditor';
 import { createForm } from '~/features/forms/services/FormService';
 import { PinForm } from '~/features/pins/components/PinForm';
-import { VillageDropdown } from '~/features/pins/components/VillageDropdown';
 import { createPin as savePin, updatePin } from '~/features/pins/services/PinService';
 import { db } from '~/services/drizzleDb';
 
@@ -102,17 +101,101 @@ test('pin creation uses five explicit dropdown options and has no address input'
       <PinForm selectedPin={null} coords={{ lat: 12, lng: 103 }} onSubmit={() => {}} />
     );
   });
-  const dropdown = renderer!.root.findByType(VillageDropdown);
-  expect(
-    dropdown.props.options
-      .map((x: { label: string }) => x.label)
-      .filter((x: string) => x !== 'Choose village')
-  ).toEqual(['Krang Svat', 'Srae Ou', 'Svay Sor', 'Boeung Tim', 'Test Village']);
+  const field = renderer!.root
+    .findAllByProps({ collapsable: false })
+    .find((node) => jest.isMockFunction(node.instance?.measureInWindow));
+  expect(field).toBeDefined();
+  field!.instance.measureInWindow.mockImplementation(
+    (callback: (x: number, y: number, width: number, height: number) => void) =>
+      callback(24, 220, 320, 48)
+  );
+  const trigger = renderer!.root.findAllByProps({
+    accessibilityRole: 'button',
+    accessibilityLabel: 'Village',
+  })[0];
+  expect(trigger).toBeDefined();
+  await act(async () => {
+    trigger.props.onPress();
+  });
+  const optionLabels = [
+    ...new Set(
+      renderer!.root
+        .findAllByProps({ accessibilityRole: 'button' })
+        .map((node) => node.props.accessibilityLabel)
+        .filter((label) => label && !['Village', 'Close village list'].includes(label))
+    ),
+  ];
+  expect(optionLabels).toEqual(['Krang Svat', 'Srae Ou', 'Svay Sor', 'Boeung Tim', 'Test Village']);
   expect(
     renderer!.root
       .findAllByType(TextInput)
       .some((node) => /address|city\/village/i.test(node.props.placeholder ?? ''))
   ).toBe(false);
+});
+
+test('pin village opens as a form choice, selects Test Village and saves without a duplicate label', async () => {
+  let submit!: () => void;
+  const onSubmit = jest.fn();
+  await act(async () => {
+    renderer = create(
+      <PinForm
+        selectedPin={null}
+        coords={{ lat: 12, lng: 103 }}
+        onSubmit={onSubmit}
+        onSubmitRegister={(fn) => {
+          submit = fn;
+        }}
+      />
+    );
+  });
+  const text = renderer!.root
+    .findAllByType(Text)
+    .map((node) => node.props.children)
+    .flat()
+    .join(' ');
+  expect(text).toContain('Village *');
+  expect(text).not.toContain('City/Village');
+  const field = renderer!.root
+    .findAllByProps({ collapsable: false })
+    .find((node) => jest.isMockFunction(node.instance?.measureInWindow));
+  expect(field).toBeDefined();
+  field!.instance.measureInWindow.mockImplementation(
+    (callback: (x: number, y: number, width: number, height: number) => void) =>
+      callback(24, 220, 320, 48)
+  );
+  const trigger = renderer!.root.findAllByProps({
+    accessibilityRole: 'button',
+    accessibilityLabel: 'Village',
+  })[0];
+  expect(trigger).toBeDefined();
+  await act(async () => {
+    trigger.props.onPress();
+  });
+  expect(renderer!.root.findAllByType(Modal).some((node) => node.props.visible)).toBe(true);
+  const choice = renderer!.root.findAllByProps({
+    accessibilityRole: 'button',
+    accessibilityLabel: 'Test Village',
+  })[0];
+  expect(choice).toBeDefined();
+  await act(async () => {
+    choice.props.onPress();
+  });
+  expect(
+    renderer!.root.findAllByProps({
+      accessibilityRole: 'button',
+      accessibilityLabel: 'Test Village',
+    }).length > 0
+  ).toBe(false);
+  await act(async () => {
+    renderer!.root
+      .findAllByType(TextInput)
+      .find((node) => node.props.placeholder === 'Enter name')!
+      .props.onChangeText('Village picker test');
+  });
+  await act(async () => {
+    await submit();
+  });
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ cityVillage: 'Test Village' }));
 });
 
 test('form UI does not ask which village the respondent is from', async () => {

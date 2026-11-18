@@ -38,7 +38,7 @@ export function PinDetails({ pin, onImagePress, onEdit, onViewForms }: PinDetail
       <Text style={styles.description}>{pin.description || 'No description provided.'}</Text>
 
       <View style={styles.infoCard}>
-        <InfoRow label="City/Village" value={pin.cityVillage} />
+        <InfoRow label="Village" value={pin.cityVillage} />
       </View>
 
       <View style={styles.actionRow}>
