@@ -5,7 +5,7 @@ import { fetchForms } from '~/services/api/formsApi';
 import { fetchPins } from '~/services/api/pinsApi';
 import { db } from '~/services/drizzleDb';
 
-import { clearLocalData, downloadLatest } from '../localDataTransfer';
+import { clearLocalData, downloadLatest, getLocalDataSummary } from '../localDataTransfer';
 import { finishSetup } from '../transferCoordinator';
 
 import { createPin } from './fixtures';
@@ -99,7 +99,6 @@ test.each([
         id: 'f',
         pinId: 'remote',
         name: 'Patient',
-        village: 'Krang Svat',
         villageId: '',
         createdAt: new Date(),
         version: 1,
@@ -146,4 +145,58 @@ test('clearing uploaded records allows a subsequent download', async () => {
   expect(await clearLocalData()).toEqual({ cleanupWarnings: [] });
   expect(db.select().from(pins).all()).toHaveLength(0);
   expect(await downloadLatest()).toEqual({ pins: 1, forms: 0 });
+});
+
+test('summary uses aggregate projections and counts NULL status as unsynced', async () => {
+  await createPin({ id: 'p', name: 'Pin', lat: 12, lng: 103 });
+  db.update(pins).set({ status: null }).run();
+  const select = jest.spyOn(db, 'select');
+  expect(await getLocalDataSummary()).toEqual({
+    pins: 1,
+    forms: 0,
+    pending: 1,
+    failed: 0,
+    unsynced: 1,
+  });
+  expect(select.mock.calls.every(([projection]) => projection !== undefined)).toBe(true);
+  select.mockRestore();
+});
+
+test('queue status counts do not materialize historical payloads', async () => {
+  await createPin({ id: 'p', name: 'Pin', lat: 12, lng: 103 });
+  const { getQueueMetrics } = require('../queue/syncQueue');
+  const select = jest.spyOn(db, 'select');
+  expect(await getQueueMetrics()).toEqual({ pending: 1, failed: 0, completed: 0 });
+  expect(select.mock.calls.every(([projection]) => projection !== undefined)).toBe(true);
+  select.mockRestore();
+});
+
+test('explicit local clearing also removes upgrade archives for deleted forms', async () => {
+  const { formVillageArchive } = require('~/db/schema');
+  await createPin({ id: 'p', name: 'Pin', lat: 12, lng: 103 });
+  db.update(pins).set({ status: 'synced' }).run();
+  db.update(syncQueue).set({ status: 'completed' }).run();
+  db.insert(formVillageArchive).values({ formId: 'old-form', village: 'Old village' }).run();
+  await clearLocalData();
+  expect(db.select().from(formVillageArchive).all()).toEqual([]);
+});
+
+test('download refuses legacy servers rather than silently losing independent form villages', async () => {
+  jest.mocked(fetchForms).mockResolvedValue({
+    success: true,
+    data: [
+      {
+        id: 'f',
+        pinId: 'remote',
+        name: '',
+        villageId: 'A1',
+        village: 'Different village',
+        otherVillage: '',
+        createdAt: new Date(),
+        version: 1,
+      },
+    ],
+  } as never);
+  await expect(downloadLatest()).rejects.toThrow(/previous|legacy|migrated/i);
+  expect(db.select().from(pins).all()).toHaveLength(0);
 });

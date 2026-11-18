@@ -1,8 +1,8 @@
-import { getTableColumns } from 'drizzle-orm';
+import { getTableColumns, sql } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { FORM_ARRAY_FIELDS } from '~/db/formArrayFields';
-import { forms, pins, syncQueue } from '~/db/schema';
+import { forms, pins, syncQueue, formVillageArchive } from '~/db/schema';
 import { mapPinDbToPin, sanitizeFormForDb, sanitizePinForDb } from '~/db/utils';
 import { fetchForms } from '~/services/api/formsApi';
 import { fetchPins } from '~/services/api/pinsApi';
@@ -10,20 +10,37 @@ import { db } from '~/services/drizzleDb';
 import { deleteImageByFilename } from '~/services/images/ImageManager';
 import { assertSafeImageComponent } from '~/services/images/imagePaths';
 
-import { outstanding } from './queue/queueOperations';
 import { clearLastSyncTimestamp, updateLastSyncTimestamp } from './syncMetadata';
 import { getTransferState, runTransfer } from './transferCoordinator';
 
 export async function getLocalDataSummary() {
-  const localPins = db.select().from(pins).all();
-  const localForms = db.select().from(forms).all();
-  const queue = db.select().from(syncQueue).where(outstanding).all();
+  const pinCounts = db
+    .select({
+      total: sql<number>`count(*)`,
+      unsynced: sql<number>`coalesce(sum(case when ${pins.status} is null or ${pins.status} <> 'synced' then 1 else 0 end), 0)`,
+    })
+    .from(pins)
+    .get()!;
+  const formCounts = db
+    .select({
+      total: sql<number>`count(*)`,
+      unsynced: sql<number>`coalesce(sum(case when ${forms.status} is null or ${forms.status} <> 'synced' then 1 else 0 end), 0)`,
+    })
+    .from(forms)
+    .get()!;
+  const queueCounts = db
+    .select({
+      pending: sql<number>`coalesce(sum(case when ${syncQueue.status} = 'pending' then 1 else 0 end), 0)`,
+      failed: sql<number>`coalesce(sum(case when ${syncQueue.status} = 'failed' then 1 else 0 end), 0)`,
+    })
+    .from(syncQueue)
+    .get()!;
   return {
-    pins: localPins.length,
-    forms: localForms.length,
-    pending: queue.filter((row) => row.status === 'pending').length,
-    failed: queue.filter((row) => row.status === 'failed').length,
-    unsynced: [...localPins, ...localForms].filter((row) => row.status !== 'synced').length,
+    pins: pinCounts.total,
+    forms: formCounts.total,
+    pending: queueCounts.pending,
+    failed: queueCounts.failed,
+    unsynced: pinCounts.unsynced + formCounts.unsynced,
   };
 }
 
@@ -91,6 +108,11 @@ export async function downloadSnapshotIntoEmptyDatabase(): Promise<{
   const pinIds = new Set(localPins.map((pin) => pin.id));
   if (pinIds.size !== localPins.length) throw new Error('Duplicate pins in server snapshot.');
   const localForms = formResponse.data.map((form) => {
+    if (form && ('village' in form || 'otherVillage' in form)) {
+      throw new Error(
+        'This server uses a previous database version. Select the migrated test backend before downloading.'
+      );
+    }
     if (!form || !pinIds.has(form.pinId))
       throw new Error('Downloaded form has a missing parent pin.');
     validateRawDates(form);
@@ -130,6 +152,7 @@ export async function clearLocalData(): Promise<{ cleanupWarnings: string[] }> {
     // Fail before deleting records if the metadata store is unavailable.
     await clearLastSyncTimestamp();
     db.transaction((tx) => {
+      tx.delete(formVillageArchive).run();
       tx.delete(forms).run();
       tx.delete(pins).run();
       tx.delete(syncQueue).run();

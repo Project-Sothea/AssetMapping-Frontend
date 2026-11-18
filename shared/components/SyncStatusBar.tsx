@@ -10,7 +10,8 @@ export function SyncStatusBar() {
   const { data } = useQuery({
     queryKey: ['queueMetrics'],
     queryFn: getQueueMetrics,
-    refetchInterval: 2000,
+    enabled: !busy,
+    refetchInterval: busy ? false : 2000,
   });
   const label = busy
     ? `${kind || 'Setup'} in progress`

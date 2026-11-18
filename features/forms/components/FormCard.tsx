@@ -4,7 +4,7 @@ import { Text, StyleSheet, Pressable } from 'react-native';
 import { useFormQueueStatus } from '~/hooks/RealTimeSync/useFormQueueStatus';
 
 type FormCardProps = {
-  form: Form;
+  form: Form & { pinVillage?: string | null };
   onPress: (form: Form) => void;
 };
 
@@ -24,7 +24,7 @@ export const FormCard = ({ form, onPress }: FormCardProps) => {
       {form.name ? (
         <Text style={styles.nameText}>{form.name}</Text>
       ) : (
-        <Text style={styles.villageText}>{form.village}</Text>
+        <Text style={styles.villageText}>{form.pinVillage || 'No village'}</Text>
       )}
       <Text style={styles.dateText}>Submitted: {new Date(form.createdAt).toLocaleString()}</Text>
       {form.updatedAt && (

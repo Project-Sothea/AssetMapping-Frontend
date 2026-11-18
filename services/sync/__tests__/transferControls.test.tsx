@@ -158,3 +158,32 @@ test('mounted controls disable all transfer commands when another tab starts a t
   });
   expect(uploadPendingChanges).not.toHaveBeenCalled();
 });
+
+test('summary polling stops while another tab transfers and resumes after completion', async () => {
+  await mount();
+  mockBusy = true;
+  await act(async () =>
+    renderer.update(
+      <QueryClientProvider client={client}>
+        <DataTransferControls />
+      </QueryClientProvider>
+    )
+  );
+  const reads = jest.mocked(getLocalDataSummary).mock.calls.length;
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+  });
+  expect(getLocalDataSummary).toHaveBeenCalledTimes(reads);
+  mockBusy = false;
+  await act(async () =>
+    renderer.update(
+      <QueryClientProvider client={client}>
+        <DataTransferControls />
+      </QueryClientProvider>
+    )
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(jest.mocked(getLocalDataSummary).mock.calls.length).toBeGreaterThan(reads);
+});

@@ -78,7 +78,7 @@ test('a committed write with a lost acknowledgement is applied only once across 
 
 test('parent failures block dependent forms without sending them', async () => {
   await createPin({ id: 'p', name: 'A', lat: 1, lng: 2 });
-  await createForm({ pinId: 'p', name: 'Patient', villageId: '', village: 'Krang Svat' });
+  await createForm({ pinId: 'p', name: 'Patient', villageId: '' });
   api.mockResolvedValue({ success: false, error: 'Unavailable' });
   expect(await uploadPendingChanges()).toMatchObject({
     uploaded: 0,
@@ -103,7 +103,6 @@ test('parent pins are sent before forms regardless of queue timestamps', async (
     pinId: 'p',
     name: 'Patient',
     villageId: '',
-    village: 'Krang Svat',
   });
   db.update(syncQueue).set({ sequenceNumber: 0 }).where(eq(syncQueue.entityType, 'form')).run();
   expect(await uploadPendingChanges()).toMatchObject({ uploaded: 2 });
@@ -119,4 +118,30 @@ test('deleting a pin after an ambiguous timeout queues a delete instead of cance
   expect(db.select().from(syncQueue).all()).toEqual([
     expect.objectContaining({ operation: 'delete', status: 'pending' }),
   ]);
+});
+
+test('unexpected old queued village payload is preserved and blocked before network upload', async () => {
+  await createPin({ id: 'p', name: 'Pin', lat: 12, lng: 103 });
+  db.update(syncQueue).set({ status: 'completed' }).run();
+  db.insert(syncQueue)
+    .values({
+      id: 'legacy',
+      entityId: 'f',
+      entityType: 'form',
+      operation: 'update',
+      payload: JSON.stringify({ id: 'f', pinId: 'p', village: 'Original independent village' }),
+      idempotencyKey: 'original-key',
+      status: 'pending',
+    })
+    .run();
+  const result = await uploadPendingChanges();
+  expect(result).toMatchObject({ uploaded: 0, failed: 1, remaining: 1 });
+  expect(api).not.toHaveBeenCalled();
+  expect(result.errors[0].message).toMatch(/previous|legacy|review/i);
+  expect(db.select().from(syncQueue).where(eq(syncQueue.id, 'legacy')).get()).toEqual(
+    expect.objectContaining({
+      payload: expect.stringContaining('Original independent village'),
+      idempotencyKey: 'original-key',
+    })
+  );
 });

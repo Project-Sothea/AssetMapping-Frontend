@@ -1,14 +1,23 @@
-import { Form } from '@assetmapping/shared-types';
+import type { Form } from '@assetmapping/shared-types';
 import { eq } from 'drizzle-orm';
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 import * as schema from '~/db/schema';
 import { mapFormDbToForm } from '~/db/utils';
+import { useDatabaseQuery } from '~/hooks/RealTimeSync/useDatabaseQuery';
 import { db } from '~/services/drizzleDb';
 
-export const useFetchForms = (pinId: string): Form[] => {
-  const query = db.select().from(schema.forms).where(eq(schema.forms.pinId, pinId));
-  // useLiveQuery returns an object like { data, error, isLoading }
-  const result = useLiveQuery(query) ?? { data: [] };
-  return (result.data ?? []).map(mapFormDbToForm);
-};
+export type FormWithVillage = Form & { pinVillage: string | null };
+
+export const useFetchForms = (pinId: string): FormWithVillage[] =>
+  useDatabaseQuery(
+    () =>
+      db
+        .select({ form: schema.forms, pinVillage: schema.pins.cityVillage })
+        .from(schema.forms)
+        .innerJoin(schema.pins, eq(schema.forms.pinId, schema.pins.id))
+        .where(eq(schema.forms.pinId, pinId))
+        .all()
+        .map(({ form, pinVillage }) => ({ ...mapFormDbToForm(form), pinVillage })),
+    ['forms', 'pins'],
+    pinId
+  ).data;

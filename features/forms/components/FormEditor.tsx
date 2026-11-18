@@ -22,7 +22,6 @@ import HealthSection from './HealthSection';
 import WaterSection from './WaterSection';
 
 const formSchema = z.looseObject({
-  village: z.string().trim().min(1, 'Required'),
   dataCollectionDate: z.string().trim().min(1, 'Required'),
 });
 
@@ -77,8 +76,6 @@ export function FormEditor({
       householdNumber: '',
       gender: '',
       age: null,
-      village: '',
-      otherVillage: '',
       canAttendHealthScreening: null,
       conflictHealthcareAccess: '',
       conflictHealthManagement: '',

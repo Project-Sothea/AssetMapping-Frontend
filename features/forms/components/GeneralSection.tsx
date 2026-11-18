@@ -1,7 +1,5 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-import { VILLAGES } from '~/shared/constants/villages';
-
 import { FormValues } from '../types';
 
 import RadioGroup from './RadioGroup';
@@ -85,23 +83,6 @@ export default function GeneralSection({
 
   return (
     <View style={{ gap: 12 }}>
-      <Text style={styles.question}>Which village are you from?*</Text>
-      <RadioGroup
-        name="village"
-        options={[
-          ...VILLAGES.map((village) => ({ label: village, value: village })),
-          { label: 'Other', value: 'others' },
-        ]}
-        values={values}
-        setFieldValue={setFieldValue}
-        otherFieldName="otherVillage"
-        otherValue={values.otherVillage ?? undefined}
-        onOtherChange={handleChange('otherVillage')}
-        errors={errors.village}
-        touched={touched.village}
-        disabled={disabled}
-      />
-
       <Text style={styles.question}>What is your name?</Text>
       <TextInput
         style={styles.input}

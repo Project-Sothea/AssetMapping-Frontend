@@ -119,3 +119,15 @@ export function safeJsonStringParse(value: string | null): string[] {
     return [];
   }
 }
+
+export function formWriteValues<T extends object>(value: T): T {
+  const current = { ...value } as T & {
+    village?: unknown;
+    otherVillage?: unknown;
+    pinVillage?: unknown;
+  };
+  delete current.village;
+  delete current.otherVillage;
+  delete current.pinVillage;
+  return current;
+}

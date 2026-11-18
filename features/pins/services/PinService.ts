@@ -17,6 +17,7 @@ import { db } from '~/services/drizzleDb';
 import * as ImageManager from '~/services/images/ImageManager';
 import { enqueueInTransaction, outstanding } from '~/services/sync/queue/queueOperations';
 import { assertLocalWritesAllowed } from '~/services/sync/transferCoordinator';
+import { assertPinVillage } from '~/shared/constants/villages';
 
 import { PinUpdate, PinValues } from '../types';
 
@@ -26,6 +27,7 @@ import { PinUpdate, PinValues } from '../types';
 
 export async function createPin(pin: PinValues): Promise<Pin> {
   assertLocalWritesAllowed();
+  assertPinVillage(pin.cityVillage);
   const newPin: Pin = {
     ...pin,
     createdAt: new Date(),
@@ -59,6 +61,10 @@ export async function updatePin(id: string, updates: PinUpdate): Promise<Pin> {
     throw new Error(`Pin ${id} not found`);
   }
 
+  assertPinVillage(
+    updates.cityVillage === undefined ? existing.cityVillage : updates.cityVillage,
+    !existing.cityVillage
+  );
   const updated: Pin = {
     ...existing,
     ...updates,

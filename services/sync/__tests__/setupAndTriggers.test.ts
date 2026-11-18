@@ -29,12 +29,8 @@ async function freshApp(marker: string | null, snapshot?: Uint8Array) {
   };
 }
 
-test('legacy setup resets once and automatically downloads only on that first setup', async () => {
+test('empty-device setup completes once and automatically downloads only on that first setup', async () => {
   const app = await freshApp(null);
-  app.db
-    .insert(app.schema.pins)
-    .values({ id: 'old', name: 'Old', lat: 1, lng: 2, createdAt: new Date() })
-    .run();
   await app.initializeLocalData();
   expect(app.db.select().from(app.schema.pins).all()).toHaveLength(0);
   expect(app.storage.setItem).toHaveBeenCalledWith('localDataResetVersion', '1');
@@ -140,4 +136,49 @@ test('reconnect hooks, notifications and API URL save have no transfer call site
       /processQueue|performFullSync|performIncrementalSync|reconnectAndSync|pullPinUpdate|pullFormUpdate/
     );
   }
+});
+
+test('missing reset marker adopts populated device data without deleting answers or pending uploads', async () => {
+  const app = await freshApp(null);
+  app.db
+    .insert(app.schema.pins)
+    .values({
+      id: 'p',
+      name: 'Existing',
+      lat: 12,
+      lng: 103,
+      cityVillage: 'Krang Svat',
+      createdAt: new Date(),
+      status: 'unsynced',
+    })
+    .run();
+  app.db
+    .insert(app.schema.forms)
+    .values({
+      id: 'f',
+      name: 'Saved answer',
+      pinId: 'p',
+      villageId: 'A1',
+      createdAt: new Date(),
+      status: 'unsynced',
+    })
+    .run();
+  app.db
+    .insert(app.schema.syncQueue)
+    .values({
+      id: 'q',
+      entityId: 'f',
+      entityType: 'form',
+      operation: 'create',
+      payload: '{"answer":"keep"}',
+      idempotencyKey: 'keep-key',
+      status: 'pending',
+    })
+    .run();
+  await app.initializeLocalData();
+  expect(app.db.select().from(app.schema.forms).get()?.name).toBe('Saved answer');
+  expect(app.db.select().from(app.schema.syncQueue).get()?.idempotencyKey).toBe('keep-key');
+  expect(app.pinsApi.fetchPins).not.toHaveBeenCalled();
+  expect(app.getTransferState().setupReady).toBe(true);
+  expect(app.storage.setItem).toHaveBeenCalledWith('localDataResetVersion', '1');
 });

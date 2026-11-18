@@ -21,8 +21,11 @@ import {
   pickImage,
   saveImageLocally,
 } from '~/services/images/ImageManager';
+import { VILLAGES } from '~/shared/constants/villages';
 
 import { PinValues } from '../types/';
+
+import { VillageDropdown } from './VillageDropdown';
 
 const pinSchema = z.looseObject({
   name: z.string().trim().min(1, 'Name is required'),
@@ -40,7 +43,7 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
   const idRef = useRef<string>(uuidv4());
 
   const defaults = useMemo((): PinValues => {
-    if (!isCreate) return selectedPin!;
+    if (!isCreate) return { ...selectedPin!, cityVillage: selectedPin!.cityVillage ?? '' };
     if (!coords) throw new Error('coords is required in create mode');
 
     return {
@@ -64,13 +67,25 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
     formState: { errors },
   } = useForm<PinValues>({
     defaultValues: defaults,
-    resolver: zodResolver(pinSchema) as unknown as Resolver<PinValues>,
+    resolver: zodResolver(
+      pinSchema.extend({
+        cityVillage: z
+          .string()
+          .refine(
+            (value) =>
+              isCreate || !!selectedPin?.cityVillage
+                ? (VILLAGES as readonly string[]).includes(value)
+                : value === '' || (VILLAGES as readonly string[]).includes(value),
+            'Choose a village from the dropdown'
+          ),
+      })
+    ) as unknown as Resolver<PinValues>,
     mode: 'onBlur',
   });
 
   useEffect(() => {
     if (!isCreate && selectedPin) {
-      reset(selectedPin);
+      reset({ ...selectedPin, cityVillage: selectedPin.cityVillage ?? '' });
     }
   }, [isCreate, selectedPin?.id, reset, selectedPin]);
 
@@ -106,8 +121,6 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
     <View style={styles.container}>
       {[
         { name: 'name', label: 'Name', required: true },
-        { name: 'cityVillage', label: 'City/Village' },
-        { name: 'address', label: 'Address' },
         { name: 'description', label: 'Description' },
       ].map(({ name, label, required }) => (
         <View key={name}>
@@ -132,6 +145,20 @@ export const PinForm = ({ onSubmit, selectedPin, coords, onSubmitRegister }: Pin
         </View>
       ))}
 
+      <Text>City/Village *</Text>
+      <VillageDropdown
+        options={[
+          { key: '', label: 'Choose village' },
+          ...VILLAGES.map((label) => ({ key: label, label })),
+        ]}
+        value={values.cityVillage ?? ''}
+        onChange={(value) =>
+          setValue('cityVillage', value, { shouldDirty: true, shouldValidate: true })
+        }
+      />
+      {errors.cityVillage?.message && (
+        <Text style={styles.error}>{errors.cityVillage.message}</Text>
+      )}
       <View>
         <Text style={{ marginBottom: 8 }}>Images</Text>
 

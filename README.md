@@ -280,3 +280,9 @@ Each device generates a stable UUID on first launch (stored in AsyncStorage) via
 ### Image Storage
 
 Pin images are stored locally using Expo's filesystem and synced to the backend via the storage API. `services/images/ImageManager.ts` handles upload, download, and local cache management. Images are referenced by UUID filenames.
+
+## Pin village migration
+
+Pins own the village; forms display their current parent pin’s village. New pins require a dropdown choice, while existing blank landmark pins can stay blank. Address is hidden from the pin UI; household codes (`villageId`) remain unchanged.
+
+The updated app must use the migrated test backend. Follow [the rollout and rollback checklist](docs/testing/2026-11-18-pin-owned-village.md) before updating devices with old cached production data. Saved API settings override build defaults.

@@ -3,8 +3,16 @@ import { createPin as savePin } from '~/features/pins/services/PinService';
 
 export const createPin = (
   values: Pick<Parameters<typeof savePin>[0], 'id' | 'name' | 'lat' | 'lng'>
-) => savePin({ address: '', cityVillage: '', description: '', type: '', images: [], ...values });
+) =>
+  savePin({
+    address: '',
+    cityVillage: 'Krang Svat',
+    description: '',
+    type: '',
+    images: [],
+    ...values,
+  });
 
 export const createForm = (
-  values: Pick<Parameters<typeof saveForm>[0], 'pinId' | 'name' | 'villageId' | 'village'>
+  values: Pick<Parameters<typeof saveForm>[0], 'pinId' | 'name' | 'villageId'>
 ) => saveForm(values as Parameters<typeof saveForm>[0]);

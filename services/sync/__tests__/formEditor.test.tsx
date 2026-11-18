@@ -48,9 +48,6 @@ async function mount(pinId: string = 'parent') {
       </QueryClientProvider>
     );
   });
-  await act(async () => {
-    renderer.root.findAllByType(GeneralSection)[0].props.setFieldValue('village', 'Krang Svat');
-  });
 }
 
 async function setHiddenPinId(value: unknown) {
@@ -74,9 +71,7 @@ test.each([undefined, null, '', 'different-pin'])(
     await mount();
     await setHiddenPinId(hiddenId);
     await save();
-    expect(db.select().from(forms).all()).toEqual([
-      expect.objectContaining({ pinId: 'parent', village: 'Krang Svat' }),
-    ]);
+    expect(db.select().from(forms).all()).toEqual([expect.objectContaining({ pinId: 'parent' })]);
     expect(close).toHaveBeenCalledTimes(1);
   }
 );
@@ -96,9 +91,6 @@ test('missing screen context cannot be replaced by a stale hidden pinId', async 
       </QueryClientProvider>
     );
   });
-  await act(async () => {
-    renderer.root.findAllByType(GeneralSection)[0].props.setFieldValue('village', 'Krang Svat');
-  });
   await setHiddenPinId('parent');
   await save();
   expect(db.select().from(forms).all()).toHaveLength(0);
@@ -111,7 +103,6 @@ test('existing form keeps its original parent despite stale screen and hidden ID
     pinId: 'parent',
     name: 'Test',
     villageId: '',
-    village: 'Krang Svat',
   });
   const selected = await getFormById(saved.id);
   await act(async () => {

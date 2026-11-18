@@ -58,7 +58,6 @@ export function PinEditor(props: PinEditorProps) {
         updates: {
           name: values.name,
           cityVillage: values.cityVillage,
-          address: values.address,
           description: values.description,
           type: values.type,
           images: values.images,

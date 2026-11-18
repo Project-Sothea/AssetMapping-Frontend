@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 
 import { syncQueue } from '~/db/schema';
 import { db } from '~/services/drizzleDb';
@@ -15,12 +15,14 @@ import {
 import type { QueueMetrics, UploadResult } from './types';
 
 export async function getQueueMetrics(): Promise<QueueMetrics> {
-  const items = db.select().from(syncQueue).all();
-  return {
-    pending: items.filter((i) => i.status === 'pending').length,
-    failed: items.filter((i) => i.status === 'failed').length,
-    completed: items.filter((i) => i.status === 'completed').length,
-  };
+  return db
+    .select({
+      pending: sql<number>`coalesce(sum(case when ${syncQueue.status} = 'pending' then 1 else 0 end), 0)`,
+      failed: sql<number>`coalesce(sum(case when ${syncQueue.status} = 'failed' then 1 else 0 end), 0)`,
+      completed: sql<number>`coalesce(sum(case when ${syncQueue.status} = 'completed' then 1 else 0 end), 0)`,
+    })
+    .from(syncQueue)
+    .get()!;
 }
 
 function rank(op: QueueRow) {

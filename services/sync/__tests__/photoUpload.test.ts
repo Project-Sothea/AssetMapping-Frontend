@@ -108,7 +108,7 @@ test.each([
 
 test('storage URL failure preserves the pin and dependent form with a stage-specific error', async () => {
   await photoPin();
-  await createForm({ pinId: 'p', name: 'Test', villageId: '', village: 'Krang Svat' });
+  await createForm({ pinId: 'p', name: 'Test', villageId: '' });
   jest
     .mocked(getUploadUrl)
     .mockResolvedValue({ success: false, error: 'HTTP 500: Internal Server Error' });

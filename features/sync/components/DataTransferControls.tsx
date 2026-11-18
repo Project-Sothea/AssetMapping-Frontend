@@ -23,7 +23,8 @@ export function DataTransferControls() {
   const { data: summary } = useQuery({
     queryKey: ['localDataSummary'],
     queryFn: getLocalDataSummary,
-    refetchInterval: 2000,
+    enabled: !busy && !working,
+    refetchInterval: busy || working ? false : 2000,
   });
   const disabled = busy || working || !summary;
   const outstanding = (summary?.pending ?? 0) + (summary?.failed ?? 0);

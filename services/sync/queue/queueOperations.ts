@@ -13,6 +13,15 @@ export type QueueRow = typeof syncQueue.$inferSelect;
 export const outstanding = or(eq(syncQueue.status, 'pending'), eq(syncQueue.status, 'failed'));
 export async function processOperation(op: QueueRow): Promise<void> {
   const payload = JSON.parse(op.payload);
+  if (
+    op.entityType === 'form' &&
+    op.operation !== 'delete' &&
+    ('village' in payload || 'otherVillage' in payload)
+  ) {
+    throw new Error(
+      'This form has a previous-version upload. Review and save the form in the updated app before uploading; the original queued data was preserved.'
+    );
+  }
   if (op.entityType === 'pin') await syncPin(op.operation as Operation, payload, op.idempotencyKey);
   else await syncForm(op.operation as Operation, payload, op.idempotencyKey);
 }

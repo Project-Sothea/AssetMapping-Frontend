@@ -31,7 +31,6 @@ test('transfers exclude overlapping transfers and stale editor writes', async ()
     pinId: pin.id,
     name: 'Patient',
     villageId: '',
-    village: 'Krang Svat',
   });
   let release!: () => void;
   const transfer = runTransfer(
@@ -45,9 +44,7 @@ test('transfers exclude overlapping transfers and stale editor writes', async ()
   await expect(createPin(pin)).rejects.toThrow();
   await expect(updatePin(pin.id, { name: 'Changed during upload' })).rejects.toThrow();
   await expect(deletePin(pin.id)).rejects.toThrow();
-  await expect(
-    createForm({ pinId: pin.id, name: 'Another', villageId: '', village: 'Krang Svat' })
-  ).rejects.toThrow();
+  await expect(createForm({ pinId: pin.id, name: 'Another', villageId: '' })).rejects.toThrow();
   await expect(updateForm(form.id, { name: 'Changed during upload' })).rejects.toThrow();
   await expect(deleteForm(form.id)).rejects.toThrow();
   await expect(runTransfer('clear', async () => {})).rejects.toThrow();
@@ -66,7 +63,7 @@ test('editing an unsent pin preserves its create operation', async () => {
 
 test('saving a form on an unsent pin retains parent create', async () => {
   await createPin(pin);
-  await createForm({ pinId: pin.id, name: 'Patient', villageId: '', village: 'Krang Svat' });
+  await createForm({ pinId: pin.id, name: 'Patient', villageId: '' });
   expect(db.select().from(forms).all()).toHaveLength(1);
   expect(db.select().from(syncQueue).all()).toEqual(
     expect.arrayContaining([
@@ -84,7 +81,6 @@ test.each([undefined, null, '', ['pin-1']])(
         pinId: pinId as unknown as string,
         name: 'Test',
         villageId: '',
-        village: 'Krang Svat',
       })
     ).rejects.toThrow(/reopen.*pin/i);
     expect(db.select().from(forms).all()).toHaveLength(0);
@@ -102,7 +98,7 @@ test('queue insert failure rolls back the local pin save', async () => {
 
 test('deleting a never-uploaded pin cancels its child records and operations', async () => {
   await createPin(pin);
-  await createForm({ pinId: pin.id, name: 'Patient', villageId: '', village: 'Krang Svat' });
+  await createForm({ pinId: pin.id, name: 'Patient', villageId: '' });
   await deletePin(pin.id);
   expect(db.select().from(pins).all()).toHaveLength(0);
   expect(db.select().from(forms).all()).toHaveLength(0);

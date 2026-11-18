@@ -59,8 +59,6 @@ export const forms = sqliteTable('forms', {
   // General
   villageId: text().notNull(),
   name: text().notNull(),
-  village: text().notNull(),
-  otherVillage: text(),
   dataCollectionDate: text(),
   householdNumber: text(),
   gender: text(),
@@ -169,4 +167,12 @@ export const syncQueue = sqliteTable('sync_queue', {
   sequenceNumber: integer(),
   dependsOn: text(),
   deviceId: text(),
+});
+
+// Upgrade archive only: never read as the current form village.
+export const formVillageArchive = sqliteTable('form_village_archive', {
+  formId: text().primaryKey(),
+  village: text(),
+  otherVillage: text(),
+  pinVillage: text(),
 });
