@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-18",
+  "device": "iPhone 16",
+  "runtime": "iOS 18.6",
+  "frontendRevision": "b52a16a6343b6408920c79f4e5338bc4b9ce2ea8",
+  "nativeReleaseBuildSucceeded": true,
+  "install": {
+    "installedOverExistingApp": true,
+    "sameDataContainer": false,
+    "bundleIdentifier": "com.projectsothea.SoformManualTest",
+    "buildVersion": "2",
+    "embeddedFrameworkIdentitiesValid": true,
+    "bundleSha256": "9a5e113e316d5a28c4690fbd1206c9221a58799c5a8473c6a712ec9a9d78aa0e"
+  },
+  "firstLaunch": {
+    "pinsPreserved": 210,
+    "formsPreserved": 271,
+    "queueRowsUnchanged": 4,
+    "pendingChangesPreserved": 2,
+    "archivedVillageRows": 271,
+    "surveyFieldsUnchanged": true,
+    "householdCodesPreserved": true,
+    "appSettingsUnchanged": true,
+    "cachedFilesUnchanged": true,
+    "foreignKeyViolations": 0,
+    "migrationCount": 5
+  },
+  "coldRestart": {
+    "pinsPreserved": 210,
+    "formsPreserved": 271,
+    "queueRowsUnchanged": 4,
+    "pendingChangesPreserved": 2,
+    "archivedVillageRows": 271,
+    "surveyFieldsUnchanged": true,
+    "householdCodesPreserved": true,
+    "appSettingsUnchanged": true,
+    "cachedFilesUnchanged": true,
+    "foreignKeyViolations": 0,
+    "migrationCount": 5
+  },
+  "missingSetupMarkerCase": {
+    "olderInstallationWithoutSetupMarker": true,
+    "pinsPreserved": 2,
+    "formsPreserved": 1,
+    "queueRowsUnchanged": 2,
+    "setupMarkerAdoptedWithoutReset": true,
+    "migrationCount": 5,
+    "foreignKeyViolations": 0
+  },
+  "uninstallPerformed": false,
+  "clearLocalDataPerformed": false,
+  "uploadPerformed": false,
+  "oldFormOpenedInNewUI": true,
+  "retiredVillageQuestionAbsent": true,
+  "originalSimulatorLeftUntouched": true,
+  "physicalTestFlightUpgradeTested": false,
+  "downloadedOfflineMapPackTested": false,
+  "nativeBuildWorkaroundsRestored": true
+}

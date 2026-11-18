@@ -65,5 +65,7 @@
 
 - [x] Exercise upgrade from the current local schema with representative data. Verify failure recovery, no repeat reset, unchanged API settings/offline map packs, and blocked unexpected pending work.
 - [ ] Verify clearing the stale production dataset in the OLD app before installing the update, followed by updating in place and downloading from the verified migration-test URL, replaces old IDs with the cleaned snapshot. If a migration gate has already failed, do not prescribe an inaccessible in-app Clear action; provide a tested recovery path.
-- [ ] If a device/simulator and installable update are available, validate an actual in-place update with the same bundle/package identity and signing. Otherwise report this as unverified; do not claim users can upgrade without problems based only on unit tests.
+- [x] If a device/simulator and installable update are available, validate an actual in-place update with the same bundle/package identity and signing. Otherwise report this as unverified; do not claim users can upgrade without problems based only on unit tests.
 - [x] Summarize completed local/remote checks, remaining access/build limits, and rollout instructions. Reinstall is not the default recovery step.
+
+Native verification completed 18 November 2026: real Release simulator update and cold restart preserved the full snapshot plus existing fixtures, queue, cached photo and settings. Physical TestFlight installation remains untested. See docs/testing/2026-11-18-pin-owned-village.md.

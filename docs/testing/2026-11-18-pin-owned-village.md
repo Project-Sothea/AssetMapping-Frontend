@@ -16,7 +16,7 @@ New pins require Krang Svat, Srae Ou, Svay Sor, Boeung Tim or Test Village. Exis
 ## Device update checklist
 
 1. Before updating a device caching the old production dataset, confirm Upload Pending is empty and there are no failed or unsynced changes. If there are, preserve/recover them before proceeding. In the **old app**, use Clear Local Data to remove old IDs.
-2. Install the update over the existing app with the same bundle/package identity and signing. Reinstallation is not the intended path. An actual signed in-place device update has **not** been verified here.
+2. Install the update over the existing app with the same bundle/package identity and signing. Reinstallation is not the intended path. A native in-place simulator update is now verified (see below). A physical TestFlight/App Store update has not been tested here.
 3. In Settings, explicitly set the test API above. Saved settings override the build default. The local ignored frontend `.env` now points at test; cloud build environment settings must be checked separately.
 4. Use Download Latest. Expect 208 pins, 268 forms and 13 blank-village landmarks. Verify offline maps, an existing survey, new pin selection, form creation and inherited village after a pin edit.
 5. If already updated with an old cache, the migration preserves independent old village values in `form_village_archive`; it does not auto-reset nonempty data or queued work. Legacy queued form writes are blocked and preserved. Inspect/recover any pending work before clearing. If startup itself fails, keep the app data intact and capture the error; do not uninstall as a first recovery step.
@@ -41,4 +41,28 @@ Healthy test deployment: `3855d5ef-62f1-4902-853a-805d212559da`, revision `eef9f
 
 Live before/after comparison passed for every pin field and every remaining form field: 208 pins, 268 forms, 13 blank pins, zero orphans, retired village keys absent. Temporary API probes verified required-village rejection (HTTP 400 JSON), blank-parent form rejection, Test Village pin creation, form creation without village fields, parent-village edit inheritance, and idempotent retry. All probe rows were deleted and the complete original active dataset matched again afterward. No pending Railway changes remain.
 
-Production was not deployed, migrated or switched. The frontend feature branch is ready for review and local testing; an installable mobile release and signed in-place upgrade have not been distributed/tested here.
+Production was not deployed, migrated or switched. The frontend feature branch is ready for review. A standalone native simulator build has now been installed and verified in place; no TestFlight/App Store release has been distributed.
+
+## Native iOS in-place update verification
+
+On 18 November 2026, a standalone Release build of frontend revision `b52a16a6343b6408920c79f4e5338bc4b9ce2ea8` was built with Xcode and tested on iPhone 16 / iOS 18.6. The normal older simulator app was installed once in an isolated simulator and given a copy of its existing records, queued operations, photo and settings plus the private full pre-migration 208-pin/268-form snapshot. It opened normally before the update. The new app was then installed **over it**, retaining the same test bundle ID (`com.projectsothea.SoformManualTest`) and increasing its build version from 1 to 2. The shipped JavaScript bundle was identical to the current native build; only simulator package identity/version metadata was adjusted.
+
+No uninstall, Clear Local Data, queue processing or upload was performed. iOS rotated the app data-container path during installation, but preserved its contents. Comparing every stored pin field and every remaining form field before/after confirmed:
+
+| Check                                        | Before |                  After update and cold restart |
+| -------------------------------------------- | -----: | ---------------------------------------------: |
+| Pins (full snapshot plus existing fixtures)  |    210 |                                            210 |
+| Forms (full snapshot plus existing fixtures) |    271 |                                            271 |
+| Queue rows                                   |      4 | 4, byte-equivalent values and idempotency keys |
+| Pending changes                              |      2 |                                              2 |
+| Cached photo files                           |      1 |                           1, identical SHA-256 |
+| Migration journal entries                    |      4 |                   5, unchanged on cold restart |
+| Foreign-key violations                       |      0 |                                              0 |
+
+All 271 retired village/otherVillage values and parent villages were preserved in the archive. Household codes and survey answers were unchanged. AsyncStorage settings, including the saved test API URL and last-sync value, matched exactly. The updated UI opened an existing fixture form and showed no village question.
+
+A second native update case removed the setup marker from an older nonempty installation: its 2 pins, 1 form and 2 queue rows survived, and the app adopted marker version 1 without resetting/downloading.
+
+The original simulator was left untouched. The populated updated app remains available in **SOFORM Native Upgrade Verification** (`EC8DB080-9696-44DC-B1CB-C55AE6610B58`), on its data-transfer screen. De-identified machine-readable results are in [the verification report](evidence/2026-11-18-ios-in-place-update.json). Private database snapshots, simulator packages and before/after screenshots are outside the repository at `/tmp/sothea-ios-upgrade-evidence`.
+
+The local native build required temporary corrections to generated shell-script quoting for the workspace path containing spaces and the local Node path. All those build-only changes were restored; no runtime code fix was needed for this test. No downloaded offline-map pack was present, so map-pack retention was not tested. Physical-device distribution/signing remains a separate release check. The simulator result supports a normal in-place update with the same application identity; reinstallation is not required for the tested migration.
