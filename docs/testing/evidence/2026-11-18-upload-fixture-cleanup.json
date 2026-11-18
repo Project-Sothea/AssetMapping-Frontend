@@ -1,0 +1,20 @@
+{
+  "removedFixturePins": 2,
+  "removedFixtureForms": 3,
+  "keptPins": 209,
+  "keptForms": 268,
+  "keptQueueRows": 1,
+  "outstandingChanges": 0,
+  "allNonFixtureFieldsUnchanged": true,
+  "settingsUnchanged": true,
+  "foreignKeyViolations": 0,
+  "serverWritesPerformed": false,
+  "date": "2026-11-18",
+  "scope": "User-approved cleanup of simulator QA fixtures only",
+  "serverPinCount": 209,
+  "serverFormCount": 268,
+  "newUserPinUploaded": true,
+  "testsPassed": 125,
+  "typeCheckPassed": true,
+  "lintPassed": true
+}

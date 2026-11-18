@@ -178,6 +178,44 @@ test('failed remote photo lookup never guesses that cached photos need reupload'
   expect(sync).not.toHaveBeenCalled();
 });
 
+test('a missing server pin explains recovery and preserves its photos and dependent form', async () => {
+  await photoPin();
+  await uploadPendingChanges();
+  await createForm({ pinId: 'p', name: 'Dependent form', villageId: 'A1' });
+  const pending = db
+    .select()
+    .from(syncQueue)
+    .all()
+    .filter((row) => row.status === 'pending');
+  jest.mocked(fetchPin).mockResolvedValue({ success: false, error: 'HTTP 404: Pin not found' });
+  jest.mocked(createUploadTask).mockClear();
+  jest.mocked(getUploadUrl).mockClear();
+  jest.mocked(sync).mockClear();
+  const result = await uploadPendingChanges();
+  expect(result).toMatchObject({ uploaded: 0, failed: 1, blocked: 1, remaining: 2 });
+  expect(result.errors[0].message).toMatch(/pin.*missing.*selected server/i);
+  expect(result.errors[0].message).toMatch(/API URL/);
+  expect(result.errors[0].message).not.toMatch(/connection improves/i);
+  expect(createUploadTask).not.toHaveBeenCalled();
+  expect(getUploadUrl).not.toHaveBeenCalled();
+  expect(sync).not.toHaveBeenCalled();
+  expect(deleteObjects).not.toHaveBeenCalled();
+  expect(db.select().from(pins).get()?.images).toBe('["photo.jpg"]');
+  expect(db.select().from(forms).get()?.status).toBe('unsynced');
+  for (const original of pending) {
+    expect(
+      db
+        .select()
+        .from(syncQueue)
+        .all()
+        .find((row) => row.id === original.id)
+    ).toMatchObject({
+      payload: original.payload,
+      idempotencyKey: original.idempotencyKey,
+    });
+  }
+});
+
 test('storage HTTP rejection does not mark the pin uploaded', async () => {
   await photoPin();
   mockUpload.mockResolvedValueOnce({ status: 403 });

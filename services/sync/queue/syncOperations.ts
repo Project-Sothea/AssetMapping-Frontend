@@ -307,6 +307,11 @@ async function determineImageChanges(
 
 async function getRemoteImages(pinId: string): Promise<string[]> {
   const response = await fetchPin(pinId);
+  if (!response.success && response.error.startsWith('HTTP 404:')) {
+    throw new Error(
+      'This pin is missing from the selected server. Check the API URL or ask the app team to recover it before uploading its forms. Your local records and photos are kept.'
+    );
+  }
   if (!response.success || !response.data) {
     const reason = response.success ? 'pin unavailable' : response.error;
     throw new Error(
