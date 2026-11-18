@@ -12,10 +12,11 @@
     "web": "expo start --web",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "types:vendor": "node scripts/vendor-shared-types.mjs"
   },
   "dependencies": {
-    "@assetmapping/shared-types": "file:../AssetMapping-Backend/packages/shared-types",
+    "@assetmapping/shared-types": "file:vendor/assetmapping-shared-types-0.1.0.tgz",
     "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.2.0",
